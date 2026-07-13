@@ -36,7 +36,7 @@ docs/
 ├── folder-structure.md
 ├── api-standard.md
 ├── ui-guidelines.md
-├── coding-standard.md
+├── implementation-rules.md
 ├── deployment.md
 ├── roadmap.md
 └── prompt-rules.md

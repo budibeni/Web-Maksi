@@ -26,7 +26,7 @@ docs/
 ├── document-numbering.md
 ├── api-standard.md
 ├── ui-guidelines.md
-├── coding-standard.md
+├── implementation-rules.md
 ├── development-flow.md
 ├── deployment.md
 └── roadmap.md
@@ -46,7 +46,7 @@ AI dan Developer wajib membaca dokumen berikut secara berurutan:
 6. Seluruh dokumen pada folder `database/`
 7. api-standard.md
 8. ui-guidelines.md
-9. coding-standard.md
+9. implementation-rules.md
 10. development-flow.md
 11. deployment.md
 12. roadmap.md
