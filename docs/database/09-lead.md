@@ -25,6 +25,7 @@ Seluruh Aktivitas Lead, Pengingat, dan Versi Penawaran selalu terhubung dengan s
 | Field | Tipe Data | Panjang | Null | Default | Keterangan |
 |--------|-----------|----------|------|---------|------------|
 | id | BIGINT UNSIGNED | - | Tidak | AUTO_INCREMENT | Primary Key |
+| nomor | VARCHAR | 30 | Tidak | - | Nomor Lead, dibuat otomatis oleh sistem (UNIQUE) |
 | customer_id | BIGINT UNSIGNED | - | Tidak | - | Relasi ke Customer |
 | cabang_id | BIGINT UNSIGNED | - | Tidak | - | Relasi ke Cabang |
 | user_id | BIGINT UNSIGNED | - | Tidak | - | Sales yang menangani Lead |
@@ -69,6 +70,7 @@ id
 
 | Field | Nama Index |
 |--------|------------|
+| nomor | uk_lead_nomor | UNIQUE |
 | customer_id | idx_lead_customer |
 | cabang_id | idx_lead_cabang |
 | user_id | idx_lead_user |

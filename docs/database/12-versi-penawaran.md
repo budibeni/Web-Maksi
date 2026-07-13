@@ -27,6 +27,7 @@ Tabel ini merupakan **Header Penawaran**.
 | Field | Tipe Data | Panjang | Null | Default | Keterangan |
 |--------|-----------|----------|------|---------|------------|
 | id | BIGINT UNSIGNED | - | Tidak | AUTO_INCREMENT | Primary Key |
+| nomor | VARCHAR | 30 | Tidak | - | Nomor Penawaran, dibuat otomatis oleh sistem (UNIQUE) |
 | lead_id | BIGINT UNSIGNED | - | Tidak | - | Relasi ke Lead |
 | versi | INT | - | Tidak | 1 | Nomor Versi |
 | customer_nama | VARCHAR | 200 | Tidak | - | Snapshot Nama Customer |
@@ -77,6 +78,7 @@ id
 
 | Field | Nama Index |
 |--------|------------|
+| nomor | uk_versi_penawaran_nomor | UNIQUE |
 | lead_id | idx_versi_penawaran_lead |
 | versi | idx_versi_penawaran_versi |
 | dibuat_tanggal | idx_versi_penawaran_tanggal |

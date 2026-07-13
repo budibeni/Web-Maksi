@@ -341,6 +341,22 @@ Contoh:
 
 ---
 
+# Standar Unique Key
+
+Seluruh field yang menjadi identitas bisnis wajib menggunakan **UNIQUE INDEX**.
+
+Contoh:
+
+| Tabel | Field |
+|--------|-------|
+| tb_lead | nomor |
+| tb_versi_penawaran | nomor |
+| tb_user | username |
+| tb_user | telepon |
+| tb_cabang | kode |
+
+UNIQUE INDEX digunakan untuk menjamin tidak terdapat data dengan identitas bisnis yang sama.
+
 # Catatan
 
 Dokumen ini menjelaskan standar desain database aplikasi MAKSI.

@@ -8,7 +8,7 @@ Seluruh implementasi wajib mengikuti dokumen yang terdapat pada folder ini.
 
 # Struktur Dokumentasi
 
-```
+```text
 docs/
 │
 ├── database/
@@ -23,6 +23,7 @@ docs/
 ├── business-rules.md
 ├── folder-structure.md
 ├── database-design.md
+├── document-numbering.md
 ├── api-standard.md
 ├── ui-guidelines.md
 ├── coding-standard.md
@@ -41,17 +42,18 @@ AI dan Developer wajib membaca dokumen berikut secara berurutan:
 2. business-rules.md
 3. folder-structure.md
 4. database-design.md
-5. Seluruh dokumen pada folder `database/`
-6. api-standard.md
-7. ui-guidelines.md
-8. coding-standard.md
-9. development-flow.md
-10. deployment.md
-11. roadmap.md
+5. document-numbering.md
+6. Seluruh dokumen pada folder `database/`
+7. api-standard.md
+8. ui-guidelines.md
+9. coding-standard.md
+10. development-flow.md
+11. deployment.md
+12. roadmap.md
 
 Setelah seluruh dokumen dipahami, lanjutkan dengan membaca seluruh referensi UI pada folder:
 
-```
+```text
 docs/reference/
 ```
 
@@ -63,12 +65,13 @@ Folder `database/` berisi dokumentasi setiap tabel pada database MAKSI.
 
 Setiap file menjelaskan satu tabel secara lengkap, meliputi:
 
-- Fungsi tabel
-- Struktur tabel
+- Fungsi Tabel
+- Struktur Tabel
 - Primary Key
 - Foreign Key
 - Index
 - Snapshot Data
+- Data Awal (Seed)
 - Aturan Bisnis
 - Catatan
 
@@ -76,7 +79,7 @@ Seluruh implementasi yang berkaitan dengan database wajib mengikuti dokumen pada
 
 Perubahan struktur tabel harus dilakukan dengan memperbarui dokumentasi terlebih dahulu sebelum melakukan implementasi pada kode.
 
-AI maupun Developer tidak diperbolehkan membuat tabel, field, relasi, atau index yang tidak terdapat pada dokumentasi.
+AI maupun Developer tidak diperbolehkan membuat tabel, field, relasi, index, ataupun constraint yang tidak terdapat pada dokumentasi.
 
 ---
 
@@ -86,14 +89,22 @@ Apabila terdapat perbedaan informasi antar dokumen, maka urutan prioritas adalah
 
 1. Business Rules
 2. Mockup UI (`docs/reference/`)
-3. Dokumentasi Database (`docs/database/`)
-4. Database Design
-5. Development Flow
-6. API Standard
-7. Folder Structure
-8. Coding Standard
-9. Roadmap
+3. Database Design
+4. Document Numbering
+5. Dokumentasi Database (`docs/database/`)
+6. Development Flow
+7. API Standard
+8. Folder Structure
+9. Coding Standard
+10. Roadmap
 
-AI tidak boleh membuat asumsi apabila aturan belum tersedia pada dokumentasi.
+AI dan Developer tidak boleh membuat asumsi apabila aturan belum tersedia pada dokumentasi.
 
-Apabila diperlukan perubahan pada struktur database, Business Rules harus diperbarui terlebih dahulu, kemudian Dokumentasi Database, baru setelah itu implementasi pada kode dilakukan.
+Apabila diperlukan perubahan proses bisnis, urutan perubahan dokumentasi adalah:
+
+1. Business Rules
+2. Database Design (apabila ada perubahan standar database)
+3. Document Numbering (apabila ada perubahan format nomor dokumen)
+4. Dokumentasi Database (`docs/database/`)
+5. Mockup UI (`docs/reference/`) apabila memengaruhi antarmuka
+6. Implementasi pada kode
