@@ -70,47 +70,7 @@ Hosting
 
 ---
 
-# Source Code
 
-Repository menggunakan GitHub.
-
-Branch utama
-
-```
-main
-```
-
-Branch Development
-
-```
-develop
-```
-
-Fitur baru
-
-```
-feature/nama-fitur
-```
-
-Contoh
-
-```
-feature/login
-
-feature/dashboard
-
-feature/lead
-```
-
-Bug Fix
-
-```
-fix/login
-
-fix/dashboard
-```
-
----
 
 # Environment Variable
 

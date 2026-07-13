@@ -65,10 +65,10 @@ Sales hanya dapat mengakses data miliknya sendiri.
 Hak akses:
 
 - Membuat Lead
-- Mengubah Lead miliknya
-- Membuat Follow Up
+- Follow Up Lead
 - Membuat Penawaran
-- Mengubah Penawaran miliknya
+- Menandai Deal
+- Menandai Lost
 - Melihat Customer miliknya
 - Melihat Dashboard pribadi
 
@@ -82,10 +82,11 @@ Ketentuan:
 
 - Customer dapat memiliki lebih dari satu Lead.
 - Customer tidak dapat dihapus apabila masih memiliki Lead.
-- Customer dapat berupa customer baru maupun customer lama.
-- Saat membuat Lead baru, sistem akan mencari Customer berdasarkan nomor telepon.
-- Apabila Customer sudah ada, maka Lead akan menggunakan Customer tersebut.
-- Apabila Customer belum ada, sistem akan membuat Customer baru secara otomatis.
+- Customer dapat berupa Customer Baru maupun Customer Existing.
+- Saat membuat Lead, sistem mencari Customer berdasarkan Nama Customer atau Nomor HP.
+- Apabila Customer ditemukan, Lead menggunakan Customer tersebut.
+- Apabila Customer tidak ditemukan, sistem otomatis membuat Customer baru.
+- Lead selalu terhubung dengan satu Customer.
 
 ---
 
@@ -93,25 +94,44 @@ Ketentuan:
 
 Lead merupakan awal proses penjualan.
 
-Status Lead terdiri dari:
+## Status Lead
 
-- Open
+Status Lead hanya terdiri dari:
+
+- OPEN
+- DEAL
+- LOST
+
+Status digunakan untuk menunjukkan kondisi akhir Lead.
+
+---
+
+## Fase Lead
+
+Fase digunakan untuk menunjukkan posisi proses penjualan.
+
+Fase hanya berlaku apabila Status = OPEN.
+
+Fase terdiri dari:
+
+- Lead Baru
 - Follow Up
 - Penawaran
-- Deal
-- Lost
 
-Ketentuan:
+Fase berubah otomatis berdasarkan aktivitas Sales.
+
+---
+
+## Ketentuan Lead
 
 - Lead wajib memiliki Customer.
 - Lead wajib memiliki Sales.
-- Lead dapat memiliki banyak Follow Up.
-- Lead hanya memiliki satu Penawaran aktif.
-- Lead yang sudah Deal tidak dapat diubah menjadi Lost.
-- Lead yang sudah Lost dapat dibuka kembali menjadi Open.
-- Lead tidak boleh dihapus apabila sudah memiliki Follow Up.
+- Lead dapat memiliki banyak aktivitas Follow Up.
+- Lead tidak boleh dihapus apabila sudah memiliki aktivitas.
 - Lead tidak boleh dihapus apabila sudah memiliki Penawaran.
-- Lead yang sudah Deal menjadi histori penjualan.
+- Lead yang sudah DEAL tidak dapat diubah kembali.
+- Lead yang sudah LOST tidak dapat diubah kembali.
+- Lead yang sudah DEAL maupun LOST tetap menjadi histori.
 
 ---
 
@@ -124,25 +144,65 @@ Ketentuan:
 - Satu Lead dapat memiliki banyak Follow Up.
 - Follow Up tidak boleh dihapus.
 - Follow Up tidak boleh diubah setelah disimpan.
-- Setiap Follow Up wajib memiliki tanggal.
 - Setiap Follow Up wajib memiliki hasil Follow Up.
+- Setiap Follow Up dapat membuat Reminder baru.
+- Follow Up tidak mengubah Status Lead.
+- Follow Up hanya memperbarui Fase Lead apabila diperlukan.
 - Seluruh Follow Up menjadi histori aktivitas.
 
 ---
 
 # 5. Aturan Penawaran
 
-Penawaran dibuat berdasarkan Lead.
+Penawaran dibuat berdasarkan Lead yang masih berstatus **OPEN**.
 
-Ketentuan:
+## Ketentuan Umum
 
-- Penawaran hanya dapat dibuat apabila Lead masih aktif.
-- Satu Lead hanya memiliki satu Penawaran aktif.
-- Penawaran dapat direvisi.
-- Nomor Penawaran dibuat otomatis.
-- Tanggal Penawaran dibuat otomatis.
-- Harga mengikuti Master Data namun masih dapat disesuaikan.
-- Total Penawaran dihitung otomatis.
+- Penawaran hanya dapat dibuat apabila Status Lead masih **OPEN**.
+- Satu Lead hanya memiliki **satu Penawaran**.
+- Satu Penawaran dapat memiliki **banyak versi** (V1, V2, V3, dan seterusnya).
+- Setiap versi merupakan revisi dari versi sebelumnya.
+- Hanya **satu versi** yang berstatus **Aktif**.
+- Versi sebelumnya tetap disimpan sebagai histori dan tidak dapat diubah.
+- Nomor Penawaran dibuat otomatis oleh sistem.
+- Nomor Penawaran tetap sama pada seluruh versi.
+- Nomor versi bertambah otomatis setiap kali dibuat revisi.
+- Tanggal Penawaran dibuat otomatis saat versi dibuat.
+- Cabang Penawaran mengikuti Cabang Lead.
+- Mata uang menggunakan Rupiah (IDR).
+
+## Aturan Harga
+
+- Harga item diambil otomatis dari Master Data.
+- Sistem menggunakan Harga Cabang sesuai Cabang Lead.
+- Apabila Harga Cabang tidak tersedia, sistem menggunakan Harga Default (Pusat).
+- Harga item pada Penawaran tidak dapat diubah oleh pengguna.
+- Perubahan harga hanya dapat dilakukan melalui Master Data oleh Administrator.
+- Perubahan harga pada Master Data tidak memengaruhi versi Penawaran yang sudah pernah dibuat.
+
+## Diskon
+
+- Sales dapat memberikan Diskon Item.
+- Sales dapat memberikan Diskon Keseluruhan.
+- Diskon dapat berupa persentase (%) atau nominal (Rp) sesuai ketentuan sistem.
+- Perhitungan diskon dilakukan secara otomatis oleh sistem.
+
+## Perhitungan Nilai Penawaran
+
+Total Penawaran dihitung otomatis dengan urutan berikut:
+
+1. Subtotal seluruh item.
+2. Dikurangi Diskon Item.
+3. Dikurangi Diskon Keseluruhan.
+4. Ditambahkan PPN.
+5. Menghasilkan Total Penawaran.
+
+## Revisi Penawaran
+
+- Revisi hanya dapat dibuat dari versi Penawaran yang aktif.
+- Saat versi baru dibuat, versi sebelumnya otomatis berubah menjadi **Digantikan**.
+- Riwayat seluruh versi tetap tersimpan dan dapat dilihat kembali.
+- Revisi tidak mengubah histori versi sebelumnya.
 
 ---
 
@@ -152,11 +212,15 @@ Deal merupakan transaksi yang berhasil.
 
 Ketentuan:
 
-- Deal harus berasal dari Penawaran.
-- Nilai Deal mengikuti nilai Penawaran terakhir.
-- Tanggal Deal dibuat otomatis.
-- Setelah Deal, status Lead menjadi selesai.
-- Lead yang sudah Deal tidak dapat kembali menjadi Open.
+- Deal hanya dapat dilakukan apabila Lead sudah memiliki Penawaran.
+- User wajib memilih versi Penawaran yang disepakati.
+- Nilai Deal mengikuti versi Penawaran yang dipilih.
+- Tanggal Deal otomatis menggunakan tanggal saat proses Deal.
+- Setelah Deal:
+  - Status Lead menjadi DEAL.
+  - Reminder aktif otomatis selesai.
+  - Lead menjadi histori penjualan.
+- Lead yang sudah DEAL tidak dapat kembali menjadi OPEN.
 
 ---
 
@@ -164,47 +228,60 @@ Ketentuan:
 
 Lost merupakan transaksi yang gagal.
 
+Lost dapat terjadi pada dua kondisi:
+
+- Lost dari Awal (belum memiliki Penawaran).
+- Lost setelah Follow Up / Penawaran.
+
 Ketentuan:
 
-- Lost wajib memiliki alasan.
-- Alasan Lost dipilih dari daftar yang tersedia.
-- Lost tetap tercatat sebagai histori.
-- Lost dapat dibuka kembali menjadi Open apabila Customer kembali berminat.
+- Lost wajib memiliki Tahap Lost.
+- Lost wajib memiliki Alasan Lost.
+- Alasan Lost dipilih dari Master Alasan Lost.
+- Jika memilih "Lainnya", Catatan wajib diisi.
+- Setelah Lost:
+  - Status Lead menjadi LOST.
+  - Reminder aktif otomatis selesai.
+  - Lead tetap tersimpan sebagai histori.
+- Lead yang sudah LOST tidak dapat kembali menjadi OPEN.
 
 ---
 
 # 8. Aturan Pengingat
 
-Pengingat digunakan untuk mengingatkan aktivitas Sales.
+Pengingat digunakan untuk mengingatkan aktivitas Follow Up.
 
 Ketentuan:
 
-- Pengingat memiliki tanggal dan waktu.
-- Pengingat dapat ditujukan kepada Sales tertentu.
-- Pengingat dapat diubah.
-- Pengingat dapat diselesaikan.
+- Pengingat dibuat dari halaman Follow Up.
+- Setiap Lead hanya memiliki satu Reminder aktif.
+- Saat Follow Up baru disimpan, Reminder sebelumnya otomatis selesai.
+- Lead dengan status DEAL atau LOST tidak memiliki Reminder aktif.
 - Pengingat yang selesai tetap disimpan sebagai histori.
+- Pengingat yang terlambat tetap ditampilkan hingga Follow Up dilakukan.
 
 ---
 
 # 9. Aturan Dashboard
 
-Dashboard menampilkan data secara real-time.
+Dashboard menampilkan data sesuai hak akses pengguna.
 
 Dashboard menampilkan:
 
 - Total Lead
-- Lead Open
-- Lead Follow Up
-- Lead Penawaran
-- Total Deal
-- Total Lost
-- Aktivitas hari ini
-- Pengingat hari ini
-- Grafik performa Sales
-- Grafik performa Cabang
+- Open
+- Deal
+- Lost
+- Nilai Deal
+- Conversion Rate
+- Closing Rate
+- Trend Lead
+- Distribusi Fase Lead
+- Funnel Pipeline
+- Top Sales
+- Ringkasan Cabang
 
-Data Dashboard mengikuti hak akses pengguna.
+Seluruh data Dashboard mengikuti filter yang dipilih.
 
 ---
 
@@ -212,14 +289,23 @@ Data Dashboard mengikuti hak akses pengguna.
 
 Laporan digunakan sebagai bahan evaluasi.
 
-Laporan dapat difilter berdasarkan:
+Laporan terdiri dari:
 
-- Tanggal
+- Laporan Semua Lead
+- Laporan Deal
+- Laporan Lost
+
+Seluruh laporan dapat difilter berdasarkan:
+
+- Periode
 - Cabang
 - Sales
-- Status Lead
+- Status
+- Fase
+- Customer
+- Alasan Lost (jika diperlukan)
 
-Laporan dapat diekspor ke Excel.
+Seluruh laporan dapat diekspor ke Excel.
 
 Data laporan mengikuti hak akses pengguna.
 
@@ -232,13 +318,17 @@ Master Data terdiri dari:
 - Mesin
 - Sparepart
 - Jasa
+- Alasan Lost
+- Cabang
+- User
 
 Ketentuan:
 
-- Data Master hanya dapat diubah oleh Administrator.
-- Setiap item memiliki harga.
-- Harga dapat berbeda setiap cabang.
-- Master Data digunakan pada Penawaran.
+- Data Master hanya dapat dikelola Administrator.
+- Produk memiliki Harga Default.
+- Produk dapat memiliki Harga Cabang.
+- Harga Cabang menggunakan Harga Default apabila tidak diisi.
+- Master Produk digunakan pada Penawaran.
 
 ---
 
@@ -253,11 +343,12 @@ Setiap User wajib memiliki:
 - Cabang
 - Status
 
-Username tidak boleh sama.
+Ketentuan:
 
-Password disimpan dalam bentuk hash.
-
-User yang dinonaktifkan tidak dapat login.
+- Username harus unik.
+- Password disimpan dalam bentuk hash.
+- User Nonaktif tidak dapat login.
+- Hak akses mengikuti Role.
 
 ---
 
@@ -281,12 +372,13 @@ Audit digunakan sebagai histori aktivitas pengguna.
 
 # 14. Ketentuan Umum
 
-- Seluruh tanggal menggunakan zona waktu Asia/Jakarta.
-- Mata uang menggunakan Rupiah.
-- Semua nominal menggunakan format angka tanpa titik pada database.
+- Zona waktu menggunakan Asia/Jakarta.
+- Mata uang menggunakan Rupiah (IDR).
+- Seluruh nominal disimpan tanpa format pada database.
 - Nomor dokumen dibuat otomatis oleh sistem.
-- Data tidak boleh dihapus secara permanen apabila masih memiliki relasi.
-- Seluruh proses harus mengikuti hak akses pengguna.
+- Data yang memiliki relasi tidak boleh dihapus permanen.
+- Seluruh proses mengikuti hak akses pengguna.
+- Seluruh implementasi wajib mengikuti mockup dan dokumen Business Rules.
 
 ---
 

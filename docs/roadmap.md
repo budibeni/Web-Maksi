@@ -2,9 +2,7 @@
 
 Dokumen ini menjelaskan urutan pengembangan aplikasi MAKSI.
 
-Seluruh proses pengembangan mengikuti roadmap ini.
-
-Apabila terdapat perubahan urutan, roadmap harus diperbarui terlebih dahulu.
+Seluruh proses pengembangan wajib mengikuti roadmap ini agar setiap modul dibangun berdasarkan dependensi yang benar.
 
 ---
 
@@ -22,6 +20,8 @@ Pekerjaan
 - Menyiapkan struktur project
 - Menyiapkan dokumentasi
 - Menyiapkan Environment
+- Menyiapkan koneksi Database
+- Menyiapkan Authentication
 
 ---
 
@@ -36,9 +36,10 @@ Pekerjaan
 - Login
 - Logout
 - Middleware Authentication
-- JWT
+- JWT Authentication
 - Session
 - Protected Route
+- Role & Permission
 
 ---
 
@@ -55,31 +56,13 @@ Pekerjaan
 - Header
 - Footer
 - Breadcrumb
-- Navigation
+- Navigation Menu
 - User Profile
+- Theme
 
 ---
 
-# Tahap 4 - Dashboard
-
-Status
-
-⬜ Belum Dimulai
-
-Pekerjaan
-
-- Ringkasan Lead
-- Ringkasan Deal
-- Ringkasan Lost
-- Grafik Lead
-- Grafik Sales
-- Grafik Cabang
-- Aktivitas Terbaru
-- Pengingat Hari Ini
-
----
-
-# Tahap 5 - Master Data
+# Tahap 4 - Master Data
 
 Status
 
@@ -92,10 +75,13 @@ Pekerjaan
 - Mesin
 - Sparepart
 - Jasa
+- Alasan Lost
+
+Seluruh Master Data harus selesai sebelum modul transaksi dikerjakan.
 
 ---
 
-# Tahap 6 - Customer
+# Tahap 5 - Customer
 
 Status
 
@@ -104,14 +90,16 @@ Status
 Pekerjaan
 
 - Daftar Customer
-- Tambah Customer
-- Ubah Customer
 - Detail Customer
 - Riwayat Lead
+- Customer Baru
+- Customer Existing
+
+Customer menjadi dasar pembuatan Lead.
 
 ---
 
-# Tahap 7 - Lead
+# Tahap 6 - Lead
 
 Status
 
@@ -122,30 +110,19 @@ Pekerjaan
 - Daftar Lead
 - Tambah Lead
 - Detail Lead
-- Edit Lead
 - Follow Up
-- Timeline
-- Status Lead
-
----
-
-# Tahap 8 - Penawaran
-
-Status
-
-⬜ Belum Dimulai
-
-Pekerjaan
-
-- Daftar Penawaran
-- Tambah Penawaran
+- Timeline Aktivitas
+- Pengingat
+- Penawaran
 - Revisi Penawaran
-- Detail Penawaran
-- Cetak Penawaran
+- Deal
+- Lost
+
+Seluruh proses penjualan dikerjakan pada tahap ini.
 
 ---
 
-# Tahap 9 - Deal
+# Tahap 7 - Dashboard
 
 Status
 
@@ -153,13 +130,23 @@ Status
 
 Pekerjaan
 
-- Proses Deal
-- Riwayat Deal
-- Statistik Deal
+- Ringkasan Lead
+- Ringkasan Deal
+- Ringkasan Lost
+- Conversion Rate
+- Closing Rate
+- Grafik Lead
+- Grafik Sales
+- Grafik Cabang
+- Funnel Penjualan
+- Aktivitas Terbaru
+- Pengingat Hari Ini
+
+Dashboard dikerjakan setelah data transaksi tersedia.
 
 ---
 
-# Tahap 10 - Lost
+# Tahap 8 - Laporan
 
 Status
 
@@ -167,46 +154,18 @@ Status
 
 Pekerjaan
 
-- Proses Lost
-- Alasan Lost
-- Statistik Lost
-
----
-
-# Tahap 11 - Pengingat
-
-Status
-
-⬜ Belum Dimulai
-
-Pekerjaan
-
-- Daftar Pengingat
-- Tambah Pengingat
-- Kalender
-- Notifikasi
-- Selesaikan Pengingat
-
----
-
-# Tahap 12 - Laporan
-
-Status
-
-⬜ Belum Dimulai
-
-Pekerjaan
-
-- Laporan Lead
+- Laporan Semua Lead
 - Laporan Deal
 - Laporan Lost
 - Laporan Sales
 - Laporan Cabang
 - Export Excel
 
+Laporan menggunakan data dari seluruh modul transaksi.
+
 ---
 
-# Tahap 13 - Pengaturan
+# Tahap 9 - Pengaturan
 
 Status
 
@@ -214,13 +173,13 @@ Status
 
 Pekerjaan
 
-- Profil
+- Profil User
 - Ubah Password
 - Pengaturan Aplikasi
 
 ---
 
-# Tahap 14 - Audit Log
+# Tahap 10 - Audit Log
 
 Status
 
@@ -234,7 +193,7 @@ Pekerjaan
 
 ---
 
-# Tahap 15 - Optimasi
+# Tahap 11 - Optimasi
 
 Status
 
@@ -242,15 +201,17 @@ Status
 
 Pekerjaan
 
-- Optimasi Query
+- Optimasi Query Database
 - Optimasi React Query
+- Optimasi API
 - Optimasi Loading
 - Optimasi UI
 - Optimasi Build
+- Optimasi Performa
 
 ---
 
-# Tahap 16 - Testing
+# Tahap 12 - Testing
 
 Status
 
@@ -258,9 +219,12 @@ Status
 
 Pekerjaan
 
-- Pengujian Login
+- Pengujian Authentication
 - Pengujian Hak Akses
+- Pengujian Master Data
+- Pengujian Customer
 - Pengujian Lead
+- Pengujian Follow Up
 - Pengujian Penawaran
 - Pengujian Deal
 - Pengujian Lost
@@ -269,7 +233,7 @@ Pekerjaan
 
 ---
 
-# Tahap 17 - Deployment
+# Tahap 13 - Deployment
 
 Status
 
@@ -278,22 +242,27 @@ Status
 Pekerjaan
 
 - Build Production
-- Konfigurasi Hostinger
-- Deploy Aplikasi
+- Konfigurasi Environment Production
+- Deploy ke Hostinger
 - Deploy Database
-- Uji Production
+- Pengujian Production
+- Backup Awal
 
 ---
 
 # Aturan Pengembangan
 
 - Kerjakan roadmap secara berurutan.
-- Jangan mengerjakan modul berikutnya sebelum modul sebelumnya stabil.
-- Setiap modul harus selesai, diuji, dan direview sebelum melanjutkan ke modul berikutnya.
-- Seluruh implementasi wajib mengikuti Business Rules, UI Guidelines, Coding Standard, dan dokumentasi lainnya.
+- Selesaikan satu tahap sebelum melanjutkan ke tahap berikutnya.
+- Seluruh implementasi wajib mengikuti Business Rules.
+- Seluruh tampilan wajib mengikuti mockup yang telah disediakan.
+- Jangan membuat fitur di luar roadmap tanpa persetujuan.
+- Setiap tahap wajib melalui proses pengujian sebelum dinyatakan selesai.
 
 ---
 
 # Catatan
 
-Roadmap ini bersifat dinamis dan dapat diperbarui apabila terdapat kebutuhan baru selama proses pengembangan.
+Roadmap ini merupakan acuan utama proses pengembangan aplikasi MAKSI.
+
+Apabila terdapat perubahan kebutuhan atau Business Rules, roadmap harus diperbarui agar tetap sesuai dengan kondisi proyek.

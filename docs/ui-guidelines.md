@@ -127,8 +127,6 @@ Standar:
 
 # Form
 
-Gunakan Form Ant Design.
-
 Aturan:
 
 - Label berada di atas Input.
@@ -208,31 +206,6 @@ Gunakan Drawer untuk:
 
 ---
 
-# Warna Status
-
-Open
-
-Orange
-
-Follow Up
-
-Blue
-
-Penawaran
-
-Purple
-
-Deal
-
-Green
-
-Lost
-
-Red
-
-Status harus selalu menggunakan warna yang sama di seluruh aplikasi.
-
----
 
 # Badge
 
@@ -277,7 +250,7 @@ Jangan menampilkan tabel kosong.
 
 # Loading
 
-Gunakan Skeleton atau Spin dari Ant Design.
+Gunakan Skeleton
 
 Jangan menggunakan teks:
 
@@ -287,7 +260,7 @@ Loading...
 
 # Notification
 
-Gunakan Notification atau Message dari Ant Design.
+Gunakan Notification 
 
 Pesan menggunakan Bahasa Indonesia.
 
@@ -358,29 +331,7 @@ Laporan terdiri dari:
 
 ---
 
-# Lead
 
-Halaman Lead lebih mengutamakan Card daripada tabel.
-
-Lead dikelompokkan berdasarkan status.
-
-- Open
-- Follow Up
-- Penawaran
-- Deal
-- Lost
-
----
-
-# Warna
-
-Gunakan warna utama perusahaan.
-
-Hindari penggunaan warna yang berlebihan.
-
-Gunakan maksimal 5 warna utama dalam satu halaman.
-
----
 
 # Responsive
 
