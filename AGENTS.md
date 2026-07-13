@@ -15,6 +15,7 @@ README.md akan mengarahkan AI membaca dokumen berikut:
 - api-standard.md
 - ui-guidelines.md
 - coding-standard.md
+- development-flow.md
 - deployment.md
 - roadmap.md
 

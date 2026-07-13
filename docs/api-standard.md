@@ -10,8 +10,8 @@ Seluruh komunikasi antara Frontend dan Database menggunakan Route Handler bawaan
 
 - Menggunakan Next.js App Router.
 - Seluruh endpoint berada pada folder `src/app/api`.
-- Seluruh request menggunakan format JSON.
-- Semua endpoint harus mengikuti Business Rules.
+- Seluruh request dan response menggunakan format JSON.
+- Seluruh endpoint wajib mengikuti Business Rules.
 - Jangan membuat endpoint di luar standar tanpa persetujuan.
 
 ---
@@ -24,92 +24,91 @@ src/
     └── api/
         ├── auth/
         ├── dashboard/
-        ├── users/
-        ├── customers/
-        ├── leads/
-        ├── quotations/
-        ├── reminders/
-        ├── products/
-        └── reports/
+        ├── pengguna/
+        ├── customer/
+        ├── lead/
+        ├── penawaran/
+        ├── pengingat/
+        ├── produk/
+        ├── cabang/
+        ├── role/
+        ├── alasan-lost/
+        └── laporan/
 ```
 
 ---
 
 # Penamaan Endpoint
 
-Gunakan bentuk jamak.
+Gunakan nama resource sesuai nama tabel.
 
-Benar
-
-```
-/api/users
-
-/api/customers
-
-/api/leads
-
-/api/products
-```
-
-Salah
+Contoh
 
 ```
-/api/user
+/api/pengguna
 
 /api/customer
 
 /api/lead
+
+/api/penawaran
+
+/api/pengingat
+
+/api/produk
 ```
+
+Gunakan nama yang konsisten.
 
 ---
 
 # Route Handler
 
-Collection
+## Collection
 
 ```
-GET    /api/leads
+GET    /api/lead
 
-POST   /api/leads
+POST   /api/lead
 ```
 
-Single Data
+## Single Data
 
 ```
-GET    /api/leads/[id]
+GET    /api/lead/[id]
 
-PUT    /api/leads/[id]
+PUT    /api/lead/[id]
 
-DELETE /api/leads/[id]
+DELETE /api/lead/[id]
 ```
 
 ---
 
 # Business Action
 
-Untuk proses bisnis gunakan endpoint khusus.
+Gunakan endpoint khusus untuk proses bisnis.
 
 Contoh
 
 ```
-POST /api/leads/deal
+POST /api/lead/deal
 
-POST /api/leads/lost
+POST /api/lead/lost
 
-POST /api/quotations/revision
+POST /api/penawaran/revisi
 
-POST /api/reminders/complete
+POST /api/pengingat/selesai
 ```
 
-Jangan memaksakan seluruh proses bisnis menggunakan CRUD.
+Jangan memaksakan seluruh proses bisnis menggunakan operasi CRUD.
 
 ---
 
 # Format Response
 
-Semua Route Handler wajib menggunakan format berikut.
+Seluruh Route Handler wajib menggunakan format berikut.
 
-Success
+## Berhasil
 
 ```json
 {
@@ -119,7 +118,9 @@ Success
 }
 ```
 
-Success List
+---
+
+## Berhasil (List)
 
 ```json
 {
@@ -135,7 +136,9 @@ Success List
 }
 ```
 
-Error
+---
+
+## Gagal
 
 ```json
 {
@@ -144,15 +147,17 @@ Error
 }
 ```
 
-Validation Error
+---
+
+## Validasi Gagal
 
 ```json
 {
     "success": false,
     "message": "Validasi gagal.",
     "errors": {
-        "customerName": [
-            "Nama customer wajib diisi."
+        "customer": [
+            "Customer wajib diisi."
         ]
     }
 }
@@ -162,37 +167,16 @@ Validation Error
 
 # Status Code
 
-200
-
-Request berhasil.
-
-201
-
-Data berhasil dibuat.
-
-400
-
-Request tidak valid.
-
-401
-
-Belum login.
-
-403
-
-Tidak memiliki hak akses.
-
-404
-
-Data tidak ditemukan.
-
-422
-
-Validasi gagal.
-
-500
-
-Terjadi kesalahan server.
+| Status | Keterangan |
+|---------|------------|
+| 200 | Request berhasil |
+| 201 | Data berhasil dibuat |
+| 400 | Request tidak valid |
+| 401 | Belum login |
+| 403 | Tidak memiliki hak akses |
+| 404 | Data tidak ditemukan |
+| 422 | Validasi gagal |
+| 500 | Terjadi kesalahan pada server |
 
 ---
 
@@ -212,7 +196,7 @@ Seluruh endpoint selain Login wajib melakukan validasi token.
 
 # Validasi
 
-Seluruh validasi utama dilakukan di Route Handler.
+Seluruh validasi utama dilakukan pada Route Handler.
 
 Frontend hanya membantu validasi untuk meningkatkan pengalaman pengguna.
 
@@ -224,25 +208,21 @@ Standar Query
 
 ```
 ?page=1
-
 &limit=20
-
 &search=
-
 &sort=id
-
 &order=asc
 ```
 
 Contoh
 
 ```
-GET /api/leads?page=1&limit=20&search=mesin
+GET /api/lead?page=1&limit=20&search=mesin
 ```
 
 ---
 
-# Logging
+# Audit Log
 
 Aktivitas berikut wajib dicatat pada Audit Log.
 
@@ -258,14 +238,14 @@ Aktivitas berikut wajib dicatat pada Audit Log.
 
 # Service Layer
 
-Component dilarang memanggil Route Handler secara langsung.
+Komponen React tidak boleh memanggil Route Handler secara langsung.
 
-Gunakan Service.
+Seluruh komunikasi API harus melalui Service Layer.
 
 Contoh
 
 ```
-Dashboard Page
+Halaman Dashboard
 
 ↓
 
@@ -286,7 +266,7 @@ dashboard.service.js
 
 Seluruh komunikasi data menggunakan React Query.
 
-Component tidak diperbolehkan menggunakan fetch() secara langsung.
+Komponen tidak diperbolehkan menggunakan `fetch()` secara langsung.
 
 Gunakan Axios Instance.
 
@@ -300,21 +280,23 @@ Seluruh request menggunakan Axios Instance yang berada pada:
 src/config/axios.js
 ```
 
-Dilarang membuat konfigurasi Axios lebih dari satu.
+Dilarang membuat lebih dari satu konfigurasi Axios.
 
 ---
 
-# Error Message
+# Pesan Response
 
-Gunakan Bahasa Indonesia.
+Seluruh pesan menggunakan Bahasa Indonesia.
 
 Contoh
 
 - Data berhasil disimpan.
 - Data berhasil diubah.
 - Data berhasil dihapus.
+- Data berhasil diproses.
 - Data tidak ditemukan.
 - Anda tidak memiliki hak akses.
+- Validasi gagal.
 
 ---
 
@@ -323,11 +305,11 @@ Contoh
 - Gunakan Route Handler bawaan Next.js.
 - Gunakan React Query.
 - Gunakan Axios Instance.
-- Jangan membuat endpoint duplikat.
+- Gunakan Service Layer.
+- Jangan membuat endpoint yang memiliki fungsi sama.
 - Jangan mengubah format response.
-- Ikuti Business Rules.
-- Selalu gunakan Service Layer.
-- Jangan melakukan query database langsung dari Component.
+- Jangan melakukan query database langsung dari Komponen React.
+- Seluruh implementasi wajib mengikuti Business Rules.
 
 ---
 

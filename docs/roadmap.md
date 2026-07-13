@@ -2,7 +2,9 @@
 
 Dokumen ini menjelaskan urutan pengembangan aplikasi MAKSI.
 
-Seluruh proses pengembangan wajib mengikuti roadmap ini agar setiap modul dibangun berdasarkan dependensi yang benar.
+Roadmap disusun berdasarkan dependensi antar modul agar proses pengembangan lebih terstruktur dan mengurangi pekerjaan berulang.
+
+Seluruh pengembangan wajib mengikuti roadmap ini.
 
 ---
 
@@ -17,11 +19,17 @@ Pekerjaan
 - Membuat Repository GitHub
 - Inisialisasi Next.js
 - Konfigurasi Tailwind CSS
-- Menyiapkan struktur project
+- Menyiapkan struktur folder project
 - Menyiapkan dokumentasi
+- Menyiapkan AGENTS.md
 - Menyiapkan Environment
 - Menyiapkan koneksi Database
-- Menyiapkan Authentication
+- Menyiapkan Dependency Project
+- Menyiapkan Git Workflow
+
+Tahap ini hanya menyiapkan fondasi project.
+
+Belum ada implementasi fitur aplikasi.
 
 ---
 
@@ -41,9 +49,11 @@ Pekerjaan
 - Protected Route
 - Role & Permission
 
+Seluruh halaman aplikasi harus menggunakan Authentication.
+
 ---
 
-# Tahap 3 - Layout
+# Tahap 3 - Application Shell
 
 Status
 
@@ -54,11 +64,17 @@ Pekerjaan
 - Main Layout
 - Sidebar
 - Header
-- Footer
 - Breadcrumb
 - Navigation Menu
 - User Profile
-- Theme
+- Loading
+- Error Page
+- Forbidden Page
+- Unauthorized Page
+
+Tahap ini hanya membangun kerangka aplikasi.
+
+Belum menampilkan data bisnis.
 
 ---
 
@@ -77,7 +93,7 @@ Pekerjaan
 - Jasa
 - Alasan Lost
 
-Seluruh Master Data harus selesai sebelum modul transaksi dikerjakan.
+Seluruh Master Data harus selesai sebelum modul transaksi dibuat.
 
 ---
 
@@ -118,7 +134,9 @@ Pekerjaan
 - Deal
 - Lost
 
-Seluruh proses penjualan dikerjakan pada tahap ini.
+Lead merupakan inti proses bisnis aplikasi MAKSI.
+
+Seluruh proses penjualan diselesaikan pada tahap ini.
 
 ---
 
@@ -135,14 +153,14 @@ Pekerjaan
 - Ringkasan Lost
 - Conversion Rate
 - Closing Rate
+- Funnel Penjualan
 - Grafik Lead
 - Grafik Sales
 - Grafik Cabang
-- Funnel Penjualan
 - Aktivitas Terbaru
 - Pengingat Hari Ini
 
-Dashboard dikerjakan setelah data transaksi tersedia.
+Dashboard dikerjakan setelah seluruh data transaksi tersedia.
 
 ---
 
@@ -191,6 +209,8 @@ Pekerjaan
 - Riwayat Aktivitas
 - Riwayat Perubahan Data
 
+Audit Log digunakan untuk kebutuhan monitoring dan pelacakan aktivitas pengguna.
+
 ---
 
 # Tahap 11 - Optimasi
@@ -202,8 +222,8 @@ Status
 Pekerjaan
 
 - Optimasi Query Database
+- Optimasi Route Handler
 - Optimasi React Query
-- Optimasi API
 - Optimasi Loading
 - Optimasi UI
 - Optimasi Build
@@ -231,6 +251,8 @@ Pekerjaan
 - Pengujian Dashboard
 - Pengujian Laporan
 
+Seluruh modul harus lulus pengujian sebelum masuk ke Production.
+
 ---
 
 # Tahap 13 - Deployment
@@ -248,21 +270,23 @@ Pekerjaan
 - Pengujian Production
 - Backup Awal
 
+Deployment dilakukan setelah seluruh pengujian selesai.
+
 ---
 
 # Aturan Pengembangan
 
 - Kerjakan roadmap secara berurutan.
-- Selesaikan satu tahap sebelum melanjutkan ke tahap berikutnya.
+- Jangan mengerjakan tahap berikutnya sebelum tahap sebelumnya selesai.
 - Seluruh implementasi wajib mengikuti Business Rules.
-- Seluruh tampilan wajib mengikuti mockup yang telah disediakan.
+- Seluruh tampilan wajib mengikuti mockup pada folder `docs/reference/`.
 - Jangan membuat fitur di luar roadmap tanpa persetujuan.
-- Setiap tahap wajib melalui proses pengujian sebelum dinyatakan selesai.
+- Setiap tahap wajib melalui proses review dan pengujian sebelum dinyatakan selesai.
 
 ---
 
 # Catatan
 
-Roadmap ini merupakan acuan utama proses pengembangan aplikasi MAKSI.
+Roadmap ini merupakan acuan utama pengembangan aplikasi MAKSI.
 
-Apabila terdapat perubahan kebutuhan atau Business Rules, roadmap harus diperbarui agar tetap sesuai dengan kondisi proyek.
+Apabila terdapat perubahan Business Rules atau kebutuhan baru, roadmap harus diperbarui terlebih dahulu sebelum implementasi dilakukan.
