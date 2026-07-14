@@ -77,6 +77,11 @@ export const APP_MENUS = [
             title: "Master Produk",
             path: "/master/produk",
             roles: [ROLE_ADMIN],
+          },
+          {
+            title: "Harga Produk",
+            path: "/master/harga-produk",
+            roles: [ROLE_ADMIN],
           }
         ]
       },

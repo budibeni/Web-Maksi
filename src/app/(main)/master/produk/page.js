@@ -462,7 +462,7 @@ export default function ProdukPage() {
                   className="px-6 py-4 text-right text-xs font-semibold text-neutral-500 uppercase tracking-wider cursor-pointer hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors group select-none"
                   onClick={() => handleSort('harga_default')}
                 >
-                  <div className="flex items-center justify-end gap-2">{renderSortIcon('harga_default')} Harga Default</div>
+                  <div className="flex items-center justify-end gap-2">{renderSortIcon('harga_default')} Harga</div>
                 </th>
                 <th 
                   scope="col" 
@@ -671,7 +671,7 @@ export default function ProdukPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Harga Default</label>
+                    <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Harga</label>
                     <input 
                       type="number" 
                       min="0"
