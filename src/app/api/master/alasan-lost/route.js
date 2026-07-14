@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getCurrentUsername } from "@/lib/jwt";
 import { z } from "zod";
 
 const alasanLostSchema = z.object({
@@ -11,7 +12,7 @@ const alasanLostSchema = z.object({
 export async function GET(request) {
   try {
     const alasanLosts = await prisma.alasanLost.findMany({
-      orderBy: { nama: 'asc' }
+      orderBy: { id: 'desc' }
     });
 
     const serializedData = JSON.parse(JSON.stringify(alasanLosts, (key, value) =>
@@ -72,11 +73,14 @@ export async function POST(request) {
       }, { status: 409 });
     }
 
+    const currentUser = await getCurrentUsername(request);
+
     const newAlasanLost = await prisma.alasanLost.create({
       data: {
         kode,
         nama,
-        aktif
+        aktif,
+        dibuat_oleh: currentUser
       }
     });
     

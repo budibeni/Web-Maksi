@@ -11,9 +11,9 @@ model Role {
   id             BigInt    @id @default(autoincrement())
   nama           String    @db.VarChar(100)
   keterangan     String?   @db.VarChar(255)
-  dibuat_oleh    BigInt?
+  dibuat_oleh    String?   @db.VarChar(100)
   dibuat_tanggal DateTime  @default(now()) @db.DateTime(0)
-  diubah_oleh    BigInt?
+  diubah_oleh    String?   @db.VarChar(100)
   diubah_tanggal DateTime? @db.DateTime(0)
 
   users User[]
@@ -29,9 +29,9 @@ model Cabang {
   alamat         String?   @db.Text
   telepon        String?   @db.VarChar(30)
   aktif          Int       @default(1) @db.TinyInt
-  dibuat_oleh    BigInt?
+  dibuat_oleh    String?   @db.VarChar(100)
   dibuat_tanggal DateTime  @default(now()) @db.DateTime(0)
-  diubah_oleh    BigInt?
+  diubah_oleh    String?   @db.VarChar(100)
   diubah_tanggal DateTime? @db.DateTime(0)
 
   users         User[]
@@ -50,9 +50,9 @@ model User {
   telepon        String    @unique(map: "idx_user_telepon") @db.VarChar(20)
   password       String    @db.VarChar(255)
   aktif          Int       @default(1) @db.TinyInt
-  dibuat_oleh    BigInt?
+  dibuat_oleh    String?   @db.VarChar(100)
   dibuat_tanggal DateTime  @default(now()) @db.DateTime(0)
-  diubah_oleh    BigInt?
+  diubah_oleh    String?   @db.VarChar(100)
   diubah_tanggal DateTime? @db.DateTime(0)
 
   cabang     Cabang     @relation(fields: [cabang_id], references: [id])
@@ -94,9 +94,9 @@ model KategoriProduk {
   kode           String    @unique(map: "idx_kategori_produk_kode") @db.VarChar(20)
   nama           String    @unique(map: "idx_kategori_produk_nama") @db.VarChar(100)
   aktif          Int       @default(1) @db.TinyInt
-  dibuat_oleh    BigInt?
+  dibuat_oleh    String?   @db.VarChar(100)
   dibuat_tanggal DateTime  @default(now()) @db.DateTime(0)
-  diubah_oleh    BigInt?
+  diubah_oleh    String?   @db.VarChar(100)
   diubah_tanggal DateTime? @db.DateTime(0)
 
   produks Produk[]
@@ -112,9 +112,9 @@ model Produk {
   satuan             String    @db.VarChar(30)
   harga_default      Decimal   @default(0) @db.Decimal(18, 2)
   aktif              Int       @default(1) @db.TinyInt
-  dibuat_oleh        BigInt?
+  dibuat_oleh        String?   @db.VarChar(100)
   dibuat_tanggal     DateTime  @default(now()) @db.DateTime(0)
-  diubah_oleh        BigInt?
+  diubah_oleh        String?   @db.VarChar(100)
   diubah_tanggal     DateTime? @db.DateTime(0)
 
   kategori      KategoriProduk @relation(fields: [kategori_produk_id], references: [id])
@@ -130,9 +130,9 @@ model HargaProduk {
   produk_id      BigInt
   cabang_id      BigInt
   harga          Decimal   @default(0) @db.Decimal(18, 2)
-  dibuat_oleh    BigInt?
+  dibuat_oleh    String?   @db.VarChar(100)
   dibuat_tanggal DateTime  @default(now()) @db.DateTime(0)
-  diubah_oleh    BigInt?
+  diubah_oleh    String?   @db.VarChar(100)
   diubah_tanggal DateTime? @db.DateTime(0)
 
   produk Produk @relation(fields: [produk_id], references: [id])
@@ -149,9 +149,9 @@ model AlasanLost {
   kode           String    @unique(map: "idx_alasan_lost_kode") @db.VarChar(20)
   nama           String    @unique(map: "idx_alasan_lost_nama") @db.VarChar(150)
   aktif          Int       @default(1) @db.TinyInt
-  dibuat_oleh    BigInt?
+  dibuat_oleh    String?   @db.VarChar(100)
   dibuat_tanggal DateTime  @default(now()) @db.DateTime(0)
-  diubah_oleh    BigInt?
+  diubah_oleh    String?   @db.VarChar(100)
   diubah_tanggal DateTime? @db.DateTime(0)
 
   @@map("tb_alasan_lost")

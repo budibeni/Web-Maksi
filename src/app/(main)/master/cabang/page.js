@@ -5,12 +5,31 @@ import { createPortal } from "react-dom";
 import { FiSearch, FiPlus, FiEdit2, FiTrash2, FiX, FiDownload, FiUpload, FiFileText } from "react-icons/fi";
 import { exportToExcel, parseExcel } from "@/lib/excel";
 import { useUIStore } from "@/store/ui.store";
+import dayjs from "dayjs";
 
 export default function CabangPage() {
   const [cabangs, setCabangs] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isImporting, setIsImporting] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [sortField, setSortField] = useState("id");
+  const [sortOrder, setSortOrder] = useState("desc");
+
+  const handleSort = (field) => {
+    if (sortField === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortOrder('asc');
+    }
+  };
+
+  const renderSortIcon = (field) => {
+    if (sortField !== field) return <span className="text-neutral-300 dark:text-neutral-700 opacity-0 group-hover:opacity-100">↑↓</span>;
+    return sortOrder === 'asc' 
+      ? <span className="text-orange-500">↑</span> 
+      : <span className="text-orange-500">↓</span>;
+  };
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -225,7 +244,17 @@ export default function CabangPage() {
   const filteredData = cabangs.filter(c => 
     c.nama.toLowerCase().includes(searchTerm.toLowerCase()) || 
     c.kode.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  ).sort((a, b) => {
+    let aVal = a[sortField];
+    let bVal = b[sortField];
+    if (typeof aVal === 'string') aVal = aVal.toLowerCase();
+    if (typeof bVal === 'string') bVal = bVal.toLowerCase();
+    if (aVal === null || aVal === undefined) aVal = "";
+    if (bVal === null || bVal === undefined) bVal = "";
+    if (aVal < bVal) return sortOrder === 'asc' ? -1 : 1;
+    if (aVal > bVal) return sortOrder === 'asc' ? 1 : -1;
+    return 0;
+  });
 
   return (
     <div className="space-y-6">
@@ -296,10 +325,24 @@ export default function CabangPage() {
             <thead className="bg-neutral-50 dark:bg-neutral-900">
               <tr>
                 <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider">No</th>
-                <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider">Kode</th>
-                <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider">Nama Cabang</th>
-                <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider">Telepon</th>
-                <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider">Status</th>
+                <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider cursor-pointer hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors group select-none" onClick={() => handleSort('kode')}>
+                  <div className="flex items-center gap-2">Kode {renderSortIcon('kode')}</div>
+                </th>
+                <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider cursor-pointer hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors group select-none" onClick={() => handleSort('nama')}>
+                  <div className="flex items-center gap-2">Nama Cabang {renderSortIcon('nama')}</div>
+                </th>
+                <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider cursor-pointer hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors group select-none" onClick={() => handleSort('telepon')}>
+                  <div className="flex items-center gap-2">Telepon {renderSortIcon('telepon')}</div>
+                </th>
+                <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider cursor-pointer hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors group select-none" onClick={() => handleSort('aktif')}>
+                  <div className="flex items-center gap-2">Status {renderSortIcon('aktif')}</div>
+                </th>
+                <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider cursor-pointer hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors group select-none" onClick={() => handleSort('dibuat_tanggal')}>
+                  <div className="flex items-center gap-2">Dibuat Oleh {renderSortIcon('dibuat_tanggal')}</div>
+                </th>
+                <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider cursor-pointer hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors group select-none" onClick={() => handleSort('diubah_tanggal')}>
+                  <div className="flex items-center gap-2">Diubah Oleh {renderSortIcon('diubah_tanggal')}</div>
+                </th>
                 <th scope="col" className="px-6 py-4 text-right text-xs font-semibold text-neutral-500 uppercase tracking-wider">Aksi</th>
               </tr>
             </thead>
@@ -315,7 +358,7 @@ export default function CabangPage() {
                 </tr>
               ) : filteredData.length === 0 ? (
                 <tr>
-                  <td colSpan="6" className="px-6 py-10 text-center text-neutral-500">
+                  <td colSpan="8" className="px-6 py-10 text-center text-neutral-500">
                     Tidak ada data ditemukan.
                   </td>
                 </tr>
@@ -330,6 +373,12 @@ export default function CabangPage() {
                       <span className={`inline-flex px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide ${cabang.aktif === 1 ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400'}`}>
                         {cabang.aktif === 1 ? 'Aktif' : 'Nonaktif'}
                       </span>
+                    </td>
+                    <td className="px-6 py-3 whitespace-nowrap text-xs text-neutral-500">
+                      {cabang.dibuat_oleh ? <div>{cabang.dibuat_oleh} <br/><span className="text-[10px] opacity-70">{dayjs(cabang.dibuat_tanggal).format('DD/MM/YY HH:mm')}</span></div> : '-'}
+                    </td>
+                    <td className="px-6 py-3 whitespace-nowrap text-xs text-neutral-500">
+                      {cabang.diubah_oleh ? <div>{cabang.diubah_oleh} <br/><span className="text-[10px] opacity-70">{dayjs(cabang.diubah_tanggal).format('DD/MM/YY HH:mm')}</span></div> : '-'}
                     </td>
                     <td className="px-6 py-3 whitespace-nowrap text-sm text-right font-medium">
                       <div className="flex items-center justify-end gap-2">

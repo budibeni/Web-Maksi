@@ -5,12 +5,31 @@ import { createPortal } from "react-dom";
 import { FiSearch, FiPlus, FiEdit2, FiTrash2, FiX, FiDownload, FiUpload, FiFileText } from "react-icons/fi";
 import { exportToExcel, parseExcel } from "@/lib/excel";
 import { useUIStore } from "@/store/ui.store";
+import dayjs from "dayjs";
 
 export default function KategoriProdukPage() {
   const [kategoriProduks, setKategoriProduks] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isImporting, setIsImporting] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [sortField, setSortField] = useState("id");
+  const [sortOrder, setSortOrder] = useState("desc");
+
+  const handleSort = (field) => {
+    if (sortField === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortOrder('asc');
+    }
+  };
+
+  const renderSortIcon = (field) => {
+    if (sortField !== field) return <span className="text-neutral-300 dark:text-neutral-700 opacity-0 group-hover:opacity-100">↑↓</span>;
+    return sortOrder === 'asc' 
+      ? <span className="text-orange-500">↑</span> 
+      : <span className="text-orange-500">↓</span>;
+  };
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -208,10 +227,20 @@ export default function KategoriProdukPage() {
     }
   };
 
-  const filteredData = kategoriProduks.filter(c => 
-    c.nama.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    c.kode.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredData = kategoriProduks.filter(k => 
+    k.nama.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    k.kode.toLowerCase().includes(searchTerm.toLowerCase())
+  ).sort((a, b) => {
+    let aVal = a[sortField];
+    let bVal = b[sortField];
+    if (typeof aVal === 'string') aVal = aVal.toLowerCase();
+    if (typeof bVal === 'string') bVal = bVal.toLowerCase();
+    if (aVal === null || aVal === undefined) aVal = "";
+    if (bVal === null || bVal === undefined) bVal = "";
+    if (aVal < bVal) return sortOrder === 'asc' ? -1 : 1;
+    if (aVal > bVal) return sortOrder === 'asc' ? 1 : -1;
+    return 0;
+  });
 
   return (
     <div className="space-y-6">
@@ -282,9 +311,21 @@ export default function KategoriProdukPage() {
             <thead className="bg-neutral-50 dark:bg-neutral-900">
               <tr>
                 <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider">No</th>
-                <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider">Kode</th>
-                <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider">Nama Kategori</th>
-                <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider">Status</th>
+                <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider cursor-pointer hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors group select-none" onClick={() => handleSort('kode')}>
+                  <div className="flex items-center gap-2">Kode {renderSortIcon('kode')}</div>
+                </th>
+                <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider cursor-pointer hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors group select-none" onClick={() => handleSort('nama')}>
+                  <div className="flex items-center gap-2">Nama Kategori {renderSortIcon('nama')}</div>
+                </th>
+                <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider cursor-pointer hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors group select-none" onClick={() => handleSort('aktif')}>
+                  <div className="flex items-center gap-2">Status {renderSortIcon('aktif')}</div>
+                </th>
+                <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider cursor-pointer hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors group select-none" onClick={() => handleSort('dibuat_tanggal')}>
+                  <div className="flex items-center gap-2">Dibuat Oleh {renderSortIcon('dibuat_tanggal')}</div>
+                </th>
+                <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider cursor-pointer hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors group select-none" onClick={() => handleSort('diubah_tanggal')}>
+                  <div className="flex items-center gap-2">Diubah Oleh {renderSortIcon('diubah_tanggal')}</div>
+                </th>
                 <th scope="col" className="px-6 py-4 text-right text-xs font-semibold text-neutral-500 uppercase tracking-wider">Aksi</th>
               </tr>
             </thead>
@@ -300,7 +341,7 @@ export default function KategoriProdukPage() {
                 </tr>
               ) : filteredData.length === 0 ? (
                 <tr>
-                  <td colSpan="5" className="px-6 py-10 text-center text-neutral-500">
+                  <td colSpan="7" className="px-6 py-10 text-center text-neutral-500">
                     Tidak ada data ditemukan.
                   </td>
                 </tr>
@@ -314,6 +355,12 @@ export default function KategoriProdukPage() {
                       <span className={`inline-flex px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide ${kategori.aktif === 1 ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400'}`}>
                         {kategori.aktif === 1 ? 'Aktif' : 'Nonaktif'}
                       </span>
+                    </td>
+                    <td className="px-6 py-3 whitespace-nowrap text-xs text-neutral-500">
+                      {kategori.dibuat_oleh ? <div>{kategori.dibuat_oleh} <br/><span className="text-[10px] opacity-70">{dayjs(kategori.dibuat_tanggal).format('DD/MM/YY HH:mm')}</span></div> : '-'}
+                    </td>
+                    <td className="px-6 py-3 whitespace-nowrap text-xs text-neutral-500">
+                      {kategori.diubah_oleh ? <div>{kategori.diubah_oleh} <br/><span className="text-[10px] opacity-70">{dayjs(kategori.diubah_tanggal).format('DD/MM/YY HH:mm')}</span></div> : '-'}
                     </td>
                     <td className="px-6 py-3 whitespace-nowrap text-sm text-right font-medium">
                       <div className="flex items-center justify-end gap-2">

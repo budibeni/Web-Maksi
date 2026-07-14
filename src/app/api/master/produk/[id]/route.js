@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getCurrentUsername } from "@/lib/jwt";
 import { z } from "zod";
 
 const produkSchema = z.object({
@@ -43,6 +44,8 @@ export async function PUT(request, context) {
       }, { status: 409 });
     }
 
+    const currentUser = await getCurrentUsername(request);
+
     const updatedProduk = await prisma.produk.update({
       where: { id },
       data: {
@@ -50,8 +53,10 @@ export async function PUT(request, context) {
         kode,
         nama,
         satuan,
-        harga_default: typeof harga_default === 'string' ? parseFloat(harga_default) : harga_default,
-        aktif
+        harga_default: !isNaN(parseFloat(harga_default)) ? parseFloat(harga_default) : 0,
+        aktif,
+        diubah_tanggal: new Date(),
+        diubah_oleh: currentUser
       },
       include: {
         kategori: true

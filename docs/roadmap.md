@@ -37,7 +37,7 @@ Belum ada implementasi fitur aplikasi.
 
 Status
 
-⬜ Belum Dimulai
+✅ Selesai
 
 Pekerjaan
 

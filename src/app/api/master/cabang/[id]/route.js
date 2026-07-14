@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getCurrentUsername } from "@/lib/jwt";
 import { z } from "zod";
 
 const cabangSchema = z.object({
@@ -42,6 +43,8 @@ export async function PUT(request, context) {
       }, { status: 409 });
     }
 
+    const currentUser = await getCurrentUsername(request);
+
     const updatedCabang = await prisma.cabang.update({
       where: { id },
       data: {
@@ -50,7 +53,8 @@ export async function PUT(request, context) {
         alamat,
         telepon,
         aktif,
-        diubah_tanggal: new Date()
+        diubah_tanggal: new Date(),
+        diubah_oleh: currentUser
       }
     });
     

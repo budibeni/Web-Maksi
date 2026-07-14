@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getCurrentUsername } from "@/lib/jwt";
 import { z } from "zod";
 
 const produkSchema = z.object({
@@ -21,8 +22,8 @@ export async function GET(request) {
     const page = parseInt(searchParams.get('page')) || 1;
     const limit = parseInt(searchParams.get('limit')) || 10;
     const isExport = searchParams.get('export') === 'true';
-    const sortBy = searchParams.get('sort_by') || 'nama';
-    const sortOrder = searchParams.get('sort_order') === 'desc' ? 'desc' : 'asc';
+    const sortBy = searchParams.get('sort_by') || 'id';
+    const sortOrder = searchParams.get('sort_order') === 'asc' ? 'asc' : 'desc';
     
     let whereClause = {};
     
@@ -117,14 +118,17 @@ export async function POST(request) {
 
     if (existing) {
       if (upsert) {
+        const currentUser = await getCurrentUsername(request);
         const updatedProduk = await prisma.produk.update({
           where: { id: existing.id },
           data: {
             kategori_produk_id: BigInt(kategori_produk_id),
             nama,
             satuan,
-            harga_default: typeof harga_default === 'string' ? parseFloat(harga_default) : harga_default,
-            aktif
+            harga_default: !isNaN(parseFloat(harga_default)) ? parseFloat(harga_default) : 0,
+            aktif,
+            diubah_tanggal: new Date(),
+            diubah_oleh: currentUser
           },
           include: {
             kategori: true
@@ -148,14 +152,17 @@ export async function POST(request) {
       }, { status: 409 });
     }
 
+    const currentUser = await getCurrentUsername(request);
+
     const newProduk = await prisma.produk.create({
       data: {
         kategori_produk_id: BigInt(kategori_produk_id),
         kode,
         nama,
         satuan,
-        harga_default: typeof harga_default === 'string' ? parseFloat(harga_default) : harga_default,
-        aktif
+        harga_default: !isNaN(parseFloat(harga_default)) ? parseFloat(harga_default) : 0,
+        aktif,
+        dibuat_oleh: currentUser
       },
       include: {
         kategori: true

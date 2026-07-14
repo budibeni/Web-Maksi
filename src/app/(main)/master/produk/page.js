@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { FiSearch, FiPlus, FiEdit2, FiTrash2, FiX, FiDownload, FiUpload, FiFilter, FiFileText, FiChevronUp, FiChevronDown } from "react-icons/fi";
 import { exportToExcel, parseExcel } from "@/lib/excel";
 import { useUIStore } from "@/store/ui.store";
+import dayjs from "dayjs";
 
 export default function ProdukPage() {
   const [produks, setProduks] = useState([]);
@@ -16,8 +17,8 @@ export default function ProdukPage() {
   const [limit, setLimit] = useState(10);
   const [totalData, setTotalData] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
-  const [sortField, setSortField] = useState("nama");
-  const [sortOrder, setSortOrder] = useState("asc");
+  const [sortField, setSortField] = useState("id");
+  const [sortOrder, setSortOrder] = useState("desc");
   
   // Filters
   const [searchTerm, setSearchTerm] = useState("");
@@ -470,13 +471,27 @@ export default function ProdukPage() {
                 >
                   <div className="flex items-center gap-2">Status {renderSortIcon('aktif')}</div>
                 </th>
+                <th 
+                  scope="col" 
+                  className="px-6 py-4 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider cursor-pointer hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors group select-none"
+                  onClick={() => handleSort('dibuat_tanggal')}
+                >
+                  <div className="flex items-center gap-2">Dibuat Oleh {renderSortIcon('dibuat_tanggal')}</div>
+                </th>
+                <th 
+                  scope="col" 
+                  className="px-6 py-4 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider cursor-pointer hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors group select-none"
+                  onClick={() => handleSort('diubah_tanggal')}
+                >
+                  <div className="flex items-center gap-2">Diubah Oleh {renderSortIcon('diubah_tanggal')}</div>
+                </th>
                 <th scope="col" className="px-6 py-4 text-right text-xs font-semibold text-neutral-500 uppercase tracking-wider">Aksi</th>
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-neutral-900 divide-y divide-neutral-100 dark:divide-neutral-800">
               {isLoading ? (
                 <tr>
-                  <td colSpan="8" className="px-6 py-10 text-center text-neutral-500">
+                  <td colSpan="10" className="px-6 py-10 text-center text-neutral-500">
                     <div className="flex justify-center items-center gap-2">
                       <div className="w-5 h-5 border-2 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
                       <span>Memuat data...</span>
@@ -485,7 +500,7 @@ export default function ProdukPage() {
                 </tr>
               ) : produks.length === 0 ? (
                 <tr>
-                  <td colSpan="8" className="px-6 py-10 text-center text-neutral-500">
+                  <td colSpan="10" className="px-6 py-10 text-center text-neutral-500">
                     Tidak ada data ditemukan.
                   </td>
                 </tr>
@@ -509,6 +524,12 @@ export default function ProdukPage() {
                         {produk.aktif === 1 ? 'Aktif' : 'Nonaktif'}
                       </span>
                     </td>
+                    <td className="px-6 py-3 whitespace-nowrap text-xs text-neutral-500">
+                      {produk.dibuat_oleh ? <div>{produk.dibuat_oleh} <br/><span className="text-[10px] opacity-70">{dayjs(produk.dibuat_tanggal).format('DD/MM/YY HH:mm')}</span></div> : '-'}
+                    </td>
+                    <td className="px-6 py-3 whitespace-nowrap text-xs text-neutral-500">
+                      {produk.diubah_oleh ? <div>{produk.diubah_oleh} <br/><span className="text-[10px] opacity-70">{dayjs(produk.diubah_tanggal).format('DD/MM/YY HH:mm')}</span></div> : '-'}
+                    </td>
                     <td className="px-6 py-3 whitespace-nowrap text-sm text-right font-medium">
                       <div className="flex items-center justify-end gap-2">
                         <button onClick={() => handleOpenModal(produk)} className="p-2 text-neutral-400 hover:text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20 rounded-lg transition-colors">
@@ -529,8 +550,26 @@ export default function ProdukPage() {
         {/* Pagination */}
         {!isLoading && produks.length > 0 && (
           <div className="px-6 py-4 border-t border-neutral-100 dark:border-neutral-800 flex flex-col sm:flex-row items-center justify-between gap-4 bg-white dark:bg-neutral-900">
-            <div className="text-sm text-neutral-500 dark:text-neutral-400">
-              Menampilkan <span className="font-medium text-neutral-900 dark:text-white">{(page - 1) * limit + 1}</span> hingga <span className="font-medium text-neutral-900 dark:text-white">{Math.min(page * limit, totalData)}</span> dari <span className="font-medium text-neutral-900 dark:text-white">{totalData}</span> produk
+            <div className="flex flex-col sm:flex-row items-center gap-4">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-neutral-500 dark:text-neutral-400">Baris:</span>
+                <select 
+                  value={limit} 
+                  onChange={(e) => {
+                    setLimit(Number(e.target.value));
+                    setPage(1);
+                  }}
+                  className="bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 text-sm rounded-lg focus:ring-orange-500 focus:border-orange-500 block px-2.5 py-1.5 outline-none cursor-pointer"
+                >
+                  <option value="10">10</option>
+                  <option value="25">25</option>
+                  <option value="50">50</option>
+                  <option value="100">100</option>
+                </select>
+              </div>
+              <div className="text-sm text-neutral-500 dark:text-neutral-400">
+                Menampilkan <span className="font-medium text-neutral-900 dark:text-white">{(page - 1) * limit + 1}</span> - <span className="font-medium text-neutral-900 dark:text-white">{Math.min(page * limit, totalData)}</span> dari <span className="font-medium text-neutral-900 dark:text-white">{totalData}</span>
+              </div>
             </div>
             <div className="flex items-center gap-2">
               <button 
@@ -540,9 +579,21 @@ export default function ProdukPage() {
               >
                 Sebelumnya
               </button>
-              <div className="text-sm font-medium text-neutral-700 dark:text-neutral-300 px-2">
-                Halaman {page} dari {totalPages}
+              
+              <div className="text-sm font-medium text-neutral-700 dark:text-neutral-300 px-2 flex items-center gap-2">
+                Hal 
+                <select 
+                  value={page}
+                  onChange={(e) => setPage(Number(e.target.value))}
+                  className="bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 text-sm rounded-lg focus:ring-orange-500 focus:border-orange-500 block px-2 py-1 outline-none cursor-pointer text-center min-w-[3rem]"
+                >
+                  {Array.from({length: Math.max(1, totalPages)}, (_, i) => i + 1).map(p => (
+                    <option key={p} value={p}>{p}</option>
+                  ))}
+                </select> 
+                dari {totalPages}
               </div>
+
               <button 
                 onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                 disabled={page >= totalPages}

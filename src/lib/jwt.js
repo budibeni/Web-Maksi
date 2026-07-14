@@ -19,3 +19,14 @@ export async function verifyToken(token) {
     return null;
   }
 }
+
+export async function getCurrentUsername(request) {
+  try {
+    const token = request.cookies.get(process.env.AUTH_COOKIE_NAME || "maksi_token")?.value;
+    if (!token) return null;
+    const payload = await verifyToken(token);
+    return payload ? (payload.username || payload.nama) : null;
+  } catch (error) {
+    return null;
+  }
+}

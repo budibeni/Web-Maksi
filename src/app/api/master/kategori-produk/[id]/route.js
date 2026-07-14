@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getCurrentUsername } from "@/lib/jwt";
 import { z } from "zod";
 
 const kategoriProdukSchema = z.object({
@@ -55,12 +56,16 @@ export async function PUT(request, context) {
       }, { status: 409 });
     }
 
+    const currentUser = await getCurrentUsername(request);
+
     const updatedKategoriProduk = await prisma.kategoriProduk.update({
       where: { id },
       data: {
         kode,
         nama,
-        aktif
+        aktif,
+        diubah_tanggal: new Date(),
+        diubah_oleh: currentUser
       }
     });
     
