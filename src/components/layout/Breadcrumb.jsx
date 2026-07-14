@@ -3,9 +3,11 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { FiChevronRight, FiHome } from "react-icons/fi";
+import { useUIStore } from "@/store/ui.store";
 
 export default function Breadcrumb() {
   const pathname = usePathname();
+  const breadcrumbsMap = useUIStore((state) => state.breadcrumbsMap);
 
   const paths = pathname.split("/").filter((p) => p !== "");
 
@@ -23,7 +25,7 @@ export default function Breadcrumb() {
 
           const href = `/${paths.slice(0, index + 1).join("/")}`;
           const isLast = index === paths.length - 1;
-          const formattedPath = path.charAt(0).toUpperCase() + path.slice(1).replace(/-/g, " ");
+          const formattedPath = breadcrumbsMap[path] || (path.charAt(0).toUpperCase() + path.slice(1).replace(/-/g, " "));
 
           return (
             <li key={path} className="flex items-center">

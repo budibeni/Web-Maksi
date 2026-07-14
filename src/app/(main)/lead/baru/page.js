@@ -3,9 +3,11 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { createPortal } from "react-dom";
 import {
   FiArrowLeft, FiSearch, FiUser, FiPhone, FiMapPin,
-  FiCheckSquare, FiAlertCircle, FiChevronRight
+  FiCheckSquare, FiAlertCircle, FiChevronRight, FiCheck,
+  FiMessageCircle, FiFileText, FiXCircle, FiInfo
 } from "react-icons/fi";
 import { useUIStore } from "@/store/ui.store";
 
@@ -93,7 +95,11 @@ function ModalLost({ leadId, onClose, onSaved }) {
 export default function LeadBaruPage() {
   const router = useRouter();
   const { showToast } = useUIStore();
-  const searchRef = useRef(null);
+  const submitBtnRef = useRef(null);
+  const dropdownRefNama = useRef(null);
+  const dropdownRefTelepon = useRef(null);
+
+  const [mounted, setMounted] = useState(false);
 
   // Customer search
   const [namaCari, setNamaCari] = useState("");
@@ -101,26 +107,28 @@ export default function LeadBaruPage() {
   const [customerResults, setCustomerResults] = useState([]);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [isSearching, setIsSearching] = useState(false);
+  const [activeSearchField, setActiveSearchField] = useState(null); // "nama" | "telepon" | null
+  const [showDropdown, setShowDropdown] = useState(false);
 
   // Form fields
   const [namaCustomer, setNamaCustomer] = useState("");
   const [teleponCustomer, setTeleponCustomer] = useState("");
   const [alamatCustomer, setAlamatCustomer] = useState("");
-  const [kebutuhan, setKebutuhan] = useState([]); // kategori_produk ids
+  const [kebutuhan, setKebutuhan] = useState([]);
   const [kategoriList, setKategoriList] = useState([]);
   const [hasilInteraksiList, setHasilInteraksiList] = useState([]);
   const [hasilInteraksiId, setHasilInteraksiId] = useState("");
   const [catatan, setCatatan] = useState("");
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showDropdown, setShowDropdown] = useState(false);
 
   // Modal lost after create
   const [showModalLost, setShowModalLost] = useState(false);
   const [createdLeadId, setCreatedLeadId] = useState(null);
 
   useEffect(() => {
-    // Load kategori produk & hasil interaksi
+    setMounted(true);
+    // Load kategori produk & hasil interaksi dari DB
     Promise.all([
       fetch('/api/master/kategori-produk').then(r => r.json()),
       fetch('/api/master/hasil-interaksi').then(r => r.json()),
@@ -128,12 +136,28 @@ export default function LeadBaruPage() {
       if (kat.success) setKategoriList(kat.data || []);
       if (hi.success) setHasilInteraksiList(hi.data || []);
     });
+
+    // Close dropdown on click outside
+    const handleClickOutside = (e) => {
+      if (
+        dropdownRefNama.current && !dropdownRefNama.current.contains(e.target) &&
+        dropdownRefTelepon.current && !dropdownRefTelepon.current.contains(e.target)
+      ) {
+        setShowDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Search customer
+  // Autocomplete search
   useEffect(() => {
-    const q = namaCari || teleponCari;
-    if (q.length < 2) { setCustomerResults([]); setShowDropdown(false); return; }
+    const q = activeSearchField === "nama" ? namaCari : teleponCari;
+    if (!activeSearchField || q.length < 2) {
+      setCustomerResults([]);
+      setShowDropdown(false);
+      return;
+    }
     setIsSearching(true);
     const t = setTimeout(async () => {
       const res = await fetch(`/api/customer/search?q=${encodeURIComponent(q)}`);
@@ -143,18 +167,19 @@ export default function LeadBaruPage() {
         setShowDropdown(true);
       }
       setIsSearching(false);
-    }, 400);
+    }, 300);
     return () => clearTimeout(t);
-  }, [namaCari, teleponCari]);
+  }, [namaCari, teleponCari, activeSearchField]);
 
   const selectCustomer = (c) => {
     setSelectedCustomer(c);
     setNamaCustomer(c.nama);
-    setTeleponCustomer(c.telepon);
-    setAlamatCustomer(c.alamat || "");
     setNamaCari(c.nama);
+    setTeleponCustomer(c.telepon);
     setTeleponCari(c.telepon);
+    setAlamatCustomer(c.alamat || "");
     setShowDropdown(false);
+    setActiveSearchField(null);
   };
 
   const clearCustomer = () => {
@@ -164,23 +189,22 @@ export default function LeadBaruPage() {
     setAlamatCustomer("");
     setNamaCari("");
     setTeleponCari("");
+    setShowDropdown(false);
+    setActiveSearchField(null);
   };
 
   const toggleKebutuhan = (id) => {
     setKebutuhan(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
   };
 
-  // Pastikan hasil interaksi aktif yang memicu Lost ditandai
-  const selectedHI = hasilInteraksiList.find(h => h.id === hasilInteraksiId);
-  const isLostTrigger = selectedHI?.kode === 'TIDAK_MINAT' || selectedHI?.fase_lead === 'LOST';
-
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!hasilInteraksiId) { showToast('Pilih hasil interaksi pertama.', 'error'); return; }
     const nama = namaCustomer || namaCari;
     const telepon = teleponCustomer || teleponCari;
     if (!nama) { showToast('Nama customer wajib diisi.', 'error'); return; }
     if (!telepon) { showToast('Nomor HP wajib diisi.', 'error'); return; }
+    if (kebutuhan.length === 0) { showToast('Kebutuhan wajib dipilih minimal 1.', 'error'); return; }
+    if (!hasilInteraksiId) { showToast('Pilih hasil interaksi pertama.', 'error'); return; }
 
     setIsSubmitting(true);
     try {
@@ -202,13 +226,14 @@ export default function LeadBaruPage() {
       if (json.success) {
         showToast('Lead berhasil dibuat!', 'success');
         const leadId = json.data.id;
-        // Jika hasil interaksi memicu Lost langsung
-        const hi = hasilInteraksiList.find(h => h.id === hasilInteraksiId);
-        if (hi && (hi.kode === 'TIDAK_MINAT' || hi.kode === 'KOMPETITOR')) {
+        
+        // Cek apakah hasil interaksi yang dipilih memicu LOST (TIDAK_MINAT atau KOMPETITOR)
+        const selectedHI = hasilInteraksiList.find(h => String(h.id) === String(hasilInteraksiId));
+        if (selectedHI && (selectedHI.kode === 'TIDAK_MINAT' || selectedHI.kode === 'KOMPETITOR')) {
           setCreatedLeadId(leadId);
           setShowModalLost(true);
         } else {
-          router.push(`/lead/${leadId}`);
+          router.push('/lead');
         }
       } else {
         showToast(json.message || 'Terjadi kesalahan.', 'error');
@@ -218,229 +243,315 @@ export default function LeadBaruPage() {
     }
   };
 
-  const getFaseColor = (faseL) => {
-    if (faseL === 'LEAD_BARU') return 'border-blue-400 bg-blue-50 dark:bg-blue-900/20';
-    if (faseL === 'PENAWARAN') return 'border-purple-400 bg-purple-50 dark:bg-purple-900/20';
-    return 'border-orange-400 bg-orange-50 dark:bg-orange-900/20';
+  // Helper untuk styling warna kartu hasil interaksi berdasarkan kode/fase
+  const getHIColor = (kode, isSelected) => {
+    if (isSelected) {
+      if (kode === 'TIDAK_MINAT' || kode === 'KOMPETITOR') {
+        return 'border-red-500 bg-red-50/50 dark:bg-red-950/20 text-red-900 dark:text-red-400';
+      }
+      if (kode === 'PENAWARAN' || kode === 'SIAP') {
+        return 'border-purple-500 bg-purple-50/50 dark:bg-purple-950/20 text-purple-900 dark:text-purple-400';
+      }
+      return 'border-orange-500 bg-orange-50/50 dark:bg-orange-950/20 text-orange-900 dark:text-orange-400';
+    }
+    return 'border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700 bg-white dark:bg-neutral-900/50';
+  };
+
+  const getHIIconColor = (kode, isSelected) => {
+    if (isSelected) {
+      if (kode === 'TIDAK_MINAT' || kode === 'KOMPETITOR') return 'text-red-500 bg-red-100 dark:bg-red-900/30';
+      if (kode === 'PENAWARAN' || kode === 'SIAP') return 'text-purple-500 bg-purple-100 dark:bg-purple-900/30';
+      return 'text-orange-500 bg-orange-100 dark:bg-orange-900/30';
+    }
+    return 'text-neutral-400 bg-neutral-100 dark:bg-neutral-800';
   };
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="flex items-center gap-4">
-        <Link href="/lead" className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-neutral-600 hover:text-neutral-900 bg-white hover:bg-neutral-50 dark:bg-neutral-900 dark:text-neutral-400 dark:hover:text-white dark:hover:bg-neutral-800 rounded-xl transition-colors border border-neutral-200 dark:border-neutral-800 shadow-sm">
-          <FiArrowLeft className="w-4 h-4" />
-          Kembali
-        </Link>
-      </div>
+    <div className="w-full">
+      {/* Header Actions Portal */}
+      {mounted && document.getElementById("header-actions-portal") && createPortal(
+        <>
+          <button
+            onClick={() => submitBtnRef.current?.click()}
+            disabled={isSubmitting}
+            className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-1.5 rounded-full font-semibold flex items-center gap-2 transition-colors shadow-sm text-sm mr-2"
+          >
+            {isSubmitting ? (
+              <>
+                <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                <span>Menyimpan...</span>
+              </>
+            ) : (
+              <span>Simpan Lead</span>
+            )}
+          </button>
+          <Link
+            href="/lead"
+            className="px-4 py-1.5 text-sm font-semibold rounded-full bg-white hover:bg-neutral-100 dark:bg-neutral-900 dark:hover:bg-neutral-800 border border-neutral-200 dark:border-neutral-800 text-neutral-700 dark:text-neutral-300 transition-colors"
+          >
+            Batal
+          </Link>
+        </>,
+        document.getElementById("header-actions-portal")
+      )}
 
-      <form onSubmit={handleSubmit} className="space-y-5">
-        {/* Section 1: Informasi Customer */}
-        <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200/50 dark:border-neutral-800 shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b border-neutral-100 dark:border-neutral-800 flex items-center gap-3">
-            <div className="w-7 h-7 rounded-full bg-orange-600 text-white text-xs font-bold flex items-center justify-center">1</div>
-            <h2 className="text-base font-bold text-neutral-900 dark:text-white">Informasi Customer</h2>
-          </div>
-          <div className="p-6 space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* Nama Customer */}
-              <div className="relative">
-                <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Nama Customer / Perusahaan *</label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <FiSearch className="text-neutral-400 w-4 h-4" />
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Hidden Submit Button to support HTML5 validation */}
+        <button type="submit" ref={submitBtnRef} className="hidden" />
+
+        {/* Responsive 2-Column Grid Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          
+          {/* LEFT COLUMN: Info Customer & Catatan */}
+          <div className="space-y-6">
+            {/* Card 1: Info Customer */}
+            <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200/50 dark:border-neutral-800 shadow-sm overflow-hidden">
+              <div className="px-6 py-4 border-b border-neutral-100 dark:border-neutral-800 flex items-center gap-3">
+                <div className="w-7 h-7 rounded-full bg-orange-600 text-white text-xs font-bold flex items-center justify-center">1</div>
+                <h2 className="text-base font-bold text-neutral-900 dark:text-white">Informasi Customer</h2>
+              </div>
+              <div className="p-6 space-y-4">
+                {/* Row 1: Nama + No HP */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Nama Customer */}
+                  <div className="relative" ref={dropdownRefNama}>
+                    <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Nama Customer / Perusahaan <span className="text-red-500">*</span></label>
+                    <input
+                      type="text"
+                      className="w-full px-4 py-2.5 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all dark:text-white text-sm"
+                      placeholder="Ketik nama customer atau perusahaan..."
+                      value={namaCari}
+                      onChange={(e) => {
+                        setNamaCari(e.target.value);
+                        setNamaCustomer(e.target.value);
+                        setActiveSearchField("nama");
+                        if (selectedCustomer) clearCustomer();
+                      }}
+                      onFocus={() => {
+                        setActiveSearchField("nama");
+                        if (namaCari.length >= 2) setShowDropdown(true);
+                      }}
+                    />
+                    {/* Dropdown hasil pencarian berdasarkan Nama */}
+                    {showDropdown && activeSearchField === "nama" && customerResults.length > 0 && (
+                      <div className="absolute z-20 top-full left-0 right-0 mt-1 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-xl shadow-lg overflow-hidden">
+                        {customerResults.map(c => (
+                          <button
+                            key={c.id}
+                            type="button"
+                            onClick={() => selectCustomer(c)}
+                            className="w-full flex items-center gap-3 px-4 py-3 hover:bg-neutral-50 dark:hover:bg-neutral-800 text-left transition-colors"
+                          >
+                            <div className="w-8 h-8 rounded-full bg-orange-100 dark:bg-orange-900/40 flex items-center justify-center flex-shrink-0">
+                              <FiUser className="w-4 h-4 text-orange-600" />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="text-sm font-medium text-neutral-900 dark:text-white truncate">{c.nama}</div>
+                              <div className="text-xs text-neutral-500">{c.telepon} {c.alamat ? `· ${c.alamat}` : ''}</div>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                  <input
-                    type="text"
-                    className="w-full pl-9 pr-3 py-2.5 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all dark:text-white text-sm"
-                    placeholder="Ketik nama customer atau perusahaan..."
-                    value={namaCari}
-                    onChange={(e) => { setNamaCari(e.target.value); setNamaCustomer(e.target.value); if (selectedCustomer) clearCustomer(); }}
+
+                  {/* No HP */}
+                  <div className="relative" ref={dropdownRefTelepon}>
+                    <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">No. HP <span className="text-red-500">*</span></label>
+                    <input
+                      type="text"
+                      className="w-full px-4 py-2.5 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all dark:text-white text-sm"
+                      placeholder="Ketik atau pilih no. HP..."
+                      value={teleponCari}
+                      onChange={(e) => {
+                        setTeleponCari(e.target.value);
+                        setTeleponCustomer(e.target.value);
+                        setActiveSearchField("telepon");
+                        if (selectedCustomer) clearCustomer();
+                      }}
+                      onFocus={() => {
+                        setActiveSearchField("telepon");
+                        if (teleponCari.length >= 2) setShowDropdown(true);
+                      }}
+                    />
+                    {/* Dropdown hasil pencarian berdasarkan No HP */}
+                    {showDropdown && activeSearchField === "telepon" && customerResults.length > 0 && (
+                      <div className="absolute z-20 top-full left-0 right-0 mt-1 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-xl shadow-lg overflow-hidden">
+                        {customerResults.map(c => (
+                          <button
+                            key={c.id}
+                            type="button"
+                            onClick={() => selectCustomer(c)}
+                            className="w-full flex items-center gap-3 px-4 py-3 hover:bg-neutral-50 dark:hover:bg-neutral-800 text-left transition-colors"
+                          >
+                            <div className="w-8 h-8 rounded-full bg-orange-100 dark:bg-orange-900/40 flex items-center justify-center flex-shrink-0">
+                              <FiUser className="w-4 h-4 text-orange-600" />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="text-sm font-medium text-neutral-900 dark:text-white truncate">{c.nama}</div>
+                              <div className="text-xs text-neutral-500">{c.telepon} {c.alamat ? `· ${c.alamat}` : ''}</div>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Row 2: Alamat */}
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Alamat (Opsional)</label>
+                  <textarea
+                    rows={3}
+                    className="w-full px-4 py-2.5 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all dark:text-white text-sm resize-none"
+                    placeholder="Alamat lengkap customer"
+                    value={alamatCustomer}
+                    onChange={(e) => setAlamatCustomer(e.target.value)}
                   />
                 </div>
 
-                {/* Dropdown hasil pencarian */}
-                {showDropdown && customerResults.length > 0 && (
-                  <div className="absolute z-20 top-full left-0 right-0 mt-1 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-xl shadow-lg overflow-hidden">
-                    {customerResults.map(c => (
-                      <button
-                        key={c.id}
-                        type="button"
-                        onClick={() => selectCustomer(c)}
-                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-neutral-50 dark:hover:bg-neutral-800 text-left transition-colors"
-                      >
-                        <div className="w-8 h-8 rounded-full bg-orange-100 dark:bg-orange-900/40 flex items-center justify-center flex-shrink-0">
-                          <FiUser className="w-4 h-4 text-orange-600" />
-                        </div>
-                        <div className="min-w-0">
-                          <div className="text-sm font-medium text-neutral-900 dark:text-white truncate">{c.nama}</div>
-                          <div className="text-xs text-neutral-500">{c.telepon}</div>
-                        </div>
-                        <div className="ml-auto text-xs text-green-600 bg-green-50 dark:bg-green-900/20 px-2 py-0.5 rounded-full">Existing</div>
-                      </button>
-                    ))}
-                    <button
-                      type="button"
-                      onClick={() => { setShowDropdown(false); setSelectedCustomer(null); }}
-                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-neutral-50 dark:hover:bg-neutral-800 text-left transition-colors border-t border-neutral-100 dark:border-neutral-800"
-                    >
-                      <div className="w-8 h-8 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center flex-shrink-0">
-                        <FiUser className="w-4 h-4 text-neutral-500" />
+                {/* Customer existing banner */}
+                {selectedCustomer && (
+                  <div className="rounded-xl border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20 p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="w-5 h-5 rounded-full bg-green-500 flex items-center justify-center">
+                        <FiCheck className="w-3 h-3 text-white" />
                       </div>
-                      <div className="text-sm text-neutral-600 dark:text-neutral-400">
-                        + Buat customer baru &ldquo;<strong>{namaCari}</strong>&rdquo;
+                      <span className="text-sm font-bold text-green-700 dark:text-green-400">Customer Existing</span>
+                      <Link href={`/customer/${selectedCustomer.id}`} className="ml-auto text-xs text-orange-600 dark:text-orange-400 hover:underline flex items-center gap-1 font-medium">
+                        Lihat Detail Customer <FiChevronRight className="w-3 h-3" />
+                      </Link>
+                    </div>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                      <div className="text-center">
+                        <div className="text-xs text-neutral-500 dark:text-neutral-400">Lead Sebelumnya</div>
+                        <div className="text-lg font-bold text-neutral-900 dark:text-white">{selectedCustomer.leads?.length || 0}</div>
                       </div>
-                    </button>
+                      <div className="text-center">
+                        <div className="text-xs text-neutral-500 dark:text-neutral-400">Total Deal</div>
+                        <div className="text-lg font-bold text-neutral-900 dark:text-white">{selectedCustomer.leads?.filter(l => l.status === 2).length || 0}</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-xs text-neutral-500 dark:text-neutral-400">Lead Aktif</div>
+                        <div className="text-lg font-bold text-neutral-900 dark:text-white">{selectedCustomer.leads?.filter(l => l.status === 1).length || 0}</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-xs text-neutral-500 dark:text-neutral-400">Total Lost</div>
+                        <div className="text-lg font-bold text-neutral-900 dark:text-white">{selectedCustomer.leads?.filter(l => l.status === 3).length || 0}</div>
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
-
-              {/* Telepon */}
-              <div>
-                <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">No. HP *</label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <FiPhone className="text-neutral-400 w-4 h-4" />
-                  </div>
-                  <input
-                    type="text"
-                    className="w-full pl-9 pr-3 py-2.5 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all dark:text-white text-sm"
-                    placeholder="Ketik atau pilih no. HP..."
-                    value={teleponCari}
-                    onChange={(e) => { setTeleponCari(e.target.value); setTeleponCustomer(e.target.value); if (selectedCustomer) clearCustomer(); }}
-                  />
-                </div>
-              </div>
             </div>
 
-            {/* Customer existing banner */}
-            {selectedCustomer && (
-              <div className="rounded-xl border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20 p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                  <span className="text-sm font-semibold text-green-700 dark:text-green-400">Customer Existing</span>
-                  <Link href={`/customer/${selectedCustomer.id}`} className="ml-auto text-xs text-green-600 dark:text-green-400 hover:underline flex items-center gap-1">
-                    Lihat Detail <FiChevronRight className="w-3 h-3" />
-                  </Link>
-                </div>
-                <div className="grid grid-cols-2 gap-3 text-xs text-neutral-600 dark:text-neutral-400">
-                  <div><span className="font-medium">Lead Sebelumnya:</span> {selectedCustomer.leads?.length || 0}</div>
-                  <div><span className="font-medium">Total Deal:</span> {selectedCustomer.leads?.filter(l => l.status === 2).length || 0}</div>
-                  <div><span className="font-medium">Lead Aktif:</span> {selectedCustomer.leads?.filter(l => l.status === 1).length || 0}</div>
-                  <div><span className="font-medium">Total Lost:</span> {selectedCustomer.leads?.filter(l => l.status === 3).length || 0}</div>
-                </div>
+            {/* Card 2: Catatan */}
+            <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200/50 dark:border-neutral-800 shadow-sm overflow-hidden">
+              <div className="px-6 py-4 border-b border-neutral-100 dark:border-neutral-800 flex items-center gap-3">
+                <div className="w-7 h-7 rounded-full bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 text-xs font-bold flex items-center justify-center">3</div>
+                <h2 className="text-base font-bold text-neutral-900 dark:text-white">Catatan <span className="text-sm font-normal text-neutral-400">(Opsional)</span></h2>
               </div>
-            )}
-
-            {/* PIC & Alamat */}
-            <div>
-              <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Alamat (Opsional)</label>
-              <div className="relative">
-                <div className="absolute top-2.5 left-3 pointer-events-none">
-                  <FiMapPin className="text-neutral-400 w-4 h-4" />
-                </div>
+              <div className="p-6">
                 <textarea
-                  rows={2}
-                  className="w-full pl-9 pr-3 py-2.5 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all dark:text-white text-sm resize-none"
-                  placeholder="Alamat lengkap customer"
-                  value={alamatCustomer}
-                  onChange={(e) => setAlamatCustomer(e.target.value)}
+                  rows={4}
+                  className="w-full px-4 py-3 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all dark:text-white text-sm resize-none"
+                  placeholder="Tulis catatan tentang kebutuhan customer, produk yang ditanyakan, atau hal penting lainnya..."
+                  value={catatan}
+                  onChange={(e) => setCatatan(e.target.value)}
+                  maxLength={500}
                 />
+                <div className="text-xs text-neutral-400 text-right mt-1">{catatan.length}/500</div>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Section 2: Kebutuhan */}
-        <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200/50 dark:border-neutral-800 shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b border-neutral-100 dark:border-neutral-800 flex items-center gap-3">
-            <div className="w-7 h-7 rounded-full bg-orange-600 text-white text-xs font-bold flex items-center justify-center">2</div>
-            <h2 className="text-base font-bold text-neutral-900 dark:text-white">Kebutuhan <span className="text-sm font-normal text-neutral-400">(pilih salah satu atau lebih)</span></h2>
-          </div>
-          <div className="p-6">
-            <div className="flex flex-wrap gap-3">
-              {kategoriList.map(kat => (
-                <button
-                  key={kat.id}
-                  type="button"
-                  onClick={() => toggleKebutuhan(String(kat.id))}
-                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 text-sm font-medium transition-all ${
-                    kebutuhan.includes(String(kat.id))
-                      ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400'
-                      : 'border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-950 text-neutral-700 dark:text-neutral-300 hover:border-neutral-300'
-                  }`}
-                >
-                  <FiCheckSquare className={`w-4 h-4 ${kebutuhan.includes(String(kat.id)) ? 'text-orange-500' : 'text-neutral-400'}`} />
-                  {kat.nama}
-                </button>
-              ))}
-              {kategoriList.length === 0 && <p className="text-sm text-neutral-400 italic">Belum ada kategori produk.</p>}
+          {/* RIGHT COLUMN: Kebutuhan & Hasil Interaksi */}
+          <div className="space-y-6">
+            {/* Card 3: Kebutuhan */}
+            <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200/50 dark:border-neutral-800 shadow-sm overflow-hidden">
+              <div className="px-6 py-4 border-b border-neutral-100 dark:border-neutral-800 flex items-center gap-3">
+                <div className="w-7 h-7 rounded-full bg-orange-600 text-white text-xs font-bold flex items-center justify-center">2</div>
+                <h2 className="text-base font-bold text-neutral-900 dark:text-white">Kebutuhan <span className="text-sm font-normal text-neutral-400">(Pilih salah satu atau lebih)</span> <span className="text-red-500">*</span></h2>
+              </div>
+              <div className="p-6">
+                <div className="flex flex-wrap gap-4">
+                  {kategoriList.map(kat => {
+                    const isSelected = kebutuhan.includes(String(kat.id));
+                    return (
+                      <label
+                        key={kat.id}
+                        className={`relative flex items-center gap-3 px-6 py-4 rounded-xl border-2 cursor-pointer transition-all select-none min-w-[120px] ${
+                          isSelected
+                            ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/20'
+                            : 'border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 hover:border-neutral-300 dark:hover:border-neutral-700'
+                        }`}
+                        onClick={() => toggleKebutuhan(String(kat.id))}
+                      >
+                        <div className={`w-5 h-5 rounded flex items-center justify-center flex-shrink-0 transition-all ${
+                          isSelected ? 'bg-orange-500' : 'border-2 border-neutral-300 dark:border-neutral-600'
+                        }`}>
+                          {isSelected && <FiCheck className="w-3.5 h-3.5 text-white" />}
+                        </div>
+                        <span className={`text-sm font-semibold ${isSelected ? 'text-orange-700 dark:text-orange-400' : 'text-neutral-700 dark:text-neutral-300'}`}>{kat.nama}</span>
+                      </label>
+                    );
+                  })}
+                  {kategoriList.length === 0 && <p className="text-sm text-neutral-400 italic">Belum ada kategori produk.</p>}
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
 
-        {/* Section 3: Hasil Interaksi Pertama */}
-        <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200/50 dark:border-neutral-800 shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b border-neutral-100 dark:border-neutral-800 flex items-center gap-3">
-            <div className="w-7 h-7 rounded-full bg-orange-600 text-white text-xs font-bold flex items-center justify-center">3</div>
-            <h2 className="text-base font-bold text-neutral-900 dark:text-white">Hasil Interaksi Pertama *</h2>
-          </div>
-          <div className="p-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {hasilInteraksiList.map(hi => (
-                <label
-                  key={hi.id}
-                  className={`flex items-start gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${
-                    hasilInteraksiId === hi.id
-                      ? `border-2 ${getFaseColor(hi.fase_lead)}`
-                      : 'border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600'
-                  }`}
-                  onClick={() => setHasilInteraksiId(hi.id)}
-                >
-                  <input type="radio" name="hasil_interaksi" value={hi.id} checked={hasilInteraksiId === hi.id} onChange={() => setHasilInteraksiId(hi.id)} className="mt-0.5" />
-                  <div>
-                    <div className="text-sm font-semibold text-neutral-900 dark:text-white">{hi.nama}</div>
-                    <div className="text-xs text-neutral-500 mt-0.5">→ Fase: {hi.fase_lead?.replace('_', ' ')}</div>
+            {/* Card 4: Hasil Interaksi */}
+            <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200/50 dark:border-neutral-800 shadow-sm overflow-hidden">
+              <div className="px-6 py-4 border-b border-neutral-100 dark:border-neutral-800 flex items-center gap-3">
+                <div className="w-7 h-7 rounded-full bg-orange-600 text-white text-xs font-bold flex items-center justify-center">4</div>
+                <h2 className="text-base font-bold text-neutral-900 dark:text-white">Hasil Interaksi Pertama <span className="text-red-500">*</span></h2>
+              </div>
+              <div className="p-6">
+                {hasilInteraksiList.length === 0 ? (
+                  <div className="flex items-center gap-2 text-sm text-neutral-400 italic p-4 bg-neutral-50 dark:bg-neutral-950 rounded-xl">
+                    <FiInfo className="w-4 h-4" />
+                    Belum ada data master hasil interaksi.
                   </div>
-                </label>
-              ))}
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                    {hasilInteraksiList.map(hi => {
+                      const isSelected = String(hasilInteraksiId) === String(hi.id);
+                      
+                      // Tentukan icon yang sesuai
+                      let IconComponent = FiMessageCircle;
+                      if (hi.kode === 'PENAWARAN' || hi.kode === 'SIAP') IconComponent = FiFileText;
+                      if (hi.kode === 'TIDAK_MINAT' || hi.kode === 'KOMPETITOR') IconComponent = FiXCircle;
+
+                      return (
+                        <label
+                          key={hi.id}
+                          className={`relative flex items-center gap-3.5 p-4 rounded-xl border-2 cursor-pointer transition-all ${getHIColor(hi.kode, isSelected)}`}
+                          onClick={() => setHasilInteraksiId(hi.id)}
+                        >
+                          <div className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 transition-colors ${getHIIconColor(hi.kode, isSelected)}`}>
+                            <IconComponent className="w-4.5 h-4.5" />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className={`text-sm font-bold leading-snug ${isSelected ? 'text-neutral-900 dark:text-white' : 'text-neutral-800 dark:text-neutral-200'}`}>{hi.nama}</div>
+                          </div>
+                          <input
+                            type="radio"
+                            name="hasil_interaksi"
+                            value={hi.id}
+                            checked={isSelected}
+                            onChange={() => setHasilInteraksiId(hi.id)}
+                            className="w-4 h-4 text-orange-600 border-neutral-300 focus:ring-orange-500"
+                          />
+                        </label>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Section 4: Catatan */}
-        <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200/50 dark:border-neutral-800 shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b border-neutral-100 dark:border-neutral-800 flex items-center gap-3">
-            <div className="w-7 h-7 rounded-full bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 text-xs font-bold flex items-center justify-center">4</div>
-            <h2 className="text-base font-bold text-neutral-900 dark:text-white">Catatan <span className="text-sm font-normal text-neutral-400">(Opsional)</span></h2>
-          </div>
-          <div className="p-6">
-            <textarea
-              rows={4}
-              className="w-full px-4 py-3 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all dark:text-white text-sm resize-none"
-              placeholder="Tulis catatan tentang kebutuhan customer, produk yang ditanyakan, atau hal penting lainnya..."
-              value={catatan}
-              onChange={(e) => setCatatan(e.target.value)}
-              maxLength={500}
-            />
-            <div className="text-xs text-neutral-400 text-right mt-1">{catatan.length}/500</div>
-          </div>
-        </div>
-
-        {/* Actions */}
-        <div className="flex justify-end gap-3 pb-6">
-          <Link href="/lead" className="px-5 py-2.5 text-sm font-medium rounded-xl border border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors text-neutral-700 dark:text-neutral-300">
-            Batal
-          </Link>
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="px-6 py-2.5 text-sm font-medium rounded-xl bg-orange-600 hover:bg-orange-700 text-white transition-colors shadow-sm disabled:opacity-60 flex items-center gap-2"
-          >
-            {isSubmitting ? (
-              <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div> Menyimpan...</>
-            ) : 'Simpan Lead'}
-          </button>
         </div>
       </form>
 

@@ -95,7 +95,7 @@ function ModalLost({ leadId, onClose, onSaved }) {
 
 export default function LeadDetailPage({ params }) {
   const router = useRouter();
-  const { showToast } = useUIStore();
+  const { showToast, setBreadcrumb } = useUIStore();
   const unwrapped = use(params);
   const id = unwrapped.id;
 
@@ -117,7 +117,12 @@ export default function LeadDetailPage({ params }) {
     try {
       const res = await fetch(`/api/lead/${id}`);
       const json = await res.json();
-      if (json.success) setLead(json.data);
+      if (json.success) {
+        setLead(json.data);
+        if (json.data?.nomor) {
+          setBreadcrumb(String(id), json.data.nomor);
+        }
+      }
       else router.push('/lead');
     } catch (e) {
       console.error(e);

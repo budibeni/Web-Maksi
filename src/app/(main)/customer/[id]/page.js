@@ -6,6 +6,7 @@ import Link from "next/link";
 import { FiArrowLeft, FiUser, FiPhone, FiMapPin, FiClock, FiEdit2, FiActivity } from "react-icons/fi";
 import dayjs from "dayjs";
 import 'dayjs/locale/id';
+import { useUIStore } from "@/store/ui.store";
 dayjs.locale('id');
 
 const formatWhatsAppUrl = (phone) => {
@@ -19,6 +20,7 @@ const formatWhatsAppUrl = (phone) => {
 
 export default function CustomerDetailPage({ params }) {
   const router = useRouter();
+  const setBreadcrumb = useUIStore((state) => state.setBreadcrumb);
   // In Next.js 15, params is a Promise, so we must unwrap it using React.use()
   const unwrappedParams = use(params);
   const id = unwrappedParams.id;
@@ -33,6 +35,9 @@ export default function CustomerDetailPage({ params }) {
         const json = await res.json();
         if (json.success) {
           setCustomer(json.data);
+          if (json.data?.nama) {
+            setBreadcrumb(String(id), json.data.nama);
+          }
         } else {
           // Redirect if not found
           router.push("/customer");

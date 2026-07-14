@@ -172,7 +172,19 @@ export async function POST(request) {
     }
 
     const nomor = await generateNomorLead();
-    const cabangId = BigInt(user.cabang_id);
+    
+    let cabangId;
+    if (user.cabang_id) {
+      cabangId = BigInt(user.cabang_id);
+    } else {
+      const dbUser = await prisma.user.findUnique({
+        where: { id: BigInt(user.id) },
+        select: { cabang_id: true }
+      });
+      if (!dbUser) return NextResponse.json({ success: false, message: 'User tidak valid.' }, { status: 400 });
+      cabangId = dbUser.cabang_id;
+    }
+
     const userId = BigInt(user.id);
 
     const lead = await prisma.lead.create({

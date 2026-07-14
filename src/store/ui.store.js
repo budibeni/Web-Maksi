@@ -8,6 +8,12 @@ export const useUIStore = create((set) => ({
   toggleMobileMenu: () => set((state) => ({ isMobileMenuOpen: !state.isMobileMenuOpen })),
   closeMobileMenu: () => set({ isMobileMenuOpen: false }),
 
+  // Custom Breadcrumbs
+  breadcrumbsMap: {},
+  setBreadcrumb: (key, label) => set((state) => ({
+    breadcrumbsMap: { ...state.breadcrumbsMap, [key]: label }
+  })),
+
   // Toast (Alert)
   toast: { open: false, message: '', type: 'info' },
   showToast: (message, type = 'info') => {

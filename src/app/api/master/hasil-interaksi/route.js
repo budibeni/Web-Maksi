@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/jwt';
 
+const serialize = (data) => JSON.parse(JSON.stringify(data, (_, v) => typeof v === 'bigint' ? v.toString() : v));
+
 // GET /api/master/hasil-interaksi
 export async function GET(request) {
   try {
@@ -13,7 +15,7 @@ export async function GET(request) {
       orderBy: { urutan: 'asc' },
     });
 
-    return NextResponse.json({ success: true, data });
+    return NextResponse.json({ success: true, data: serialize(data) });
   } catch (error) {
     console.error(error);
     return NextResponse.json({ success: false, message: 'Terjadi kesalahan sistem' }, { status: 500 });
