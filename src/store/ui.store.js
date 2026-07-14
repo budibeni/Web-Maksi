@@ -19,8 +19,8 @@ export const useUIStore = create((set) => ({
   hideToast: () => set((state) => ({ toast: { ...state.toast, open: false } })),
 
   // Confirm Dialog
-  confirm: { open: false, message: '', onConfirm: null, onCancel: null, type: 'danger' },
-  showConfirm: (message, onConfirm, onCancel = null, type = 'danger') => 
-    set({ confirm: { open: true, message, onConfirm, onCancel, type } }),
+  confirm: { open: false, title: '', message: '', onConfirm: null, onCancel: null, type: 'danger' },
+  showConfirm: (title, message, onConfirm, onCancel = null, type = 'danger') => 
+    set({ confirm: { open: true, title, message, onConfirm, onCancel, type } }),
   hideConfirm: () => set((state) => ({ confirm: { ...state.confirm, open: false } })),
 }));

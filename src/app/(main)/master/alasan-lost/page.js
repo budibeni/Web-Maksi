@@ -91,7 +91,10 @@ export default function AlasanLostPage() {
   };
 
   const handleDelete = (id) => {
-    showConfirm("Apakah Anda yakin ingin menghapus data alasan lost ini?", async () => {
+    showConfirm(
+      "Konfirmasi Hapus",
+      "Apakah Anda yakin ingin menghapus data alasan lost ini?", 
+      async () => {
       try {
         const res = await fetch(`/api/master/alasan-lost/${id}`, { method: "DELETE" });
         const json = await res.json();

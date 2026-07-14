@@ -69,18 +69,13 @@ export const APP_MENUS = [
         roles: [ROLE_ADMIN],
         children: [
           {
-            title: "Master Mesin",
-            path: "/master/produk/mesin",
+            title: "Kategori Produk",
+            path: "/master/kategori-produk",
             roles: [ROLE_ADMIN],
           },
           {
-            title: "Master Sparepart",
-            path: "/master/produk/sparepart",
-            roles: [ROLE_ADMIN],
-          },
-          {
-            title: "Master Jasa",
-            path: "/master/produk/jasa",
+            title: "Master Produk",
+            path: "/master/produk",
             roles: [ROLE_ADMIN],
           }
         ]

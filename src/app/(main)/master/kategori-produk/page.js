@@ -6,15 +6,15 @@ import { FiSearch, FiPlus, FiEdit2, FiTrash2, FiX, FiDownload, FiUpload, FiFileT
 import { exportToExcel, parseExcel } from "@/lib/excel";
 import { useUIStore } from "@/store/ui.store";
 
-export default function CabangPage() {
-  const [cabangs, setCabangs] = useState([]);
+export default function KategoriProdukPage() {
+  const [kategoriProduks, setKategoriProduks] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isImporting, setIsImporting] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formData, setFormData] = useState({ id: null, kode: "", nama: "", alamat: "", telepon: "", aktif: 1 });
+  const [formData, setFormData] = useState({ id: null, kode: "", nama: "", aktif: 1 });
   const [mounted, setMounted] = useState(false);
   const fileInputRef = useRef(null);
   const { showToast, showConfirm } = useUIStore();
@@ -23,13 +23,13 @@ export default function CabangPage() {
     setMounted(true);
   }, []);
 
-  const fetchCabang = async () => {
+  const fetchKategoriProduks = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch("/api/master/cabang");
+      const res = await fetch("/api/master/kategori-produk");
       const json = await res.json();
       if (json.success) {
-        setCabangs(json.data);
+        setKategoriProduks(json.data);
       }
     } catch (error) {
       console.error(error);
@@ -39,21 +39,19 @@ export default function CabangPage() {
   };
 
   useEffect(() => {
-    fetchCabang();
+    fetchKategoriProduks();
   }, []);
 
-  const handleOpenModal = (cabang = null) => {
-    if (cabang) {
+  const handleOpenModal = (kategori = null) => {
+    if (kategori) {
       setFormData({
-        id: cabang.id,
-        kode: cabang.kode,
-        nama: cabang.nama,
-        alamat: cabang.alamat || "",
-        telepon: cabang.telepon || "",
-        aktif: cabang.aktif
+        id: kategori.id,
+        kode: kategori.kode,
+        nama: kategori.nama,
+        aktif: kategori.aktif
       });
     } else {
-      setFormData({ id: null, kode: "", nama: "", alamat: "", telepon: "", aktif: 1 });
+      setFormData({ id: null, kode: "", nama: "", aktif: 1 });
     }
     setIsModalOpen(true);
   };
@@ -63,7 +61,7 @@ export default function CabangPage() {
     setIsSubmitting(true);
     
     try {
-      const url = formData.id ? `/api/master/cabang/${formData.id}` : "/api/master/cabang";
+      const url = formData.id ? `/api/master/kategori-produk/${formData.id}` : "/api/master/kategori-produk";
       const method = formData.id ? "PUT" : "POST";
       
       const res = await fetch(url, {
@@ -72,8 +70,6 @@ export default function CabangPage() {
         body: JSON.stringify({
           kode: formData.kode,
           nama: formData.nama,
-          alamat: formData.alamat,
-          telepon: formData.telepon,
           aktif: parseInt(formData.aktif)
         })
       });
@@ -82,10 +78,10 @@ export default function CabangPage() {
       
       if (res.ok && json.success) {
         setIsModalOpen(false);
-        fetchCabang();
+        fetchKategoriProduks();
         showToast(json.message, "success");
       } else {
-        showToast(json.message || "Gagal menyimpan data", "error");
+        showToast(json.error ? `Error: ${json.error}` : (json.message || "Gagal menyimpan data"), "error");
       }
     } catch (error) {
       console.error(error);
@@ -98,14 +94,14 @@ export default function CabangPage() {
   const handleDelete = (id) => {
     showConfirm(
       "Konfirmasi Hapus",
-      "Apakah Anda yakin ingin menghapus data cabang ini?", 
+      "Apakah Anda yakin ingin menghapus data Kategori Produk ini?", 
       async () => {
       try {
-        const res = await fetch(`/api/master/cabang/${id}`, { method: "DELETE" });
+        const res = await fetch(`/api/master/kategori-produk/${id}`, { method: "DELETE" });
         const json = await res.json();
         
         if (res.ok && json.success) {
-          fetchCabang();
+          fetchKategoriProduks();
           showToast(json.message, "success");
         } else {
           showToast(json.message || "Gagal menghapus data", "error");
@@ -118,34 +114,28 @@ export default function CabangPage() {
   };
 
   const handleExport = () => {
-    const exportData = cabangs.map(c => ({
+    const exportData = kategoriProduks.map(c => ({
       KODE: c.kode,
-      NAMA_CABANG: c.nama,
-      ALAMAT: c.alamat || "",
-      TELEPON: c.telepon || "",
+      NAMA: c.nama,
       STATUS: c.aktif === 1 ? "Aktif" : "Nonaktif"
     }));
-    exportToExcel(exportData, "master_cabang.xlsx");
+    exportToExcel(exportData, "master_kategori_produk.xlsx");
   };
 
   const handleDownloadTemplate = () => {
     const templateData = [
       {
-        KODE: "C001",
-        NAMA_CABANG: "Cabang Jakarta",
-        ALAMAT: "Jl. Sudirman No. 1",
-        TELEPON: "021-123456",
+        KODE: "MSN",
+        NAMA: "Mesin",
         STATUS: "Aktif"
       },
       {
-        KODE: "C002",
-        NAMA_CABANG: "Cabang Surabaya",
-        ALAMAT: "Jl. Pemuda No. 2",
-        TELEPON: "031-123456",
+        KODE: "SPR",
+        NAMA: "Sparepart",
         STATUS: "Aktif"
       }
     ];
-    exportToExcel(templateData, "template_master_cabang.xlsx");
+    exportToExcel(templateData, "template_kategori_produk.xlsx");
   };
 
   const handleImport = async (e) => {
@@ -155,33 +145,28 @@ export default function CabangPage() {
     try {
       setIsImporting(true);
       const data = await parseExcel(file);
-      
       let successCount = 0;
       let errorCount = 0;
       let errorMessages = [];
 
       for (let i = 0; i < data.length; i++) {
         const row = data[i];
-        // Skip empty rows
-        if (!row.KODE || !row.NAMA_CABANG) {
+        if (!row.KODE || !row.NAMA) {
           continue;
         }
 
-        const payload = {
-          kode: row.KODE.toString(),
-          nama: row.NAMA_CABANG.toString(),
-          alamat: row.ALAMAT || "",
-          telepon: row.TELEPON || "",
-          aktif: row.STATUS?.toLowerCase() === 'nonaktif' ? 0 : 1
-        };
-
+        const aktif = row.STATUS?.toLowerCase() === 'nonaktif' ? 0 : 1;
+        
         try {
-          const res = await fetch("/api/master/cabang", {
+          const res = await fetch("/api/master/kategori-produk", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
+            body: JSON.stringify({
+              kode: row.KODE.toString(),
+              nama: row.NAMA.toString(),
+              aktif: aktif
+            })
           });
-
           if (res.ok) {
             successCount++;
           } else {
@@ -195,7 +180,7 @@ export default function CabangPage() {
         }
       }
 
-      fetchCabang();
+      fetchKategoriProduks();
       
       if (errorCount > 0) {
         const errorDetails = errorMessages.slice(0, 5).join('\n');
@@ -212,6 +197,7 @@ export default function CabangPage() {
       } else {
         showToast(`Tidak ada data valid untuk diimport`, "error");
       }
+      e.target.value = null;
     } catch (err) {
       console.error(err);
       showToast("Gagal memproses file import", "error");
@@ -222,7 +208,7 @@ export default function CabangPage() {
     }
   };
 
-  const filteredData = cabangs.filter(c => 
+  const filteredData = kategoriProduks.filter(c => 
     c.nama.toLowerCase().includes(searchTerm.toLowerCase()) || 
     c.kode.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -236,7 +222,7 @@ export default function CabangPage() {
               className="bg-neutral-900 hover:bg-neutral-800 dark:bg-white dark:hover:bg-neutral-200 text-white dark:text-neutral-900 px-4 py-1.5 rounded-full font-medium flex items-center gap-2 transition-colors shadow-sm text-sm mr-1"
             >
               <FiPlus className="w-4 h-4" />
-              <span className="hidden sm:inline">Tambah Cabang</span>
+              <span className="hidden sm:inline">Tambah Kategori</span>
             </button>
             
             <input 
@@ -283,7 +269,7 @@ export default function CabangPage() {
             <input
               type="text"
               className="block w-full pl-10 pr-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-xl leading-5 bg-white dark:bg-neutral-950 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-colors sm:text-sm"
-              placeholder="Cari kode atau nama cabang..."
+              placeholder="Cari kode atau nama kategori..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -297,8 +283,7 @@ export default function CabangPage() {
               <tr>
                 <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider">No</th>
                 <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider">Kode</th>
-                <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider">Nama Cabang</th>
-                <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider">Telepon</th>
+                <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider">Nama Kategori</th>
                 <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider">Status</th>
                 <th scope="col" className="px-6 py-4 text-right text-xs font-semibold text-neutral-500 uppercase tracking-wider">Aksi</th>
               </tr>
@@ -306,7 +291,7 @@ export default function CabangPage() {
             <tbody className="bg-white dark:bg-neutral-900 divide-y divide-neutral-100 dark:divide-neutral-800">
               {isLoading ? (
                 <tr>
-                  <td colSpan="6" className="px-6 py-10 text-center text-neutral-500">
+                  <td colSpan="5" className="px-6 py-10 text-center text-neutral-500">
                     <div className="flex justify-center items-center gap-2">
                       <div className="w-5 h-5 border-2 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
                       <span>Memuat data...</span>
@@ -315,28 +300,27 @@ export default function CabangPage() {
                 </tr>
               ) : filteredData.length === 0 ? (
                 <tr>
-                  <td colSpan="6" className="px-6 py-10 text-center text-neutral-500">
+                  <td colSpan="5" className="px-6 py-10 text-center text-neutral-500">
                     Tidak ada data ditemukan.
                   </td>
                 </tr>
               ) : (
-                filteredData.map((cabang, index) => (
-                  <tr key={cabang.id} className="hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors">
+                filteredData.map((kategori, index) => (
+                  <tr key={kategori.id} className="hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors">
                     <td className="px-6 py-3 whitespace-nowrap text-sm text-neutral-500">{index + 1}</td>
-                    <td className="px-6 py-3 whitespace-nowrap text-sm font-medium text-neutral-900 dark:text-white">{cabang.kode}</td>
-                    <td className="px-6 py-3 whitespace-nowrap text-sm text-neutral-900 dark:text-neutral-200">{cabang.nama}</td>
-                    <td className="px-6 py-3 whitespace-nowrap text-sm text-neutral-500">{cabang.telepon || "-"}</td>
+                    <td className="px-6 py-3 whitespace-nowrap text-sm font-medium text-neutral-900 dark:text-white">{kategori.kode}</td>
+                    <td className="px-6 py-3 whitespace-nowrap text-sm text-neutral-900 dark:text-neutral-200">{kategori.nama}</td>
                     <td className="px-6 py-3 whitespace-nowrap text-sm">
-                      <span className={`inline-flex px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide ${cabang.aktif === 1 ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400'}`}>
-                        {cabang.aktif === 1 ? 'Aktif' : 'Nonaktif'}
+                      <span className={`inline-flex px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide ${kategori.aktif === 1 ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400'}`}>
+                        {kategori.aktif === 1 ? 'Aktif' : 'Nonaktif'}
                       </span>
                     </td>
                     <td className="px-6 py-3 whitespace-nowrap text-sm text-right font-medium">
                       <div className="flex items-center justify-end gap-2">
-                        <button onClick={() => handleOpenModal(cabang)} className="p-2 text-neutral-400 hover:text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20 rounded-lg transition-colors">
+                        <button onClick={() => handleOpenModal(kategori)} className="p-2 text-neutral-400 hover:text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20 rounded-lg transition-colors">
                           <FiEdit2 className="w-4 h-4" />
                         </button>
-                        <button onClick={() => handleDelete(cabang.id)} className="p-2 text-neutral-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors">
+                        <button onClick={() => handleDelete(kategori.id)} className="p-2 text-neutral-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors">
                           <FiTrash2 className="w-4 h-4" />
                         </button>
                       </div>
@@ -355,7 +339,7 @@ export default function CabangPage() {
           <div className="bg-white dark:bg-neutral-900 rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95">
             <div className="px-6 py-4 border-b border-neutral-100 dark:border-neutral-800 flex justify-between items-center">
               <h3 className="text-lg font-bold text-neutral-900 dark:text-white">
-                {formData.id ? "Edit Cabang" : "Tambah Cabang"}
+                {formData.id ? "Edit Kategori Produk" : "Tambah Kategori Produk"}
               </h3>
               <button onClick={() => setIsModalOpen(false)} className="text-neutral-400 hover:text-neutral-600 transition-colors">
                 <FiX className="w-5 h-5" />
@@ -365,7 +349,7 @@ export default function CabangPage() {
             <form onSubmit={handleSubmit}>
               <div className="p-6 space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Kode Cabang *</label>
+                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Kode Kategori *</label>
                   <input 
                     type="text" 
                     required 
@@ -376,7 +360,7 @@ export default function CabangPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Nama Cabang *</label>
+                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Nama Kategori *</label>
                   <input 
                     type="text" 
                     required 
@@ -385,24 +369,6 @@ export default function CabangPage() {
                     value={formData.nama}
                     onChange={(e) => setFormData({...formData, nama: e.target.value})}
                   />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Telepon</label>
-                  <input 
-                    type="text" 
-                    maxLength={30}
-                    className="w-full px-4 py-2 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all dark:text-white"
-                    value={formData.telepon}
-                    onChange={(e) => setFormData({...formData, telepon: e.target.value})}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Alamat</label>
-                  <textarea 
-                    className="w-full px-4 py-2 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all min-h-[100px] resize-none dark:text-white"
-                    value={formData.alamat}
-                    onChange={(e) => setFormData({...formData, alamat: e.target.value})}
-                  ></textarea>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">Status</label>
@@ -427,7 +393,7 @@ export default function CabangPage() {
                         onChange={() => setFormData({...formData, aktif: 0})}
                         className="text-orange-600 focus:ring-orange-500"
                       />
-                      <span className="text-sm dark:text-neutral-300">Nonaktif</span>
+                        <span className="text-sm dark:text-neutral-300">Nonaktif</span>
                     </label>
                   </div>
                 </div>

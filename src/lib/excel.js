@@ -76,9 +76,19 @@ export function parseExcel(file) {
         const sheetName = wb.SheetNames[0];
         const ws = wb.Sheets[sheetName];
         
-        // Convert to JSON
+        // Convert to JSON and normalize keys (Uppercase & trim)
         const jsonData = XLSX.utils.sheet_to_json(ws);
-        resolve(jsonData);
+        const normalizedData = jsonData.map(row => {
+          const newRow = {};
+          for (const key in row) {
+            if (Object.prototype.hasOwnProperty.call(row, key)) {
+              newRow[key.toString().trim().toUpperCase()] = row[key];
+            }
+          }
+          return newRow;
+        });
+        
+        resolve(normalizedData);
       } catch (err) {
         reject(new Error("Gagal membaca file Excel"));
       }

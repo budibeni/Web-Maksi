@@ -43,9 +43,9 @@ export default function GlobalDialogs() {
           <div className="bg-white dark:bg-neutral-900 rounded-2xl shadow-xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 scale-100">
             <div className="p-6">
               <h3 className="text-lg font-bold text-neutral-900 dark:text-white mb-2">
-                Konfirmasi
+                {confirm.title || "Konfirmasi"}
               </h3>
-              <p className="text-neutral-600 dark:text-neutral-400 text-sm">
+              <p className="text-neutral-600 dark:text-neutral-400 text-sm whitespace-pre-wrap">
                 {confirm.message}
               </p>
             </div>

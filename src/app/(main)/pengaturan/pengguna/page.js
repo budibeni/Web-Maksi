@@ -136,7 +136,10 @@ export default function PenggunaPage() {
   };
 
   const handleDelete = (id) => {
-    showConfirm("Apakah Anda yakin ingin menghapus pengguna ini?", async () => {
+    showConfirm(
+      "Konfirmasi Hapus",
+      "Apakah Anda yakin ingin menghapus pengguna ini?", 
+      async () => {
       try {
         const res = await fetch(`/api/master/user/${id}`, { method: "DELETE" });
         const json = await res.json();
