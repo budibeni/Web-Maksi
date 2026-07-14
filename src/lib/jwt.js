@@ -30,3 +30,14 @@ export async function getCurrentUsername(request) {
     return null;
   }
 }
+
+export async function getCurrentUser(request) {
+  try {
+    const token = request.cookies.get(process.env.AUTH_COOKIE_NAME || "maksi_token")?.value;
+    if (!token) return null;
+    const payload = await verifyToken(token);
+    return payload || null;
+  } catch (error) {
+    return null;
+  }
+}

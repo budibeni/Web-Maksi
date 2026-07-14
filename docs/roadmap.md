@@ -118,7 +118,7 @@ Customer menjadi dasar pembuatan Lead.
 
 Status
 
-⬜ Belum Dimulai
+🔄 Dalam Pengerjaan
 
 Pekerjaan
 

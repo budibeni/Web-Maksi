@@ -36,6 +36,7 @@ model Cabang {
 
   users         User[]
   harga_produks HargaProduk[]
+  leads         Lead[]
 
   @@index([nama], map: "idx_cabang_nama")
   @@map("tb_cabang")
@@ -58,6 +59,7 @@ model User {
   cabang     Cabang     @relation(fields: [cabang_id], references: [id])
   role       Role       @relation(fields: [role_id], references: [id])
   audit_logs AuditLog[]
+  leads      Lead[]
 
   @@index([nama], map: "idx_user_nama")
   @@index([cabang_id], map: "idx_user_cabang")
@@ -168,7 +170,115 @@ model Customer {
   diubah_oleh    String?   @db.VarChar(100)
   diubah_tanggal DateTime? @db.DateTime(0)
 
+  leads Lead[]
+
   @@index([nama], map: "idx_customer_nama")
   @@index([telepon], map: "idx_customer_telepon")
   @@map("tb_customer")
+}
+
+model HasilInteraksi {
+  id             BigInt    @id @default(autoincrement())
+  kode           String    @unique(map: "idx_hasil_interaksi_kode") @db.VarChar(30)
+  nama           String    @unique(map: "idx_hasil_interaksi_nama") @db.VarChar(150)
+  fase_lead      String    @db.VarChar(20) // LEAD_BARU, FOLLOW_UP, PENAWARAN
+  urutan         Int       @default(0)
+  warna          String?   @db.VarChar(20)
+  ikon           String?   @db.VarChar(50)
+  aktif          Int       @default(1) @db.TinyInt
+  dibuat_oleh    String?   @db.VarChar(100)
+  dibuat_tanggal DateTime  @default(now()) @db.DateTime(0)
+  diubah_oleh    String?   @db.VarChar(100)
+  diubah_tanggal DateTime? @db.DateTime(0)
+
+  aktivitas_leads AktivitasLead[]
+
+  @@index([fase_lead], map: "idx_hasil_interaksi_fase")
+  @@index([aktif], map: "idx_hasil_interaksi_aktif")
+  @@map("tb_hasil_interaksi")
+}
+
+model Lead {
+  id                        BigInt    @id @default(autoincrement())
+  nomor                     String    @unique(map: "uk_lead_nomor") @db.VarChar(30)
+  customer_id               BigInt
+  cabang_id                 BigInt
+  user_id                   BigInt
+  status_customer           String    @default("BARU") @db.VarChar(20) // BARU, EXISTING
+  status                    Int       @default(1) @db.TinyInt // 1=OPEN, 2=DEAL, 3=LOST
+  fase                      Int       @default(1) @db.TinyInt // 1=LEAD_BARU, 2=FOLLOW_UP, 3=PENAWARAN
+  kebutuhan                 String?   @db.Text // JSON array of kategori_produk_id
+  versi_penawaran_final_id  BigInt?
+  nilai_deal                Decimal?  @db.Decimal(18, 2)
+  tanggal_deal              DateTime? @db.DateTime(0)
+  alasan_lost_id            BigInt?
+  nama_alasan_lost          String?   @db.VarChar(200)
+  nilai_lost                Decimal?  @db.Decimal(18, 2)
+  catatan_awal              String?   @db.Text
+  catatan_lost              String?   @db.Text
+  tanggal_lost              DateTime? @db.DateTime(0)
+  dibuat_oleh               String?   @db.VarChar(100)
+  dibuat_tanggal            DateTime  @default(now()) @db.DateTime(0)
+  diubah_oleh               String?   @db.VarChar(100)
+  diubah_tanggal            DateTime? @db.DateTime(0)
+
+  customer        Customer        @relation(fields: [customer_id], references: [id])
+  cabang          Cabang          @relation(fields: [cabang_id], references: [id])
+  user            User            @relation(fields: [user_id], references: [id])
+  aktivitas_leads AktivitasLead[]
+  pengingats      Pengingat[]
+
+  @@index([customer_id], map: "idx_lead_customer")
+  @@index([cabang_id], map: "idx_lead_cabang")
+  @@index([user_id], map: "idx_lead_user")
+  @@index([status_customer], map: "idx_lead_status_customer")
+  @@index([status], map: "idx_lead_status")
+  @@index([fase], map: "idx_lead_fase")
+  @@index([tanggal_deal], map: "idx_lead_tanggal_deal")
+  @@index([tanggal_lost], map: "idx_lead_tanggal_lost")
+  @@map("tb_lead")
+}
+
+model AktivitasLead {
+  id                  BigInt    @id @default(autoincrement())
+  lead_id             BigInt
+  user_id             BigInt
+  hasil_interaksi_id  BigInt
+  hasil_interaksi     String    @db.VarChar(150) // Snapshot
+  catatan             String?   @db.Text
+  dibuat_oleh         String?   @db.VarChar(100)
+  dibuat_tanggal      DateTime  @default(now()) @db.DateTime(0)
+  diubah_oleh         String?   @db.VarChar(100)
+  diubah_tanggal      DateTime? @db.DateTime(0)
+
+  lead             Lead            @relation(fields: [lead_id], references: [id])
+  hasil_interaksi_rel HasilInteraksi @relation(fields: [hasil_interaksi_id], references: [id])
+  pengingat        Pengingat?
+
+  @@index([lead_id], map: "idx_aktivitas_lead_lead")
+  @@index([user_id], map: "idx_aktivitas_lead_user")
+  @@index([hasil_interaksi_id], map: "idx_aktivitas_lead_hasil_interaksi")
+  @@index([dibuat_tanggal], map: "idx_aktivitas_lead_tanggal")
+  @@map("tb_aktivitas_lead")
+}
+
+model Pengingat {
+  id                 BigInt    @id @default(autoincrement())
+  lead_id            BigInt
+  aktivitas_lead_id  BigInt    @unique
+  tanggal_pengingat  DateTime  @db.DateTime(0)
+  catatan            String?   @db.Text
+  status             String    @default("AKTIF") @db.VarChar(10) // AKTIF, SELESAI
+  dibuat_oleh        String?   @db.VarChar(100)
+  dibuat_tanggal     DateTime  @default(now()) @db.DateTime(0)
+  diubah_oleh        String?   @db.VarChar(100)
+  diubah_tanggal     DateTime? @db.DateTime(0)
+
+  lead          Lead          @relation(fields: [lead_id], references: [id])
+  aktivitas_lead AktivitasLead @relation(fields: [aktivitas_lead_id], references: [id])
+
+  @@index([lead_id], map: "idx_pengingat_lead")
+  @@index([status], map: "idx_pengingat_status")
+  @@index([tanggal_pengingat], map: "idx_pengingat_tanggal")
+  @@map("tb_pengingat")
 }

@@ -90,7 +90,9 @@ export async function POST(request) {
       nama: user.nama,
       username: user.username,
       role: user.role.nama,
-      cabang: user.cabang.kode
+      role_id: user.role_id.toString(),
+      cabang: user.cabang.kode,
+      cabang_id: user.cabang_id.toString(),
     };
     
     const token = await signToken(tokenPayload, `${AUTH_COOKIE_EXPIRES_IN_DAYS}d`);
