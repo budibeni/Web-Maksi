@@ -7,18 +7,13 @@ import { FiChevronRight, FiHome } from "react-icons/fi";
 export default function Breadcrumb() {
   const pathname = usePathname();
 
-  if (pathname === "/" || pathname === "/dashboard") {
-    return null;
-  }
-
   const paths = pathname.split("/").filter((p) => p !== "");
 
   return (
-    <nav className="flex px-5 py-3 text-neutral-700 bg-white dark:bg-neutral-900 rounded-xl shadow-sm mb-6 transition-colors duration-300" aria-label="Breadcrumb">
-      <ol className="inline-flex items-center space-x-1 md:space-x-3">
+    <nav className="flex items-center" aria-label="Breadcrumb">
+      <ol className="inline-flex items-center space-x-1 md:space-x-2">
         <li className="inline-flex items-center">
-          <Link href="/dashboard" className="inline-flex items-center text-sm font-medium text-neutral-500 dark:text-neutral-400 hover:text-orange-600 dark:hover:text-orange-400 transition-colors">
-            <FiHome className="mr-2 w-4 h-4" />
+          <Link href="/dashboard" className={`inline-flex items-center text-sm font-semibold transition-colors ${paths.length === 0 || (paths.length === 1 && paths[0] === 'dashboard') ? 'text-neutral-900 dark:text-white' : 'text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white'}`}>
             Dashboard
           </Link>
         </li>
@@ -32,13 +27,13 @@ export default function Breadcrumb() {
 
           return (
             <li key={path} className="flex items-center">
-              <FiChevronRight className="w-4 h-4 text-neutral-400 dark:text-neutral-500" />
+              <FiChevronRight className="w-4 h-4 mx-1 text-neutral-400" />
               {isLast ? (
-                <span className="ml-1 text-sm font-medium text-neutral-800 dark:text-neutral-200 md:ml-2">
+                <span className="text-sm font-semibold text-neutral-900 dark:text-white">
                   {formattedPath}
                 </span>
               ) : (
-                <Link href={href} className="ml-1 text-sm font-medium text-neutral-500 hover:text-orange-600 dark:text-neutral-400 dark:hover:text-orange-400 transition-colors md:ml-2">
+                <Link href={href} className="text-sm font-medium text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white transition-colors">
                   {formattedPath}
                 </Link>
               )}

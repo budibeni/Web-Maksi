@@ -7,6 +7,7 @@ import { useUIStore } from "@/store/ui.store";
 import { logout } from "@/services/auth.service";
 import { FiLogOut, FiUser, FiBell, FiMenu, FiChevronLeft, FiChevronRight, FiMoon, FiSun } from "react-icons/fi";
 import { useTheme } from "next-themes";
+import Breadcrumb from "./Breadcrumb";
 
 export default function Header() {
   const router = useRouter();
@@ -38,7 +39,7 @@ export default function Header() {
   };
 
   return (
-    <header className="bg-transparent h-20 flex items-center justify-between px-4 md:px-6 sticky top-0 z-10 transition-all duration-300">
+    <header className="bg-transparent h-16 flex items-center justify-between px-4 md:px-6 sticky top-0 z-10 transition-all duration-300">
       <div className="flex items-center">
         {/* Mobile menu toggle */}
         <button 
@@ -58,27 +59,32 @@ export default function Header() {
           {isCollapsed ? <FiChevronRight className="h-5 w-5" /> : <FiChevronLeft className="h-5 w-5" />}
         </button>
 
-        {/* Dashboard Title */}
-        <h2 className="hidden md:block text-2xl font-bold text-neutral-800 dark:text-white mr-6">Dashboard</h2>
+        {/* Dashboard Title / Breadcrumb */}
+        <div className="hidden md:block">
+          <Breadcrumb />
+        </div>
       </div>
 
       {/* Spacer to push right items */}
       <div className="flex-1"></div>
 
       <div className="flex items-center space-x-2 md:space-x-4">
+        {/* Portal for page-specific actions */}
+        <div id="header-actions-portal" className="flex items-center gap-3 empty:hidden mr-4 md:mr-6 border-r border-neutral-200 dark:border-neutral-800 pr-4 md:pr-6"></div>
+
         {mounted && (
           <button 
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            className="text-neutral-500 dark:text-neutral-400 hover:text-orange-600 dark:hover:text-orange-400 transition-colors p-2.5 rounded-full bg-white dark:bg-neutral-900 shadow-sm relative"
+            className="p-2 text-neutral-500 hover:text-neutral-900 bg-white hover:bg-neutral-100 dark:bg-neutral-900 dark:text-neutral-400 dark:hover:text-white dark:hover:bg-neutral-800 rounded-full transition-colors border border-neutral-200 dark:border-neutral-800 relative"
             title="Toggle Theme"
           >
-            {theme === 'dark' ? <FiSun className="h-5 w-5" /> : <FiMoon className="h-5 w-5" />}
+            {theme === 'dark' ? <FiSun className="h-4 w-4" /> : <FiMoon className="h-4 w-4" />}
           </button>
         )}
 
-        <button className="text-neutral-500 dark:text-neutral-400 hover:text-orange-600 dark:hover:text-orange-400 transition-colors p-2.5 rounded-full bg-white dark:bg-neutral-900 shadow-sm relative">
-          <FiBell className="h-5 w-5" />
-          <span className="absolute top-2 right-2 h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white dark:ring-neutral-900"></span>
+        <button className="p-2 text-neutral-500 hover:text-neutral-900 bg-white hover:bg-neutral-100 dark:bg-neutral-900 dark:text-neutral-400 dark:hover:text-white dark:hover:bg-neutral-800 rounded-full transition-colors border border-neutral-200 dark:border-neutral-800 relative">
+          <FiBell className="h-4 w-4" />
+          <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-red-500 ring-2 ring-white dark:ring-neutral-900"></span>
         </button>
         
         <div className="relative ml-1 md:ml-2">
@@ -86,7 +92,7 @@ export default function Header() {
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             className="flex items-center focus:outline-none rounded-full ring-2 ring-transparent hover:ring-orange-200 dark:hover:ring-orange-900/50 transition-all"
           >
-            <div className="h-10 w-10 rounded-full bg-gradient-to-r from-orange-500 to-orange-600 flex items-center justify-center text-white font-bold text-sm shadow-sm">
+            <div className="h-8 w-8 rounded-full bg-gradient-to-r from-orange-500 to-orange-600 flex items-center justify-center text-white font-bold text-xs shadow-sm">
               {user?.nama?.charAt(0) || "U"}
             </div>
           </button>

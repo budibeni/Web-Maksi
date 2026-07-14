@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
-import Breadcrumb from "@/components/layout/Breadcrumb";
 import { useAuthStore } from "@/store/auth.store";
 import { useUIStore } from "@/store/ui.store";
 import { getMe } from "@/services/auth.service";
@@ -70,7 +69,6 @@ export default function MainLayout({ children }) {
       <div className="flex-1 flex flex-col overflow-hidden transition-all duration-300 relative">
         <Header />
         <main className="flex-1 overflow-x-hidden overflow-y-auto bg-transparent px-4 pb-4 pt-1 md:px-6 md:pb-6 md:pt-2 scroll-smooth">
-          <Breadcrumb />
           <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
             {children}
           </div>

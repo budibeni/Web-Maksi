@@ -8,82 +8,151 @@ datasource db {
 }
 
 model Role {
-  id              BigInt    @id @default(autoincrement())
-  nama            String    @db.VarChar(100)
-  keterangan      String?   @db.VarChar(255)
-  dibuat_oleh     BigInt?
-  dibuat_tanggal  DateTime  @default(now()) @db.DateTime(0)
-  diubah_oleh     BigInt?
-  diubah_tanggal  DateTime? @db.DateTime(0)
+  id             BigInt    @id @default(autoincrement())
+  nama           String    @db.VarChar(100)
+  keterangan     String?   @db.VarChar(255)
+  dibuat_oleh    BigInt?
+  dibuat_tanggal DateTime  @default(now()) @db.DateTime(0)
+  diubah_oleh    BigInt?
+  diubah_tanggal DateTime? @db.DateTime(0)
 
-  users           User[]
+  users User[]
 
-  @@map("tb_role")
   @@index([nama], map: "idx_role_nama")
+  @@map("tb_role")
 }
 
 model Cabang {
-  id              BigInt    @id @default(autoincrement())
-  kode            String    @unique(map: "idx_cabang_kode") @db.VarChar(20)
-  nama            String    @db.VarChar(150)
-  alamat          String?   @db.Text
-  telepon         String?   @db.VarChar(30)
-  aktif           Int       @default(1) @db.TinyInt
-  dibuat_oleh     BigInt?
-  dibuat_tanggal  DateTime  @default(now()) @db.DateTime(0)
-  diubah_oleh     BigInt?
-  diubah_tanggal  DateTime? @db.DateTime(0)
+  id             BigInt    @id @default(autoincrement())
+  kode           String    @unique(map: "idx_cabang_kode") @db.VarChar(20)
+  nama           String    @db.VarChar(150)
+  alamat         String?   @db.Text
+  telepon        String?   @db.VarChar(30)
+  aktif          Int       @default(1) @db.TinyInt
+  dibuat_oleh    BigInt?
+  dibuat_tanggal DateTime  @default(now()) @db.DateTime(0)
+  diubah_oleh    BigInt?
+  diubah_tanggal DateTime? @db.DateTime(0)
 
-  users           User[]
+  users         User[]
+  harga_produks HargaProduk[]
 
-  @@map("tb_cabang")
   @@index([nama], map: "idx_cabang_nama")
+  @@map("tb_cabang")
 }
 
 model User {
-  id              BigInt    @id @default(autoincrement())
-  cabang_id       BigInt
-  role_id         BigInt
-  nama            String    @db.VarChar(150)
-  username        String    @unique(map: "idx_user_username") @db.VarChar(100)
-  telepon         String    @unique(map: "idx_user_telepon") @db.VarChar(20)
-  password        String    @db.VarChar(255)
-  aktif           Int       @default(1) @db.TinyInt
-  dibuat_oleh     BigInt?
-  dibuat_tanggal  DateTime  @default(now()) @db.DateTime(0)
-  diubah_oleh     BigInt?
-  diubah_tanggal  DateTime? @db.DateTime(0)
+  id             BigInt    @id @default(autoincrement())
+  cabang_id      BigInt
+  role_id        BigInt
+  nama           String    @db.VarChar(150)
+  username       String    @unique(map: "idx_user_username") @db.VarChar(100)
+  telepon        String    @unique(map: "idx_user_telepon") @db.VarChar(20)
+  password       String    @db.VarChar(255)
+  aktif          Int       @default(1) @db.TinyInt
+  dibuat_oleh    BigInt?
+  dibuat_tanggal DateTime  @default(now()) @db.DateTime(0)
+  diubah_oleh    BigInt?
+  diubah_tanggal DateTime? @db.DateTime(0)
 
-  cabang          Cabang    @relation(fields: [cabang_id], references: [id])
-  role            Role      @relation(fields: [role_id], references: [id])
-  audit_logs      AuditLog[]
+  cabang     Cabang     @relation(fields: [cabang_id], references: [id])
+  role       Role       @relation(fields: [role_id], references: [id])
+  audit_logs AuditLog[]
 
-  @@map("tb_user")
   @@index([nama], map: "idx_user_nama")
   @@index([cabang_id], map: "idx_user_cabang")
   @@index([role_id], map: "idx_user_role")
+  @@map("tb_user")
 }
 
 model AuditLog {
-  id              BigInt    @id @default(autoincrement())
-  user_id         BigInt?
-  nama_user       String    @db.VarChar(150)
-  modul           String    @db.VarChar(50)
-  aksi            String    @db.VarChar(30)
-  referensi_id    BigInt?
-  deskripsi       String?   @db.Text
-  data_sebelum    Json?
-  data_sesudah    Json?
-  ip_address      String?   @db.VarChar(45)
-  user_agent      String?   @db.Text
-  dibuat_tanggal  DateTime  @default(now()) @db.DateTime(0)
+  id             BigInt   @id @default(autoincrement())
+  user_id        BigInt?
+  nama_user      String   @db.VarChar(150)
+  modul          String   @db.VarChar(50)
+  aksi           String   @db.VarChar(30)
+  referensi_id   BigInt?
+  deskripsi      String?  @db.Text
+  data_sebelum   Json?
+  data_sesudah   Json?
+  ip_address     String?  @db.VarChar(45)
+  user_agent     String?  @db.Text
+  dibuat_tanggal DateTime @default(now()) @db.DateTime(0)
 
-  user            User?     @relation(fields: [user_id], references: [id])
+  user User? @relation(fields: [user_id], references: [id])
 
-  @@map("tb_audit_log")
   @@index([user_id], map: "idx_audit_log_user")
   @@index([modul], map: "idx_audit_log_modul")
   @@index([aksi], map: "idx_audit_log_aksi")
   @@index([referensi_id], map: "idx_audit_log_referensi")
   @@index([dibuat_tanggal], map: "idx_audit_log_tanggal")
+  @@map("tb_audit_log")
+}
+
+model KategoriProduk {
+  id             BigInt    @id @default(autoincrement())
+  kode           String    @unique(map: "idx_kategori_produk_kode") @db.VarChar(20)
+  nama           String    @unique(map: "idx_kategori_produk_nama") @db.VarChar(100)
+  aktif          Int       @default(1) @db.TinyInt
+  dibuat_oleh    BigInt?
+  dibuat_tanggal DateTime  @default(now()) @db.DateTime(0)
+  diubah_oleh    BigInt?
+  diubah_tanggal DateTime? @db.DateTime(0)
+
+  produks Produk[]
+
+  @@map("tb_kategori_produk")
+}
+
+model Produk {
+  id                 BigInt    @id @default(autoincrement())
+  kategori_produk_id BigInt
+  kode               String    @unique(map: "idx_produk_kode") @db.VarChar(30)
+  nama               String    @db.VarChar(200)
+  satuan             String    @db.VarChar(30)
+  harga_default      Decimal   @default(0) @db.Decimal(18, 2)
+  aktif              Int       @default(1) @db.TinyInt
+  dibuat_oleh        BigInt?
+  dibuat_tanggal     DateTime  @default(now()) @db.DateTime(0)
+  diubah_oleh        BigInt?
+  diubah_tanggal     DateTime? @db.DateTime(0)
+
+  kategori      KategoriProduk @relation(fields: [kategori_produk_id], references: [id])
+  harga_cabangs HargaProduk[]
+
+  @@index([nama], map: "idx_produk_nama")
+  @@index([kategori_produk_id], map: "idx_produk_kategori")
+  @@map("tb_produk")
+}
+
+model HargaProduk {
+  id             BigInt    @id @default(autoincrement())
+  produk_id      BigInt
+  cabang_id      BigInt
+  harga          Decimal   @default(0) @db.Decimal(18, 2)
+  dibuat_oleh    BigInt?
+  dibuat_tanggal DateTime  @default(now()) @db.DateTime(0)
+  diubah_oleh    BigInt?
+  diubah_tanggal DateTime? @db.DateTime(0)
+
+  produk Produk @relation(fields: [produk_id], references: [id])
+  cabang Cabang @relation(fields: [cabang_id], references: [id])
+
+  @@unique([produk_id, cabang_id], map: "idx_harga_produk_unique")
+  @@index([produk_id], map: "idx_harga_produk_produk")
+  @@index([cabang_id], map: "idx_harga_produk_cabang")
+  @@map("tb_harga_produk")
+}
+
+model AlasanLost {
+  id             BigInt    @id @default(autoincrement())
+  kode           String    @unique(map: "idx_alasan_lost_kode") @db.VarChar(20)
+  nama           String    @unique(map: "idx_alasan_lost_nama") @db.VarChar(150)
+  aktif          Int       @default(1) @db.TinyInt
+  dibuat_oleh    BigInt?
+  dibuat_tanggal DateTime  @default(now()) @db.DateTime(0)
+  diubah_oleh    BigInt?
+  diubah_tanggal DateTime? @db.DateTime(0)
+
+  @@map("tb_alasan_lost")
 }

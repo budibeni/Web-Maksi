@@ -7,4 +7,20 @@ export const useUIStore = create((set) => ({
   isMobileMenuOpen: false,
   toggleMobileMenu: () => set((state) => ({ isMobileMenuOpen: !state.isMobileMenuOpen })),
   closeMobileMenu: () => set({ isMobileMenuOpen: false }),
+
+  // Toast (Alert)
+  toast: { open: false, message: '', type: 'info' },
+  showToast: (message, type = 'info') => {
+    set({ toast: { open: true, message, type } });
+    setTimeout(() => {
+      set((state) => ({ toast: { ...state.toast, open: false } }));
+    }, 3000);
+  },
+  hideToast: () => set((state) => ({ toast: { ...state.toast, open: false } })),
+
+  // Confirm Dialog
+  confirm: { open: false, message: '', onConfirm: null, onCancel: null, type: 'danger' },
+  showConfirm: (message, onConfirm, onCancel = null, type = 'danger') => 
+    set({ confirm: { open: true, message, onConfirm, onCancel, type } }),
+  hideConfirm: () => set((state) => ({ confirm: { ...state.confirm, open: false } })),
 }));
