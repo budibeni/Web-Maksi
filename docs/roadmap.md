@@ -57,7 +57,7 @@ Seluruh halaman aplikasi harus menggunakan Authentication.
 
 Status
 
-⬜ Belum Dimulai
+✅ Selesai
 
 Pekerjaan
 
