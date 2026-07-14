@@ -82,15 +82,14 @@ Belum menampilkan data bisnis.
 
 Status
 
-⬜ Belum Dimulai
+✅ Selesai
 
 Pekerjaan
 
 - Cabang
-- User
-- Mesin
-- Sparepart
-- Jasa
+- Kategori Produk
+- Produk
+- Harga Produk
 - Alasan Lost
 
 Seluruh Master Data harus selesai sebelum modul transaksi dibuat.
@@ -101,7 +100,7 @@ Seluruh Master Data harus selesai sebelum modul transaksi dibuat.
 
 Status
 
-⬜ Belum Dimulai
+✅ Selesai
 
 Pekerjaan
 
@@ -194,6 +193,7 @@ Pekerjaan
 - Profil User
 - Ubah Password
 - Pengaturan Aplikasi
+- User
 
 ---
 

@@ -156,3 +156,19 @@ model AlasanLost {
 
   @@map("tb_alasan_lost")
 }
+
+model Customer {
+  id             BigInt    @id @default(autoincrement())
+  nama           String    @db.VarChar(150)
+  telepon        String    @db.VarChar(20)
+  alamat         String?   @db.Text
+  catatan        String?   @db.Text
+  dibuat_oleh    String?   @db.VarChar(100)
+  dibuat_tanggal DateTime  @default(now()) @db.DateTime(0)
+  diubah_oleh    String?   @db.VarChar(100)
+  diubah_tanggal DateTime? @db.DateTime(0)
+
+  @@index([nama], map: "idx_customer_nama")
+  @@index([telepon], map: "idx_customer_telepon")
+  @@map("tb_customer")
+}

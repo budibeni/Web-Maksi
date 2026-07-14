@@ -15,9 +15,15 @@ export const APP_MENUS = [
         roles: [ROLE_ADMIN, ROLE_TOP_MANAGEMENT, ROLE_BRANCH_MANAGER, ROLE_SALES],
       },
       {
+        title: "Customer",
+        path: "/customer",
+        icon: FiUsers,
+        roles: [ROLE_ADMIN, ROLE_TOP_MANAGEMENT, ROLE_BRANCH_MANAGER, ROLE_SALES],
+      },
+      {
         title: "Lead",
         path: "/lead",
-        icon: FiUsers,
+        icon: FiTarget,
         roles: [ROLE_ADMIN, ROLE_TOP_MANAGEMENT, ROLE_BRANCH_MANAGER, ROLE_SALES],
       },
       {
