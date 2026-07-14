@@ -1,0 +1,89 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Role {
+  id              BigInt    @id @default(autoincrement())
+  nama            String    @db.VarChar(100)
+  keterangan      String?   @db.VarChar(255)
+  dibuat_oleh     BigInt?
+  dibuat_tanggal  DateTime  @default(now()) @db.DateTime(0)
+  diubah_oleh     BigInt?
+  diubah_tanggal  DateTime? @db.DateTime(0)
+
+  users           User[]
+
+  @@map("tb_role")
+  @@index([nama], map: "idx_role_nama")
+}
+
+model Cabang {
+  id              BigInt    @id @default(autoincrement())
+  kode            String    @unique(map: "idx_cabang_kode") @db.VarChar(20)
+  nama            String    @db.VarChar(150)
+  alamat          String?   @db.Text
+  telepon         String?   @db.VarChar(30)
+  aktif           Int       @default(1) @db.TinyInt
+  dibuat_oleh     BigInt?
+  dibuat_tanggal  DateTime  @default(now()) @db.DateTime(0)
+  diubah_oleh     BigInt?
+  diubah_tanggal  DateTime? @db.DateTime(0)
+
+  users           User[]
+
+  @@map("tb_cabang")
+  @@index([nama], map: "idx_cabang_nama")
+}
+
+model User {
+  id              BigInt    @id @default(autoincrement())
+  cabang_id       BigInt
+  role_id         BigInt
+  nama            String    @db.VarChar(150)
+  username        String    @unique(map: "idx_user_username") @db.VarChar(100)
+  telepon         String    @unique(map: "idx_user_telepon") @db.VarChar(20)
+  password        String    @db.VarChar(255)
+  aktif           Int       @default(1) @db.TinyInt
+  dibuat_oleh     BigInt?
+  dibuat_tanggal  DateTime  @default(now()) @db.DateTime(0)
+  diubah_oleh     BigInt?
+  diubah_tanggal  DateTime? @db.DateTime(0)
+
+  cabang          Cabang    @relation(fields: [cabang_id], references: [id])
+  role            Role      @relation(fields: [role_id], references: [id])
+  audit_logs      AuditLog[]
+
+  @@map("tb_user")
+  @@index([nama], map: "idx_user_nama")
+  @@index([cabang_id], map: "idx_user_cabang")
+  @@index([role_id], map: "idx_user_role")
+}
+
+model AuditLog {
+  id              BigInt    @id @default(autoincrement())
+  user_id         BigInt?
+  nama_user       String    @db.VarChar(150)
+  modul           String    @db.VarChar(50)
+  aksi            String    @db.VarChar(30)
+  referensi_id    BigInt?
+  deskripsi       String?   @db.Text
+  data_sebelum    Json?
+  data_sesudah    Json?
+  ip_address      String?   @db.VarChar(45)
+  user_agent      String?   @db.Text
+  dibuat_tanggal  DateTime  @default(now()) @db.DateTime(0)
+
+  user            User?     @relation(fields: [user_id], references: [id])
+
+  @@map("tb_audit_log")
+  @@index([user_id], map: "idx_audit_log_user")
+  @@index([modul], map: "idx_audit_log_modul")
+  @@index([aksi], map: "idx_audit_log_aksi")
+  @@index([referensi_id], map: "idx_audit_log_referensi")
+  @@index([dibuat_tanggal], map: "idx_audit_log_tanggal")
+}
