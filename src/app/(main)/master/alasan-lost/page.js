@@ -2,13 +2,14 @@
 
 import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
-import { FiSearch, FiPlus, FiEdit2, FiTrash2, FiX, FiDownload, FiUpload } from "react-icons/fi";
+import { FiSearch, FiPlus, FiEdit2, FiTrash2, FiX, FiDownload, FiUpload, FiFileText } from "react-icons/fi";
 import { exportToExcel, parseExcel } from "@/lib/excel";
 import { useUIStore } from "@/store/ui.store";
 
 export default function AlasanLostPage() {
   const [alasanLosts, setAlasanLosts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isImporting, setIsImporting] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -121,23 +122,41 @@ export default function AlasanLostPage() {
     exportToExcel(exportData, "master_alasan_lost.xlsx");
   };
 
+  const handleDownloadTemplate = () => {
+    const templateData = [
+      {
+        KODE: "AL01",
+        NAMA_ALASAN: "Harga Terlalu Mahal",
+        STATUS: "Aktif"
+      },
+      {
+        KODE: "AL02",
+        NAMA_ALASAN: "Stok Kosong",
+        STATUS: "Aktif"
+      }
+    ];
+    exportToExcel(templateData, "template_alasan_lost.xlsx");
+  };
+
   const handleImport = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
     
     try {
-      setIsLoading(true);
+      setIsImporting(true);
       const data = await parseExcel(file);
       
       let successCount = 0;
       let errorCount = 0;
+      let errorMessages = [];
 
-      for (const row of data) {
+      for (let i = 0; i < data.length; i++) {
+        const row = data[i];
         if (!row.KODE || !row.NAMA_ALASAN) continue;
 
         const payload = {
-          kode: row.KODE,
-          nama: row.NAMA_ALASAN,
+          kode: row.KODE.toString(),
+          nama: row.NAMA_ALASAN.toString(),
           aktif: row.STATUS?.toLowerCase() === 'nonaktif' ? 0 : 1
         };
 
@@ -147,17 +166,37 @@ export default function AlasanLostPage() {
           body: JSON.stringify(payload)
         });
 
-        if (res.ok) successCount++;
-        else errorCount++;
+        if (res.ok) {
+          successCount++;
+        } else {
+          errorCount++;
+          const json = await res.json();
+          errorMessages.push(`Baris ${i + 2} (${row.KODE}): ${json.message || 'Gagal tersimpan'}`);
+        }
       }
 
       fetchAlasanLost();
-      showToast(`Import Selesai. Berhasil: ${successCount}, Gagal: ${errorCount}`, successCount > 0 ? "success" : "error");
+      
+      if (errorCount > 0) {
+        const errorDetails = errorMessages.slice(0, 5).join('\n');
+        const moreErrors = errorMessages.length > 5 ? `\n...dan ${errorMessages.length - 5} error lainnya.` : '';
+        showConfirm(
+          "Import Selesai dengan Catatan",
+          `Berhasil: ${successCount}\nGagal: ${errorCount}\n\nRincian Error:\n${errorDetails}${moreErrors}`,
+          () => {},
+          null,
+          "info"
+        );
+      } else if (successCount > 0) {
+        showToast(`Import Selesai. Berhasil: ${successCount}`, "success");
+      } else {
+        showToast(`Tidak ada data valid untuk diimport`, "error");
+      }
     } catch (err) {
       console.error(err);
       showToast("Gagal memproses file import", "error");
     } finally {
-      setIsLoading(false);
+      setIsImporting(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
@@ -187,6 +226,13 @@ export default function AlasanLostPage() {
               onChange={handleImport} 
             />
             
+            <button 
+              className="p-2 text-neutral-500 hover:text-neutral-900 bg-white hover:bg-neutral-100 dark:bg-neutral-900 dark:text-neutral-400 dark:hover:text-white dark:hover:bg-neutral-800 rounded-full transition-colors border border-neutral-200 dark:border-neutral-800"
+              title="Download Template Import"
+              onClick={handleDownloadTemplate}
+            >
+              <FiFileText className="w-4 h-4" />
+            </button>
             <button 
               className="p-2 text-neutral-500 hover:text-neutral-900 bg-white hover:bg-neutral-100 dark:bg-neutral-900 dark:text-neutral-400 dark:hover:text-white dark:hover:bg-neutral-800 rounded-full transition-colors border border-neutral-200 dark:border-neutral-800"
               title="Import dari Excel"
@@ -364,6 +410,15 @@ export default function AlasanLostPage() {
               </div>
             </form>
           </div>
+        </div>
+      )}
+
+      {/* Import Loading Overlay */}
+      {isImporting && (
+        <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-white/80 dark:bg-neutral-900/80 backdrop-blur-sm animate-in fade-in">
+          <div className="w-12 h-12 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+          <p className="text-lg font-semibold text-neutral-900 dark:text-white">Memproses Import Data...</p>
+          <p className="text-sm text-neutral-500 mt-1">Mohon tunggu, jangan tutup atau *refresh* halaman ini.</p>
         </div>
       )}
     </div>
