@@ -163,7 +163,7 @@ Dashboard dikerjakan setelah seluruh data transaksi tersedia.
 
 Status
 
-⬜ Belum Dimulai
+✅ Selesai
 
 Pekerjaan
 
