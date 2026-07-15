@@ -7,6 +7,7 @@ import { FiArrowLeft, FiUser, FiPhone, FiMapPin, FiClock, FiEdit2, FiActivity } 
 import dayjs from "dayjs";
 import 'dayjs/locale/id';
 import { useUIStore } from "@/store/ui.store";
+import { useAuthStore } from "@/store/auth.store";
 dayjs.locale('id');
 
 const formatWhatsAppUrl = (phone) => {
@@ -21,6 +22,10 @@ const formatWhatsAppUrl = (phone) => {
 export default function CustomerDetailPage({ params }) {
   const router = useRouter();
   const setBreadcrumb = useUIStore((state) => state.setBreadcrumb);
+  const currentUser = useAuthStore((state) => state.user);
+  const role = (typeof currentUser?.role === 'object' ? currentUser.role.nama : currentUser?.role || "").toLowerCase();
+  const isTopManagement = role === "top management";
+
   // In Next.js 15, params is a Promise, so we must unwrap it using React.use()
   const unwrappedParams = use(params);
   const id = unwrappedParams.id;
@@ -75,17 +80,19 @@ export default function CustomerDetailPage({ params }) {
           <FiArrowLeft className="w-4 h-4" />
           Kembali ke Daftar
         </Link>
-        <button 
-          className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 rounded-xl transition-colors shadow-sm"
-          onClick={() => {
-            // Ideally this would open the edit modal, but for now it can just alert or we could implement a full edit page.
-            // Since edit is in the main list, we can direct users back there or implement it here later.
-            alert("Fitur edit detail dalam pengembangan. Silakan edit melalui daftar customer.");
-          }}
-        >
-          <FiEdit2 className="w-4 h-4" />
-          Edit Profil
-        </button>
+        {!isTopManagement && (
+          <button 
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 rounded-xl transition-colors shadow-sm"
+            onClick={() => {
+              // Ideally this would open the edit modal, but for now it can just alert or we could implement a full edit page.
+              // Since edit is in the main list, we can direct users back there or implement it here later.
+              alert("Fitur edit detail dalam pengembangan. Silakan edit melalui daftar customer.");
+            }}
+          >
+            <FiEdit2 className="w-4 h-4" />
+            Edit Profil
+          </button>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

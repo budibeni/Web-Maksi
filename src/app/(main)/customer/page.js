@@ -6,9 +6,16 @@ import Link from "next/link";
 import { FiSearch, FiPlus, FiEdit2, FiTrash2, FiX, FiDownload, FiUser, FiPhone, FiMapPin, FiEye } from "react-icons/fi";
 import { exportToExcel } from "@/lib/excel";
 import { useUIStore } from "@/store/ui.store";
+import { useAuthStore } from "@/store/auth.store";
 import dayjs from "dayjs";
 
 export default function CustomerPage() {
+  const currentUser = useAuthStore(state => state.user);
+  const role = (typeof currentUser?.role === 'object' ? currentUser.role.nama : currentUser?.role || "").toLowerCase();
+  const isTopManagement = role === "top management";
+  const canEditCustomer = !isTopManagement;
+  const canDeleteCustomer = role === 'administrator' || role === 'branch manager';
+
   const [customers, setCustomers] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   
@@ -181,13 +188,15 @@ export default function CustomerPage() {
     <div className="space-y-6">
       {mounted && document.getElementById("header-actions-portal") && createPortal(
           <>
-            <button 
-              onClick={() => handleOpenModal()}
-              className="bg-neutral-900 hover:bg-neutral-800 dark:bg-white dark:hover:bg-neutral-200 text-white dark:text-neutral-900 px-4 py-1.5 rounded-full font-medium flex items-center gap-2 transition-colors shadow-sm text-sm mr-1"
-            >
-              <FiPlus className="w-4 h-4" />
-              <span className="hidden sm:inline">Tambah Customer</span>
-            </button>
+            {!isTopManagement && (
+              <button 
+                onClick={() => handleOpenModal()}
+                className="bg-neutral-900 hover:bg-neutral-800 dark:bg-white dark:hover:bg-neutral-200 text-white dark:text-neutral-900 px-4 py-1.5 rounded-full font-medium flex items-center gap-2 transition-colors shadow-sm text-sm mr-1"
+              >
+                <FiPlus className="w-4 h-4" />
+                <span className="hidden sm:inline">Tambah Customer</span>
+              </button>
+            )}
             <button 
               className="p-2 text-neutral-500 hover:text-neutral-900 bg-white hover:bg-neutral-100 dark:bg-neutral-900 dark:text-neutral-400 dark:hover:text-white dark:hover:bg-neutral-800 rounded-full transition-colors border border-neutral-200 dark:border-neutral-800"
               title="Export ke Excel"
@@ -320,20 +329,24 @@ export default function CustomerPage() {
                         >
                           <FiEye className="w-4 h-4" />
                         </Link>
-                        <button 
-                          onClick={() => handleOpenModal(c)}
-                          className="p-2 text-neutral-400 hover:text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/30 rounded-lg transition-colors"
-                          title="Edit"
-                        >
-                          <FiEdit2 className="w-4 h-4" />
-                        </button>
-                        <button 
-                          onClick={() => handleDelete(c.id)}
-                          className="p-2 text-neutral-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
-                          title="Hapus"
-                        >
-                          <FiTrash2 className="w-4 h-4" />
-                        </button>
+                        {canEditCustomer && (
+                          <button 
+                            onClick={() => handleOpenModal(c)}
+                            className="p-2 text-neutral-400 hover:text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/30 rounded-lg transition-colors"
+                            title="Edit"
+                          >
+                            <FiEdit2 className="w-4 h-4" />
+                          </button>
+                        )}
+                        {canDeleteCustomer && (
+                          <button 
+                            onClick={() => handleDelete(c.id)}
+                            className="p-2 text-neutral-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
+                            title="Hapus"
+                          >
+                            <FiTrash2 className="w-4 h-4" />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>

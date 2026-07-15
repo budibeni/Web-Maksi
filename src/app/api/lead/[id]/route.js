@@ -61,6 +61,11 @@ export async function DELETE(request, context) {
     const user = await getCurrentUser(request);
     if (!user) return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
 
+    const role = (user.role || '').toLowerCase();
+    if (role === 'top management') {
+      return NextResponse.json({ success: false, message: 'Top Management tidak diperbolehkan melakukan modifikasi data.' }, { status: 403 });
+    }
+
     const params = await context.params;
     const id = BigInt(params.id);
 

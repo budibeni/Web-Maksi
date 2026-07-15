@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { FiSearch, FiActivity, FiEye, FiRefreshCw, FiClock, FiUser, FiMapPin } from "react-icons/fi";
 import { useAuthStore } from "@/store/auth.store";
@@ -11,8 +12,18 @@ import 'dayjs/locale/id';
 dayjs.locale('id');
 
 export default function RiwayatAktivitasPage() {
+  const router = useRouter();
   const user = useAuthStore((state) => state.user);
   const { showToast } = useUIStore();
+
+  useEffect(() => {
+    if (user) {
+      const role = (typeof user.role === 'object' ? user.role.nama : user.role || "").toLowerCase();
+      if (role === 'sales') {
+        router.replace("/forbidden");
+      }
+    }
+  }, [user, router]);
 
   const [activities, setActivities] = useState([]);
   const [isLoading, setIsLoading] = useState(true);

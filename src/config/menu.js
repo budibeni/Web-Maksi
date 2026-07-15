@@ -36,7 +36,7 @@ export const APP_MENUS = [
         title: "Aktivitas",
         path: "/aktivitas",
         icon: FiActivity,
-        roles: [ROLE_ADMIN, ROLE_TOP_MANAGEMENT, ROLE_BRANCH_MANAGER, ROLE_SALES],
+        roles: [ROLE_ADMIN, ROLE_TOP_MANAGEMENT, ROLE_BRANCH_MANAGER],
       },
       {
         title: "Pengingat",
@@ -49,13 +49,13 @@ export const APP_MENUS = [
         title: "Deal",
         path: "/deal",
         icon: FiCheckCircle,
-        roles: [ROLE_ADMIN, ROLE_TOP_MANAGEMENT, ROLE_BRANCH_MANAGER, ROLE_SALES],
+        roles: [ROLE_ADMIN, ROLE_TOP_MANAGEMENT, ROLE_BRANCH_MANAGER],
       },
       {
         title: "Lost",
         path: "/lost",
         icon: FiXCircle,
-        roles: [ROLE_ADMIN, ROLE_TOP_MANAGEMENT, ROLE_BRANCH_MANAGER, ROLE_SALES],
+        roles: [ROLE_ADMIN, ROLE_TOP_MANAGEMENT, ROLE_BRANCH_MANAGER],
       },
       {
         title: "Laporan",
@@ -67,27 +67,27 @@ export const APP_MENUS = [
   },
   {
     group: "MASTER DATA",
-    roles: [ROLE_ADMIN], // Only admin can see this entire group
+    roles: [ROLE_ADMIN, ROLE_TOP_MANAGEMENT], // Admin and Top Management can see this group
     items: [
       {
         title: "Produk",
         icon: FiBox,
-        roles: [ROLE_ADMIN],
+        roles: [ROLE_ADMIN, ROLE_TOP_MANAGEMENT],
         children: [
           {
             title: "Kategori Produk",
             path: "/master/kategori-produk",
-            roles: [ROLE_ADMIN],
+            roles: [ROLE_ADMIN, ROLE_TOP_MANAGEMENT],
           },
           {
             title: "Master Produk",
             path: "/master/produk",
-            roles: [ROLE_ADMIN],
+            roles: [ROLE_ADMIN, ROLE_TOP_MANAGEMENT],
           },
           {
             title: "Harga Produk",
             path: "/master/harga-produk",
-            roles: [ROLE_ADMIN],
+            roles: [ROLE_ADMIN, ROLE_TOP_MANAGEMENT],
           }
         ]
       },

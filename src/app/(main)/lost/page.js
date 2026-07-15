@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { 
   FiAlertCircle, FiTrendingDown, FiDollarSign, FiCalendar, 
   FiDownload, FiRefreshCw, FiChevronDown, FiFilter, 
@@ -10,8 +11,18 @@ import { useAuthStore } from "@/store/auth.store";
 import { useUIStore } from "@/store/ui.store";
 
 export default function LaporanLeadLostPage() {
+  const router = useRouter();
   const user = useAuthStore((state) => state.user);
   const { showToast } = useUIStore();
+
+  useEffect(() => {
+    if (user) {
+      const role = (typeof user.role === 'object' ? user.role.nama : user.role || "").toLowerCase();
+      if (role === 'sales') {
+        router.replace("/forbidden");
+      }
+    }
+  }, [user, router]);
 
   const [isLoading, setIsLoading] = useState(true);
   const [startDate, setStartDate] = useState("2026-07-01");

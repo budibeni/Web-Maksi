@@ -12,6 +12,7 @@ import {
 import dayjs from "dayjs";
 import 'dayjs/locale/id';
 import { useUIStore } from "@/store/ui.store";
+import { useAuthStore } from "@/store/auth.store";
 import PenawaranDetailModal from "./components/PenawaranDetailModal";
 
 dayjs.locale('id');
@@ -161,6 +162,10 @@ function ModalDeal({ lead, quotations, onClose, onSaved }) {
 export default function LeadDetailPage({ params }) {
   const router = useRouter();
   const { showToast, setBreadcrumb } = useUIStore();
+  const currentUser = useAuthStore(state => state.user);
+  const role = (typeof currentUser?.role === 'object' ? currentUser.role.nama : currentUser?.role || "").toLowerCase();
+  const isTopManagement = role === "top management";
+
   const unwrapped = use(params);
   const id = unwrapped.id;
 
@@ -270,7 +275,7 @@ export default function LeadDetailPage({ params }) {
             <FiX className="w-4 h-4" />
             Tutup
           </Link>
-          {isOpen && lead.versi_penawarans?.length > 0 && (
+          {isOpen && !isTopManagement && lead.versi_penawarans?.length > 0 && (
             <button
               onClick={() => setShowModalDeal(true)}
               className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-semibold rounded-lg border border-green-200 text-green-600 hover:bg-green-50 dark:border-green-800 dark:text-green-400 dark:hover:bg-green-900/20 transition-colors"
@@ -279,7 +284,7 @@ export default function LeadDetailPage({ params }) {
               Tandai Deal
             </button>
           )}
-          {isOpen && (
+          {isOpen && !isTopManagement && (
             <button
               onClick={() => setShowModalLost(true)}
               className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-semibold rounded-lg border border-red-200 text-red-600 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/20 transition-colors"
@@ -336,7 +341,7 @@ export default function LeadDetailPage({ params }) {
 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
         {/* Left: Follow Up Form */}
-        {isOpen && (
+        {isOpen && !isTopManagement && (
           <div className="lg:col-span-3">
             <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200/50 dark:border-neutral-800 shadow-sm overflow-hidden">
               <div className="px-6 py-4 border-b border-neutral-100 dark:border-neutral-800 flex items-center gap-3">
@@ -415,7 +420,7 @@ export default function LeadDetailPage({ params }) {
         )}
 
         {/* Right / Full: Timeline & Penawaran Tab Panel */}
-        <div className={isOpen ? 'lg:col-span-2' : 'lg:col-span-5'}>
+        <div className={(isOpen && !isTopManagement) ? 'lg:col-span-2' : 'lg:col-span-5'}>
           <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200/50 dark:border-neutral-800 shadow-sm overflow-hidden">
             {/* Tabs Navigation */}
             <div className="flex border-b border-neutral-100 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-900/50">
@@ -472,7 +477,7 @@ export default function LeadDetailPage({ params }) {
               ) : (
                 /* Penawaran Content */
                 <div className="space-y-4">
-                  {isOpen && (
+                  {isOpen && !isTopManagement && (
                     <div className="flex justify-end">
                       <Link
                         href={`/lead/${id}/penawaran/baru`}
@@ -529,7 +534,7 @@ export default function LeadDetailPage({ params }) {
                                   >
                                     Cetak
                                   </button>
-                                  {isOpen && (
+                                  {isOpen && !isTopManagement && (
                                     <Link
                                       href={`/lead/${id}/penawaran/baru?revisi=${q.id}`}
                                       className="px-2.5 py-1 bg-orange-100 hover:bg-orange-200 dark:bg-orange-900/20 dark:hover:bg-orange-900/40 text-orange-700 dark:text-orange-400 rounded font-semibold transition-all inline-block"

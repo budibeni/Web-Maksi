@@ -35,11 +35,12 @@ Berfungsi sebagai monitoring dan pengambilan keputusan.
 Hak akses:
 
 - Melihat seluruh Dashboard
-- Melihat seluruh Lead
-- Melihat seluruh Customer
+- Melihat seluruh Lead (tidak boleh menambah atau mengubah data)
+- Melihat seluruh Customer (tidak boleh menambah atau mengubah data)
 - Melihat seluruh Versi Penawaran
 - Melihat seluruh Aktivitas Lead
 - Melihat seluruh Laporan
+- Melihat dan mengakses Master Kategori Produk, Master Produk, dan Harga Produk (tidak boleh mengubah data)
 
 Top Management tidak melakukan input data operasional.
 
@@ -69,14 +70,17 @@ Sales hanya dapat mengakses data miliknya sendiri.
 Hak akses:
 
 - Membuat Lead
-- Menambahkan Aktivitas Lead
-- Membuat Versi Penawaran
-- Menandai Deal
-- Menandai Lost
+- Menambahkan Aktivitas Lead (pada lead miliknya)
+- Membuat Versi Penawaran (pada lead miliknya)
+- Menandai Deal (pada lead miliknya)
+- Menandai Lost (pada lead miliknya)
 - Melihat Customer miliknya
 - Melihat Dashboard pribadi
 
-Sales tidak dapat mengubah Master Data.
+Sales tidak dapat:
+- Mengubah Master Data.
+- Mengakses halaman Aktivitas, Deal, dan Lost secara keseluruhan.
+- Menghapus data Customer.
 
 ---
 

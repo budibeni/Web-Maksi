@@ -13,6 +13,7 @@ import dayjs from "dayjs";
 import 'dayjs/locale/id';
 import { exportToExcel } from "@/lib/excel";
 import { useUIStore } from "@/store/ui.store";
+import { useAuthStore } from "@/store/auth.store";
 
 dayjs.locale('id');
 
@@ -25,6 +26,10 @@ const FASE_COLOR = {
 
 export default function LeadPage() {
   const router = useRouter();
+  const currentUser = useAuthStore(state => state.user);
+  const role = (typeof currentUser?.role === 'object' ? currentUser.role.nama : currentUser?.role || "").toLowerCase();
+  const isTopManagement = role === "top management";
+
   const [leads, setLeads] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [summary, setSummary] = useState({ totalOpen: 0, totalLeadBaru: 0, totalFollowUp: 0, totalPenawaran: 0 });
@@ -122,13 +127,15 @@ export default function LeadPage() {
       {/* Portal: Header Actions */}
       {mounted && document.getElementById("header-actions-portal") && createPortal(
         <>
-          <button
-            onClick={() => router.push('/lead/baru')}
-            className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-1.5 rounded-full font-medium flex items-center gap-2 transition-colors shadow-sm text-sm mr-1"
-          >
-            <FiPlus className="w-4 h-4" />
-            <span className="hidden sm:inline">Lead Baru</span>
-          </button>
+          {!isTopManagement && (
+            <button
+              onClick={() => router.push('/lead/baru')}
+              className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-1.5 rounded-full font-medium flex items-center gap-2 transition-colors shadow-sm text-sm mr-1"
+            >
+              <FiPlus className="w-4 h-4" />
+              <span className="hidden sm:inline">Lead Baru</span>
+            </button>
+          )}
           <button
             className="p-2 text-neutral-500 hover:text-neutral-900 bg-white hover:bg-neutral-100 dark:bg-neutral-900 dark:text-neutral-400 dark:hover:text-white dark:hover:bg-neutral-800 rounded-full transition-colors border border-neutral-200 dark:border-neutral-800"
             title="Export ke Excel"

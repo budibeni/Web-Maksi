@@ -11,10 +11,23 @@ export async function GET(request) {
       typeof value === 'bigint' ? value.toString() : value
     ));
 
+    const orderMap = {
+      'sales': 1,
+      'branch manager': 2,
+      'top management': 3,
+      'administrator': 4
+    };
+
+    const sortedData = serializedData.sort((a, b) => {
+      const weightA = orderMap[a.nama.toLowerCase()] || 99;
+      const weightB = orderMap[b.nama.toLowerCase()] || 99;
+      return weightA - weightB;
+    });
+
     return NextResponse.json({
       success: true,
       message: "Data berhasil diambil.",
-      data: serializedData
+      data: sortedData
     });
   } catch (error) {
     console.error("GET Role Error:", error);
