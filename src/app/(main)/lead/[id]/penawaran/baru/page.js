@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, use } from "react";
+import { useState, useEffect, use, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
@@ -20,6 +21,12 @@ export default function BaruPenawaranPage({ params }) {
   const [products, setProducts] = useState([]);
   const [branchPrices, setBranchPrices] = useState({});
   const [isLoading, setIsLoading] = useState(true);
+  const [mounted, setMounted] = useState(false);
+  const submitBtnRef = useRef(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Form states
   const [items, setItems] = useState([]); // { produk_id, nama_produk, kode_produk, satuan, harga, qty, diskon_persen, diskon_nominal, subtotal }
@@ -255,16 +262,32 @@ export default function BaruPenawaranPage({ params }) {
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto pb-10">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <Link href={`/lead/${leadId}`} className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-neutral-600 hover:text-neutral-900 bg-white hover:bg-neutral-50 dark:bg-neutral-900 dark:text-neutral-400 dark:hover:text-white dark:hover:bg-neutral-800 rounded-xl transition-colors border border-neutral-200 dark:border-neutral-800 shadow-sm">
-          <FiArrowLeft className="w-4 h-4" />
-          Batal & Kembali
-        </Link>
-        <h2 className="text-lg font-bold text-neutral-900 dark:text-white">
-          {revisiId ? "Buat Revisi Penawaran" : "Buat Penawaran Baru"}
-        </h2>
-      </div>
+      {/* Header Actions Portal */}
+      {mounted && document.getElementById("header-actions-portal") && createPortal(
+        <>
+          <button
+            onClick={() => submitBtnRef.current?.click()}
+            disabled={isSubmitting}
+            className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-1.5 rounded-full font-semibold flex items-center gap-2 transition-colors shadow-sm text-sm mr-2"
+          >
+            {isSubmitting ? (
+              <>
+                <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                <span>Menyimpan...</span>
+              </>
+            ) : (
+              <span>Simpan Penawaran</span>
+            )}
+          </button>
+          <Link
+            href={`/lead/${leadId}`}
+            className="px-4 py-1.5 text-sm font-semibold rounded-full bg-white hover:bg-neutral-100 dark:bg-neutral-900 dark:hover:bg-neutral-800 border border-neutral-200 dark:border-neutral-800 text-neutral-700 dark:text-neutral-300 transition-colors"
+          >
+            Batal
+          </Link>
+        </>,
+        document.getElementById("header-actions-portal")
+      )}
 
       {/* Lead info */}
       <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200/50 dark:border-neutral-800 shadow-sm p-5 grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -286,6 +309,7 @@ export default function BaruPenawaranPage({ params }) {
       </div>
 
       <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+        <button type="submit" ref={submitBtnRef} className="hidden" />
         {/* Left/Middle: Items & Product Select */}
         <div className="lg:col-span-2 space-y-6">
           <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200/50 dark:border-neutral-800 shadow-sm p-6 space-y-4">
@@ -560,23 +584,7 @@ export default function BaruPenawaranPage({ params }) {
               )}
             </div>
 
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full bg-orange-600 hover:bg-orange-700 text-white py-3 rounded-xl font-bold transition-all shadow-lg flex items-center justify-center gap-2 disabled:opacity-60 text-sm mt-4"
-            >
-              {isSubmitting ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  <span>Menyimpan...</span>
-                </>
-              ) : (
-                <>
-                  <FiSave className="w-4 h-4" />
-                  <span>Simpan Penawaran</span>
-                </>
-              )}
-            </button>
+
           </div>
         </div>
       </form>

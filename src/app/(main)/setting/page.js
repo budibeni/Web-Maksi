@@ -161,17 +161,7 @@ export default function SettingPage() {
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
-      {/* Header */}
-      <div>
-        <div className="flex items-center gap-2 text-xs text-neutral-500 dark:text-neutral-400">
-          <span>Pengaturan</span><FiChevronRight className="w-3 h-3" />
-          <span className="font-semibold text-neutral-800 dark:text-neutral-200">Akun Saya</span>
-        </div>
-        <h1 className="text-xl font-bold text-neutral-900 dark:text-white mt-1.5">Pengaturan Akun</h1>
-        <p className="text-xs text-neutral-500 dark:text-neutral-400">
-          Kelola informasi profil dan keamanan akun Anda.
-        </p>
-      </div>
+
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Left: Profile Card */}

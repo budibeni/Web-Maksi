@@ -111,18 +111,7 @@ export default function AuditLogPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <div className="flex items-center gap-2 text-xs text-neutral-500 dark:text-neutral-400">
-          <span>Pengaturan</span>
-          <FiCr className="w-3 h-3" />
-          <span className="font-semibold text-neutral-800 dark:text-neutral-200">Audit Log</span>
-        </div>
-        <h1 className="text-xl font-bold text-neutral-900 dark:text-white mt-1.5">Riwayat Aktivitas Sistem</h1>
-        <p className="text-xs text-neutral-500 dark:text-neutral-400">
-          Monitoring seluruh aktivitas pengguna dalam sistem Maksindo.
-        </p>
-      </div>
+
 
       {/* Filter Card */}
       <div className="bg-white dark:bg-neutral-900 border border-neutral-200/50 dark:border-neutral-800 rounded-2xl shadow-sm overflow-hidden">

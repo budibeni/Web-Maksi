@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, use } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { FiArrowLeft, FiUser, FiPhone, FiMapPin, FiClock, FiEdit2, FiActivity } from "react-icons/fi";
@@ -32,8 +33,10 @@ export default function CustomerDetailPage({ params }) {
 
   const [customer, setCustomer] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     const fetchCustomer = async () => {
       try {
         const res = await fetch(`/api/customer/${id}`);
@@ -71,29 +74,29 @@ export default function CustomerDetailPage({ params }) {
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
-      {/* Header Actions */}
-      <div className="flex items-center justify-between">
-        <Link 
-          href="/customer" 
-          className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-neutral-600 hover:text-neutral-900 bg-white hover:bg-neutral-50 dark:bg-neutral-900 dark:text-neutral-400 dark:hover:text-white dark:hover:bg-neutral-800 rounded-xl transition-colors border border-neutral-200 dark:border-neutral-800 shadow-sm"
-        >
-          <FiArrowLeft className="w-4 h-4" />
-          Kembali ke Daftar
-        </Link>
-        {!isTopManagement && (
-          <button 
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-orange-600 hover:bg-orange-700 rounded-xl transition-colors shadow-sm"
-            onClick={() => {
-              // Ideally this would open the edit modal, but for now it can just alert or we could implement a full edit page.
-              // Since edit is in the main list, we can direct users back there or implement it here later.
-              alert("Fitur edit detail dalam pengembangan. Silakan edit melalui daftar customer.");
-            }}
+      {mounted && document.getElementById("header-actions-portal") && createPortal(
+        <>
+          {!isTopManagement && (
+            <button 
+              className="inline-flex items-center gap-2 px-4 py-1.5 text-sm font-semibold text-white bg-orange-600 hover:bg-orange-700 rounded-full transition-colors shadow-sm mr-2"
+              onClick={() => {
+                alert("Fitur edit detail dalam pengembangan. Silakan edit melalui daftar customer.");
+              }}
+            >
+              <FiEdit2 className="w-4 h-4" />
+              <span>Edit Profil</span>
+            </button>
+          )}
+          <Link 
+            href="/customer" 
+            className="inline-flex items-center gap-2 px-4 py-1.5 text-sm font-semibold text-neutral-600 hover:text-neutral-900 bg-white hover:bg-neutral-100 dark:bg-neutral-900 dark:text-neutral-400 dark:hover:text-white dark:hover:bg-neutral-800 rounded-full transition-colors border border-neutral-200 dark:border-neutral-800 shadow-sm"
           >
-            <FiEdit2 className="w-4 h-4" />
-            Edit Profil
-          </button>
-        )}
-      </div>
+            <FiArrowLeft className="w-4 h-4" />
+            <span>Kembali</span>
+          </Link>
+        </>,
+        document.getElementById("header-actions-portal")
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column: Profile Card */}

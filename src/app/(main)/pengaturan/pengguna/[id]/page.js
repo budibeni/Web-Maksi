@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, use } from "react";
+import { useState, useEffect, use, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { 
@@ -19,6 +20,12 @@ export default function EditUserPage({ params }) {
   const [cabangs, setCabangs] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const submitBtnRef = useRef(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const [showPassword, setShowPassword] = useState(false);
   const [showKonfirmasi, setShowKonfirmasi] = useState(false);
@@ -176,22 +183,29 @@ export default function EditUserPage({ params }) {
 
   return (
     <div className="space-y-6 max-w-3xl mx-auto">
-      {/* Header */}
-      <div>
-        <div className="flex items-center gap-2 text-xs text-neutral-500 dark:text-neutral-400">
-          <span>Pengguna</span>
-          <FiChevronRight className="w-3 h-3" />
-          <Link href="/pengaturan/pengguna" className="hover:text-orange-500 transition-colors">Daftar User</Link>
-          <FiChevronRight className="w-3 h-3" />
-          <span className="font-semibold text-neutral-800 dark:text-neutral-200">Edit User</span>
-        </div>
-        <h1 className="text-xl font-bold text-neutral-900 dark:text-white mt-1.5">Edit User</h1>
-        <p className="text-xs text-neutral-500 dark:text-neutral-400">
-          Perbarui informasi akun pengguna di sistem Maksindo.
-        </p>
-      </div>
+
+
+      {mounted && document.getElementById("header-actions-portal") && createPortal(
+        <>
+          <button
+            onClick={() => submitBtnRef.current?.click()}
+            disabled={isSaving}
+            className="flex items-center gap-2 px-4 py-1.5 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-full text-sm transition-colors shadow-sm mr-2"
+          >
+            {isSaving ? "Menyimpan..." : "Simpan"}
+          </button>
+          <Link
+            href="/pengaturan/pengguna"
+            className="flex items-center gap-2 px-4 py-1.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-neutral-700 dark:text-neutral-300 font-bold rounded-full text-sm hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
+          >
+            Batal
+          </Link>
+        </>,
+        document.getElementById("header-actions-portal")
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-5">
+        <button type="submit" ref={submitBtnRef} className="hidden" />
         {/* Section: Informasi Akun */}
         <div className="bg-white dark:bg-neutral-900 border border-neutral-200/50 dark:border-neutral-800 rounded-2xl shadow-sm overflow-hidden">
           <div className="p-5 border-b border-neutral-100 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-900/50">
@@ -401,24 +415,7 @@ export default function EditUserPage({ params }) {
           </div>
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex items-center justify-end gap-3">
-          <Link
-            href="/pengaturan/pengguna"
-            className="flex items-center gap-2 px-6 py-2.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-neutral-700 dark:text-neutral-300 font-bold rounded-xl text-sm hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-all active:scale-95"
-          >
-            <FiX className="w-4 h-4" />
-            Batal
-          </Link>
-          <button
-            type="submit"
-            disabled={isSaving}
-            className="flex items-center gap-2 px-6 py-2.5 bg-orange-500 hover:bg-orange-600 disabled:opacity-60 text-white font-bold rounded-xl text-sm transition-all duration-150 active:scale-95 shadow-sm shadow-orange-200 dark:shadow-orange-900/30"
-          >
-            <FiSave className="w-4 h-4" />
-            {isSaving ? "Menyimpan..." : "Simpan Perubahan"}
-          </button>
-        </div>
+
       </form>
     </div>
   );

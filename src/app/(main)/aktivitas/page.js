@@ -152,18 +152,7 @@ export default function RiwayatAktivitasPage() {
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
-        <div>
-          <h1 className="text-xl font-bold text-neutral-900 dark:text-white flex items-center gap-2">
-            <FiActivity className="text-orange-500 w-6 h-6 animate-pulse" />
-            Riwayat Aktivitas Sales
-          </h1>
-          <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
-            Pantau seluruh log follow up, negosiasi, dan aktivitas prospek penjualan secara real-time.
-          </p>
-        </div>
-      </div>
+
 
       {/* Filters Card */}
       <div className="bg-white dark:bg-neutral-900 border border-neutral-200/50 dark:border-neutral-800 rounded-2xl p-5 shadow-sm space-y-4">

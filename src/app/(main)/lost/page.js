@@ -123,40 +123,7 @@ export default function LaporanLeadLostPage() {
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
-        <div>
-          <div className="flex items-center gap-2 text-xs text-neutral-500 dark:text-neutral-400">
-            <span>Lead</span><FiChevronRight className="w-3 h-3" />
-            <span>Lost Lead</span><FiChevronRight className="w-3 h-3" />
-            <span className="font-semibold text-neutral-800 dark:text-neutral-200">Laporan</span>
-          </div>
-          <h1 className="text-xl font-bold text-neutral-900 dark:text-white mt-1.5">Laporan Lead Lost</h1>
-          <p className="text-xs text-neutral-500 dark:text-neutral-400">
-            Analisis lead dengan status LOST untuk melihat penyebab dan meningkatkan strategi penjualan.
-          </p>
-        </div>
-        <div className="flex items-center gap-2 self-start sm:self-auto">
-          <button className="flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-neutral-700 dark:text-neutral-300 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl shadow-sm hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors">
-            <FiMapPin className="text-orange-500 w-4 h-4" />
-            <span>{user?.cabang?.nama || "Semua Cabang"}</span>
-            <FiChevronDown className="text-neutral-400 w-3 h-3" />
-          </button>
-          <button className="p-2.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors relative shadow-sm">
-            <FiBell className="w-4 h-4 text-neutral-600 dark:text-neutral-400" />
-            {summary.totalLost > 0 && (
-              <span className="absolute -top-1.5 -right-1.5 bg-red-500 text-white text-[9px] font-black h-4 w-4 rounded-full flex items-center justify-center border border-white dark:border-neutral-900">
-                {Math.min(summary.totalLost, 9)}
-              </span>
-            )}
-          </button>
-          <button onClick={() => showToast("Mengekspor laporan Lost...", "info")}
-            className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-neutral-700 dark:text-neutral-300 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl shadow-sm hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-all active:scale-95">
-            <FiDownload className="w-3.5 h-3.5 text-neutral-500" />
-            <span>Export</span>
-          </button>
-        </div>
-      </div>
+
 
       {/* Summary Cards */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
