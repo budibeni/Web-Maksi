@@ -5,7 +5,7 @@ import { z } from 'zod';
 
 const serialize = (data) => JSON.parse(JSON.stringify(data, (_, v) => typeof v === 'bigint' ? v.toString() : v));
 
-// GET /api/pengingat - Daftar Pengingat & Summary
+// GET /api/pengingat - Daftar Pengingat & Summary sesuai Mockup
 export async function GET(request) {
   try {
     const user = await getCurrentUser(request);
@@ -13,9 +13,12 @@ export async function GET(request) {
 
     const { searchParams } = new URL(request.url);
     const search = searchParams.get('search') || '';
-    const status = searchParams.get('status') || 'AKTIF'; // AKTIF, SELESAI, atau 'ALL'
+    const status = searchParams.get('status') || ''; // 'AKTIF', 'SELESAI', or empty for all
     const cabang_id = searchParams.get('cabang_id') || '';
     const sales_id = searchParams.get('sales_id') || '';
+    const periode = searchParams.get('periode') || ''; // 'hari_ini', 'terlambat', 'besok', 'lainnya', 'selesai_hari_ini'
+    const startDateStr = searchParams.get('startDate') || '';
+    const endDateStr = searchParams.get('endDate') || '';
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '10');
     const skip = (page - 1) * limit;
@@ -29,9 +32,59 @@ export async function GET(request) {
       userFilter = { lead: { cabang_id: BigInt(user.cabang_id) } };
     }
 
+    // Time boundaries (local date handling)
+    const now = new Date();
+    
+    const startOfToday = new Date(now);
+    startOfToday.setHours(0, 0, 0, 0);
+    
+    const endOfToday = new Date(now);
+    endOfToday.setHours(23, 59, 59, 999);
+
+    const startOfTomorrow = new Date(now);
+    startOfTomorrow.setDate(startOfTomorrow.getDate() + 1);
+    startOfTomorrow.setHours(0, 0, 0, 0);
+
+    const endOfTomorrow = new Date(now);
+    endOfTomorrow.setDate(endOfTomorrow.getDate() + 1);
+    endOfTomorrow.setHours(23, 59, 59, 999);
+
+    // Build the dynamic where object
+    let dateFilter = {};
+    let statusFilter = status ? { status } : {};
+
+    // Apply period filters
+    if (periode === 'hari_ini') {
+      statusFilter = { status: 'AKTIF' };
+      dateFilter = { tanggal_pengingat: { gte: startOfToday, lte: endOfToday } };
+    } else if (periode === 'terlambat') {
+      statusFilter = { status: 'AKTIF' };
+      dateFilter = { tanggal_pengingat: { lt: startOfToday } };
+    } else if (periode === 'besok') {
+      statusFilter = { status: 'AKTIF' };
+      dateFilter = { tanggal_pengingat: { gte: startOfTomorrow, lte: endOfTomorrow } };
+    } else if (periode === 'lainnya') {
+      statusFilter = { status: 'AKTIF' };
+      dateFilter = { tanggal_pengingat: { gt: endOfTomorrow } };
+    } else if (periode === 'selesai_hari_ini') {
+      statusFilter = { status: 'SELESAI' };
+      // For completed today, we look at the modified date of the reminder
+      dateFilter = { diubah_tanggal: { gte: startOfToday, lte: endOfToday } };
+    } else if (startDateStr || endDateStr) {
+      const gte = startDateStr ? new Date(`${startDateStr}T00:00:00`) : undefined;
+      const lte = endDateStr ? new Date(`${endDateStr}T23:59:59.999`) : undefined;
+      dateFilter = {
+        tanggal_pengingat: {
+          ...(gte ? { gte } : {}),
+          ...(lte ? { lte } : {}),
+        }
+      };
+    }
+
     const where = {
       ...userFilter,
-      ...(status !== 'ALL' ? { status } : {}),
+      ...statusFilter,
+      ...dateFilter,
       ...(cabang_id ? { lead: { cabang_id: BigInt(cabang_id) } } : {}),
       ...(sales_id ? { lead: { user_id: BigInt(sales_id) } } : {}),
       ...(search ? {
@@ -39,7 +92,6 @@ export async function GET(request) {
           { catatan: { contains: search } },
           { lead: { nomor: { contains: search } } },
           { lead: { customer: { nama: { contains: search } } } },
-          { lead: { customer: { telepon: { contains: search } } } },
         ]
       } : {}),
     };
@@ -81,17 +133,23 @@ export async function GET(request) {
       take: limit,
     });
 
-    // Summary counts
-    const now = new Date();
-    const [totalAktif, totalTerlambat, totalSelesai] = await Promise.all([
+    // Summary counts for Mockup cards (regardless of page-level query filters, but obeying role-based userFilter)
+    const [totalHariIni, totalTerlambat, totalBesok, totalSelesaiHariIni] = await Promise.all([
+      // Hari Ini (AKTIF & today)
       prisma.pengingat.count({
-        where: { ...userFilter, status: 'AKTIF' }
+        where: { ...userFilter, status: 'AKTIF', tanggal_pengingat: { gte: startOfToday, lte: endOfToday } }
       }),
+      // Terlambat (AKTIF & < today)
       prisma.pengingat.count({
-        where: { ...userFilter, status: 'AKTIF', tanggal_pengingat: { lt: now } }
+        where: { ...userFilter, status: 'AKTIF', tanggal_pengingat: { lt: startOfToday } }
       }),
+      // Besok (AKTIF & tomorrow)
       prisma.pengingat.count({
-        where: { ...userFilter, status: 'SELESAI' }
+        where: { ...userFilter, status: 'AKTIF', tanggal_pengingat: { gte: startOfTomorrow, lte: endOfTomorrow } }
+      }),
+      // Selesai Hari Ini (SELESAI & diubah_tanggal is today)
+      prisma.pengingat.count({
+        where: { ...userFilter, status: 'SELESAI', diubah_tanggal: { gte: startOfToday, lte: endOfToday } }
       })
     ]);
 
@@ -101,7 +159,7 @@ export async function GET(request) {
     return NextResponse.json({
       success: true,
       data: serialize(reminders),
-      summary: { totalAktif, totalTerlambat, totalSelesai },
+      summary: { totalHariIni, totalTerlambat, totalBesok, totalSelesaiHariIni },
       pagination: { page, limit, totalData, totalPages },
     });
   } catch (error) {
