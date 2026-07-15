@@ -36,8 +36,9 @@ Setiap User wajib memiliki satu Role dan satu Cabang.
 | cabang_id | BIGINT UNSIGNED | - | Tidak | - | Relasi ke tabel Cabang |
 | role_id | BIGINT UNSIGNED | - | Tidak | - | Relasi ke tabel Role |
 | nama | VARCHAR | 150 | Tidak | - | Nama Lengkap |
+| email | VARCHAR | 150 | Tidak | - | Alamat Email |
 | username | VARCHAR | 100 | Tidak | - | Username Login |
-| telepon | VARCHAR | 20 | Tidak | - | Nomor HP |
+| telepon | VARCHAR | 20 | Ya | NULL | Nomor HP / Handphone |
 | password | VARCHAR | 255 | Tidak | - | Password Hash |
 | aktif | TINYINT | 1 | Tidak | 1 | Status Aktif |
 | dibuat_oleh | BIGINT UNSIGNED | - | Ya | NULL | ID User yang membuat data |
@@ -62,10 +63,9 @@ id
 
 ---
 
-# Index
-
 | Field | Nama Index |
 |--------|------------|
+| email | idx_user_email |
 | username | idx_user_username |
 | telepon | idx_user_telepon |
 | nama | idx_user_nama |

@@ -34,6 +34,7 @@ async function main() {
       cabang_id: cabang.id,
       role_id: roleAdmin.id,
       nama: 'Administrator',
+      email: 'admin@maksindo.com',
       username: 'admin',
       telepon: '081234567890',
       password: passwordHash,

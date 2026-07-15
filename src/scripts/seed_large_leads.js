@@ -41,6 +41,7 @@ async function main() {
           cabang_id: cabangs[mock.cabIndex].id,
           role_id: roleSales.id,
           nama: mock.nama,
+          email: `${mock.username}@maksindo.com`,
           username: mock.username,
           telepon: mock.telp,
           password: passwordHash

@@ -47,8 +47,9 @@ model User {
   cabang_id      BigInt
   role_id        BigInt
   nama           String    @db.VarChar(150)
+  email          String    @unique(map: "idx_user_email") @db.VarChar(150)
   username       String    @unique(map: "idx_user_username") @db.VarChar(100)
-  telepon        String    @unique(map: "idx_user_telepon") @db.VarChar(20)
+  telepon        String?   @unique(map: "idx_user_telepon") @db.VarChar(20)
   password       String    @db.VarChar(255)
   aktif          Int       @default(1) @db.TinyInt
   dibuat_oleh    String?   @db.VarChar(100)
