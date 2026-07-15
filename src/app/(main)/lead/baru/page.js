@@ -226,7 +226,7 @@ export default function LeadBaruPage() {
       if (json.success) {
         showToast('Lead berhasil dibuat!', 'success');
         const leadId = json.data.id;
-        
+
         // Cek apakah hasil interaksi yang dipilih memicu LOST (TIDAK_MINAT atau KOMPETITOR)
         const selectedHI = hasilInteraksiList.find(h => String(h.id) === String(hasilInteraksiId));
         if (selectedHI && (selectedHI.kode === 'TIDAK_MINAT' || selectedHI.kode === 'KOMPETITOR')) {
@@ -301,7 +301,7 @@ export default function LeadBaruPage() {
 
         {/* Responsive 2-Column Grid Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          
+
           {/* LEFT COLUMN: Info Customer & Catatan */}
           <div className="space-y-6">
             {/* Card 1: Info Customer */}
@@ -315,11 +315,11 @@ export default function LeadBaruPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {/* Nama Customer */}
                   <div className="relative" ref={dropdownRefNama}>
-                    <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Nama Customer / Perusahaan <span className="text-red-500">*</span></label>
+                    <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Nama Customer<span className="text-red-500">*</span></label>
                     <input
                       type="text"
                       className="w-full px-4 py-2.5 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all dark:text-white text-sm"
-                      placeholder="Ketik nama customer atau perusahaan..."
+                      placeholder="Ketik nama customer..."
                       value={namaCari}
                       onChange={(e) => {
                         setNamaCari(e.target.value);
@@ -480,16 +480,14 @@ export default function LeadBaruPage() {
                     return (
                       <label
                         key={kat.id}
-                        className={`relative flex items-center gap-3 px-6 py-4 rounded-xl border-2 cursor-pointer transition-all select-none min-w-[120px] ${
-                          isSelected
+                        className={`relative flex items-center gap-3 px-6 py-4 rounded-xl border-2 cursor-pointer transition-all select-none min-w-[120px] ${isSelected
                             ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/20'
                             : 'border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 hover:border-neutral-300 dark:hover:border-neutral-700'
-                        }`}
+                          }`}
                         onClick={() => toggleKebutuhan(String(kat.id))}
                       >
-                        <div className={`w-5 h-5 rounded flex items-center justify-center flex-shrink-0 transition-all ${
-                          isSelected ? 'bg-orange-500' : 'border-2 border-neutral-300 dark:border-neutral-600'
-                        }`}>
+                        <div className={`w-5 h-5 rounded flex items-center justify-center flex-shrink-0 transition-all ${isSelected ? 'bg-orange-500' : 'border-2 border-neutral-300 dark:border-neutral-600'
+                          }`}>
                           {isSelected && <FiCheck className="w-3.5 h-3.5 text-white" />}
                         </div>
                         <span className={`text-sm font-semibold ${isSelected ? 'text-orange-700 dark:text-orange-400' : 'text-neutral-700 dark:text-neutral-300'}`}>{kat.nama}</span>
@@ -517,7 +515,7 @@ export default function LeadBaruPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                     {hasilInteraksiList.map(hi => {
                       const isSelected = String(hasilInteraksiId) === String(hi.id);
-                      
+
                       // Tentukan icon yang sesuai
                       let IconComponent = FiMessageCircle;
                       if (hi.kode === 'PENAWARAN' || hi.kode === 'SIAP') IconComponent = FiFileText;

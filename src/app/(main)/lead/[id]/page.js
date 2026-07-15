@@ -6,11 +6,12 @@ import Link from "next/link";
 import {
   FiArrowLeft, FiUser, FiPhone, FiMapPin, FiCalendar, FiClock,
   FiCheckCircle, FiXCircle, FiFileText, FiEdit3, FiBell, FiActivity,
-  FiAlertCircle, FiChevronRight
+  FiAlertCircle, FiChevronRight, FiDollarSign, FiPlus
 } from "react-icons/fi";
 import dayjs from "dayjs";
 import 'dayjs/locale/id';
 import { useUIStore } from "@/store/ui.store";
+import PenawaranDetailModal from "./components/PenawaranDetailModal";
 
 dayjs.locale('id');
 
@@ -93,6 +94,69 @@ function ModalLost({ leadId, onClose, onSaved }) {
   );
 }
 
+// Modal Deal
+function ModalDeal({ lead, quotations, onClose, onSaved }) {
+  const [quotationId, setQuotationId] = useState(lead.versi_penawaran_final_id ? String(lead.versi_penawaran_final_id) : "");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { showToast } = useUIStore();
+
+  const handleSubmit = async () => {
+    if (!quotationId) { showToast('Pilih penawaran yang disetujui.', 'error'); return; }
+    setIsSubmitting(true);
+    try {
+      const res = await fetch('/api/lead/deal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lead_id: String(lead.id), versi_penawaran_id: quotationId }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        showToast('Lead berhasil diselesaikan sebagai DEAL.', 'success');
+        onSaved();
+      } else {
+        showToast(json.message || 'Terjadi kesalahan.', 'error');
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-neutral-900/60 backdrop-blur-sm">
+      <div className="bg-white dark:bg-neutral-900 rounded-2xl shadow-xl w-full max-w-md">
+        <div className="p-5 border-b border-neutral-100 dark:border-neutral-800 flex items-center gap-3">
+          <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-xl">
+            <FiCheckCircle className="w-5 h-5 text-green-600" />
+          </div>
+          <div>
+            <h3 className="text-base font-bold text-neutral-900 dark:text-white">Tandai sebagai Deal</h3>
+            <p className="text-xs text-neutral-500">Selesaikan prospek penjualan ini.</p>
+          </div>
+        </div>
+        <div className="p-5 space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Pilih Penawaran yang Disetujui *</label>
+            <select value={quotationId} onChange={(e) => setQuotationId(e.target.value)} className="w-full px-4 py-2.5 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl outline-none dark:text-white text-sm">
+              <option value="">Pilih versi penawaran...</option>
+              {quotations.map(q => (
+                <option key={q.id} value={q.id}>
+                  {q.nomor} - Versi {q.versi} (Rp {Number(q.grand_total).toLocaleString('id-ID')})
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+        <div className="px-5 pb-5 flex justify-end gap-3">
+          <button onClick={onClose} className="px-4 py-2 text-sm font-medium rounded-xl border border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors text-neutral-700 dark:text-neutral-300">Batal</button>
+          <button onClick={handleSubmit} disabled={isSubmitting} className="px-4 py-2 text-sm font-medium rounded-xl bg-green-600 hover:bg-green-700 text-white transition-colors disabled:opacity-60">
+            {isSubmitting ? 'Menyimpan...' : 'Simpan sebagai Deal'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function LeadDetailPage({ params }) {
   const router = useRouter();
   const { showToast, setBreadcrumb } = useUIStore();
@@ -102,6 +166,9 @@ export default function LeadDetailPage({ params }) {
   const [lead, setLead] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showModalLost, setShowModalLost] = useState(false);
+  const [showModalDeal, setShowModalDeal] = useState(false);
+  const [activeTab, setActiveTab] = useState("timeline"); // "timeline" or "penawaran"
+  const [selectedQuotationId, setSelectedQuotationId] = useState(null);
 
   // Follow Up form
   const [hasilInteraksiList, setHasilInteraksiList] = useState([]);
@@ -195,6 +262,15 @@ export default function LeadDetailPage({ params }) {
         </Link>
         {isOpen && (
           <div className="flex items-center gap-2">
+            {lead.versi_penawarans?.length > 0 && (
+              <button
+                onClick={() => setShowModalDeal(true)}
+                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl border border-green-200 text-green-600 hover:bg-green-50 dark:border-green-800 dark:text-green-400 dark:hover:bg-green-900/20 transition-colors"
+              >
+                <FiCheckCircle className="w-4 h-4" />
+                Tandai Deal
+              </button>
+            )}
             <button
               onClick={() => setShowModalLost(true)}
               className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl border border-red-200 text-red-600 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/20 transition-colors"
@@ -328,42 +404,137 @@ export default function LeadDetailPage({ params }) {
           </div>
         )}
 
-        {/* Right / Full: Timeline Riwayat Aktivitas */}
+        {/* Right / Full: Timeline & Penawaran Tab Panel */}
         <div className={isOpen ? 'lg:col-span-2' : 'lg:col-span-5'}>
           <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200/50 dark:border-neutral-800 shadow-sm overflow-hidden">
-            <div className="px-6 py-4 border-b border-neutral-100 dark:border-neutral-800 flex items-center gap-3">
-              <FiActivity className="w-5 h-5 text-orange-500" />
-              <h3 className="text-base font-bold text-neutral-900 dark:text-white">Riwayat Aktivitas</h3>
-              <span className="ml-auto text-xs bg-neutral-100 dark:bg-neutral-800 text-neutral-500 px-2.5 py-1 rounded-full font-medium">{lead.aktivitas_leads?.length || 0} aktivitas</span>
+            {/* Tabs Navigation */}
+            <div className="flex border-b border-neutral-100 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-900/50">
+              <button
+                type="button"
+                onClick={() => setActiveTab("timeline")}
+                className={`px-5 py-4 text-xs font-bold border-b-2 transition-all uppercase tracking-wider flex items-center gap-2 ${activeTab === 'timeline' ? 'border-orange-500 text-orange-600' : 'border-transparent text-neutral-500 hover:text-neutral-800 dark:hover:text-white'}`}
+              >
+                <FiActivity className="w-4 h-4" />
+                Timeline ({lead.aktivitas_leads?.length || 0})
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab("penawaran")}
+                className={`px-5 py-4 text-xs font-bold border-b-2 transition-all uppercase tracking-wider flex items-center gap-2 ${activeTab === 'penawaran' ? 'border-orange-500 text-orange-600' : 'border-transparent text-neutral-500 hover:text-neutral-800 dark:hover:text-white'}`}
+              >
+                <FiFileText className="w-4 h-4" />
+                Penawaran ({lead.versi_penawarans?.length || 0})
+              </button>
             </div>
+
             <div className="p-6">
-              {lead.aktivitas_leads?.length === 0 ? (
-                <div className="text-center py-6 text-neutral-400 text-sm">Belum ada aktivitas.</div>
+              {activeTab === "timeline" ? (
+                /* Timeline Content */
+                lead.aktivitas_leads?.length === 0 ? (
+                  <div className="text-center py-6 text-neutral-400 text-sm">Belum ada aktivitas.</div>
+                ) : (
+                  <div className="space-y-4 relative before:absolute before:left-3.5 before:top-4 before:bottom-0 before:w-0.5 before:bg-neutral-200 dark:before:bg-neutral-800">
+                    {lead.aktivitas_leads.map((act, i) => (
+                      <div key={act.id} className="flex gap-4 relative">
+                        <div className="w-7 h-7 flex-shrink-0 rounded-full bg-orange-100 dark:bg-orange-900/30 border-2 border-white dark:border-neutral-900 flex items-center justify-center z-10">
+                          <FiActivity className="w-3.5 h-3.5 text-orange-600" />
+                        </div>
+                        <div className="flex-1 min-w-0 pb-4">
+                          <div className="text-xs text-neutral-400 mb-1">{dayjs(act.dibuat_tanggal).format('DD MMM YYYY HH:mm')}</div>
+                          <div className="text-sm font-semibold text-neutral-900 dark:text-white">{act.hasil_interaksi}</div>
+                          {act.catatan && (
+                            <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-1 leading-relaxed">{act.catatan}</p>
+                          )}
+                          {act.pengingat && (
+                            <div className="mt-2 flex items-center gap-1.5 text-xs text-orange-600 dark:text-orange-400">
+                              <FiBell className="w-3.5 h-3.5" />
+                              Reminder: {dayjs(act.pengingat.tanggal_pengingat).format('DD MMM YYYY HH:mm')}
+                              <span className={`px-1.5 py-0.5 rounded-full font-bold ${act.pengingat.status === 'AKTIF' ? 'bg-green-100 text-green-600' : 'bg-neutral-100 text-neutral-500'}`}>
+                                {act.pengingat.status}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )
               ) : (
-                <div className="space-y-4 relative before:absolute before:left-3.5 before:top-4 before:bottom-0 before:w-0.5 before:bg-neutral-200 dark:before:bg-neutral-800">
-                  {lead.aktivitas_leads.map((act, i) => (
-                    <div key={act.id} className="flex gap-4 relative">
-                      <div className="w-7 h-7 flex-shrink-0 rounded-full bg-orange-100 dark:bg-orange-900/30 border-2 border-white dark:border-neutral-900 flex items-center justify-center z-10">
-                        <FiActivity className="w-3.5 h-3.5 text-orange-600" />
-                      </div>
-                      <div className="flex-1 min-w-0 pb-4">
-                        <div className="text-xs text-neutral-400 mb-1">{dayjs(act.dibuat_tanggal).format('DD MMM YYYY HH:mm')}</div>
-                        <div className="text-sm font-semibold text-neutral-900 dark:text-white">{act.hasil_interaksi}</div>
-                        {act.catatan && (
-                          <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-1 leading-relaxed">{act.catatan}</p>
-                        )}
-                        {act.pengingat && (
-                          <div className="mt-2 flex items-center gap-1.5 text-xs text-orange-600 dark:text-orange-400">
-                            <FiBell className="w-3.5 h-3.5" />
-                            Reminder: {dayjs(act.pengingat.tanggal_pengingat).format('DD MMM YYYY HH:mm')}
-                            <span className={`px-1.5 py-0.5 rounded-full font-bold ${act.pengingat.status === 'AKTIF' ? 'bg-green-100 text-green-600' : 'bg-neutral-100 text-neutral-500'}`}>
-                              {act.pengingat.status}
-                            </span>
-                          </div>
-                        )}
-                      </div>
+                /* Penawaran Content */
+                <div className="space-y-4">
+                  {isOpen && (
+                    <div className="flex justify-end">
+                      <Link
+                        href={`/lead/${id}/penawaran/baru`}
+                        className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-xl font-bold transition-all shadow-sm text-xs flex items-center gap-1.5"
+                      >
+                        <FiPlus className="w-4 h-4" />
+                        Buat Penawaran
+                      </Link>
                     </div>
-                  ))}
+                  )}
+
+                  {lead.versi_penawarans?.length === 0 ? (
+                    <div className="text-center py-10 border border-dashed rounded-2xl">
+                      <FiFileText className="w-8 h-8 text-neutral-300 dark:text-neutral-700 mx-auto mb-2" />
+                      <p className="text-sm text-neutral-500 font-medium">Belum ada Penawaran</p>
+                      <p className="text-xs text-neutral-400 mt-0.5">Silakan buat penawaran harga untuk lead prospek ini.</p>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto border border-neutral-100 dark:border-neutral-800 rounded-xl">
+                      <table className="min-w-full divide-y divide-neutral-200 dark:divide-neutral-800">
+                        <thead className="bg-neutral-50 dark:bg-neutral-900">
+                          <tr>
+                            <th className="px-4 py-3 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider">Versi</th>
+                            <th className="px-4 py-3 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider">No Penawaran</th>
+                            <th className="px-4 py-3 text-right text-xs font-semibold text-neutral-500 uppercase tracking-wider">Grand Total</th>
+                            <th className="px-4 py-3 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider">Status</th>
+                            <th className="px-4 py-3 text-right text-xs font-semibold text-neutral-500 uppercase tracking-wider">Aksi</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800 text-xs">
+                          {lead.versi_penawarans.map(q => {
+                            const isFinal = String(lead.versi_penawaran_final_id) === String(q.id);
+                            return (
+                              <tr key={q.id} className="hover:bg-neutral-50 dark:hover:bg-neutral-800/30 transition-colors">
+                                <td className="px-4 py-3.5 font-bold text-neutral-900 dark:text-white">v{q.versi}</td>
+                                <td className="px-4 py-3.5 font-mono text-neutral-600 dark:text-neutral-400">{q.nomor}</td>
+                                <td className="px-4 py-3.5 text-right font-bold text-neutral-900 dark:text-white">
+                                  Rp {Number(q.grand_total).toLocaleString('id-ID')}
+                                </td>
+                                <td className="px-4 py-3.5">
+                                  {isFinal ? (
+                                    <span className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 px-2.5 py-0.5 rounded-full font-bold text-[9px] uppercase tracking-wider">
+                                      Disetujui
+                                    </span>
+                                  ) : (
+                                    <span className="text-neutral-400 font-medium">-</span>
+                                  )}
+                                </td>
+                                <td className="px-4 py-3.5 text-right space-x-2 whitespace-nowrap">
+                                  <button
+                                    type="button"
+                                    onClick={() => setSelectedQuotationId(q.id)}
+                                    className="px-2.5 py-1 bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 rounded font-semibold transition-all"
+                                  >
+                                    Cetak
+                                  </button>
+                                  {isOpen && (
+                                    <Link
+                                      href={`/lead/${id}/penawaran/baru?revisi=${q.id}`}
+                                      className="px-2.5 py-1 bg-orange-100 hover:bg-orange-200 dark:bg-orange-900/20 dark:hover:bg-orange-900/40 text-orange-700 dark:text-orange-400 rounded font-semibold transition-all inline-block"
+                                    >
+                                      Revisi
+                                    </Link>
+                                  )}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -374,16 +545,38 @@ export default function LeadDetailPage({ params }) {
       {/* Status DEAL / LOST info */}
       {!isOpen && (
         <div className={`rounded-2xl border p-6 ${lead.status === 2 ? 'bg-green-50 dark:bg-green-900/10 border-green-200 dark:border-green-800' : 'bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-800'}`}>
-          <div className="flex items-center gap-3">
-            {lead.status === 2 ? <FiCheckCircle className="w-6 h-6 text-green-600" /> : <FiXCircle className="w-6 h-6 text-red-600" />}
-            <div>
-              <div className={`text-base font-bold ${lead.status === 2 ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400'}`}>
-                Lead {lead.status === 2 ? 'DEAL' : 'LOST'}
-              </div>
-              {lead.status === 3 && lead.nama_alasan_lost && (
-                <div className="text-sm text-neutral-600 dark:text-neutral-400 mt-0.5">Alasan: {lead.nama_alasan_lost}</div>
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            <div className="flex items-center gap-3">
+              {lead.status === 2 ? (
+                <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-xl"><FiCheckCircle className="w-6 h-6 text-green-600" /></div>
+              ) : (
+                <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-xl"><FiXCircle className="w-6 h-6 text-red-600" /></div>
               )}
+              <div>
+                <div className={`text-base font-bold ${lead.status === 2 ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400'}`}>
+                  Lead {lead.status === 2 ? 'DEAL' : 'LOST'}
+                </div>
+                {lead.status === 2 && lead.nilai_deal && (
+                  <div className="text-sm font-semibold text-neutral-700 dark:text-neutral-300 mt-0.5">
+                    Nilai Deal: <span className="text-green-600 dark:text-green-400 font-extrabold text-base">Rp {Number(lead.nilai_deal).toLocaleString('id-ID')}</span>
+                  </div>
+                )}
+                {lead.status === 3 && lead.nama_alasan_lost && (
+                  <div className="text-sm text-neutral-600 dark:text-neutral-400 mt-0.5">Alasan: {lead.nama_alasan_lost}</div>
+                )}
+              </div>
             </div>
+
+            {lead.status === 2 && lead.versi_penawaran_final_id && (
+              <button
+                type="button"
+                onClick={() => setSelectedQuotationId(lead.versi_penawaran_final_id)}
+                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-xl font-bold transition-all shadow-sm text-xs flex items-center gap-1.5"
+              >
+                <FiFileText className="w-4 h-4" />
+                Cetak Penawaran Final ({lead.versi_penawaran_final?.nomor} v{lead.versi_penawaran_final?.versi})
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -394,6 +587,24 @@ export default function LeadDetailPage({ params }) {
           leadId={id}
           onClose={() => setShowModalLost(false)}
           onSaved={() => { setShowModalLost(false); fetchLead(); }}
+        />
+      )}
+
+      {/* Modal Deal */}
+      {showModalDeal && (
+        <ModalDeal
+          lead={lead}
+          quotations={lead.versi_penawarans || []}
+          onClose={() => setShowModalDeal(false)}
+          onSaved={() => { setShowModalDeal(false); fetchLead(); }}
+        />
+      )}
+
+      {/* Penawaran Detail Print Modal */}
+      {selectedQuotationId && (
+        <PenawaranDetailModal
+          quotationId={selectedQuotationId}
+          onClose={() => setSelectedQuotationId(null)}
         />
       )}
     </div>

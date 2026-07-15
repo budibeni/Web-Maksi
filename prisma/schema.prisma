@@ -121,6 +121,7 @@ model Produk {
 
   kategori      KategoriProduk @relation(fields: [kategori_produk_id], references: [id])
   harga_cabangs HargaProduk[]
+  detail_penawarans DetailPenawaran[]
 
   @@index([nama], map: "idx_produk_nama")
   @@index([kategori_produk_id], map: "idx_produk_kategori")
@@ -227,6 +228,8 @@ model Lead {
   user            User            @relation(fields: [user_id], references: [id])
   aktivitas_leads AktivitasLead[]
   pengingats      Pengingat[]
+  versi_penawaran_final     VersiPenawaran? @relation("FinalPenawaran", fields: [versi_penawaran_final_id], references: [id])
+  versi_penawarans          VersiPenawaran[] @relation("LeadVersiPenawarans")
 
   @@index([customer_id], map: "idx_lead_customer")
   @@index([cabang_id], map: "idx_lead_cabang")
@@ -281,4 +284,67 @@ model Pengingat {
   @@index([status], map: "idx_pengingat_status")
   @@index([tanggal_pengingat], map: "idx_pengingat_tanggal")
   @@map("tb_pengingat")
+}
+
+model VersiPenawaran {
+  id               BigInt    @id @default(autoincrement())
+  nomor            String    @db.VarChar(30)
+  lead_id          BigInt
+  versi            Int       @default(1)
+  customer_nama    String    @db.VarChar(200)
+  customer_telepon String?   @db.VarChar(30)
+  customer_alamat  String?   @db.Text
+  sales_nama       String    @db.VarChar(150)
+  cabang_nama      String    @db.VarChar(150)
+  catatan          String?   @db.Text
+  masa_berlaku     Int       @default(30)
+  subtotal         Decimal   @default(0) @db.Decimal(18, 2)
+  diskon_persen    Decimal   @default(0) @db.Decimal(5, 2)
+  diskon_nominal   Decimal   @default(0) @db.Decimal(18, 2)
+  ppn_persen       Decimal   @default(11) @db.Decimal(5, 2)
+  ppn_nominal      Decimal   @default(0) @db.Decimal(18, 2)
+  grand_total      Decimal   @default(0) @db.Decimal(18, 2)
+  dp_persen        Decimal   @default(0) @db.Decimal(5, 2)
+  dp_nominal       Decimal   @default(0) @db.Decimal(18, 2)
+  dibuat_oleh      String?   @db.VarChar(100)
+  dibuat_tanggal   DateTime  @default(now()) @db.DateTime(0)
+  diubah_oleh      String?   @db.VarChar(100)
+  diubah_tanggal   DateTime? @db.DateTime(0)
+
+  lead             Lead              @relation("LeadVersiPenawarans", fields: [lead_id], references: [id])
+  details          DetailPenawaran[]
+  final_leads      Lead[]            @relation("FinalPenawaran")
+
+  @@unique([lead_id, versi], map: "idx_versi_penawaran_unique")
+  @@index([lead_id], map: "idx_versi_penawaran_lead")
+  @@index([nomor], map: "idx_versi_penawaran_nomor")
+  @@index([versi], map: "idx_versi_penawaran_versi")
+  @@index([dibuat_tanggal], map: "idx_versi_penawaran_tanggal")
+  @@map("tb_versi_penawaran")
+}
+
+model DetailPenawaran {
+  id                   BigInt   @id @default(autoincrement())
+  versi_penawaran_id   BigInt
+  produk_id            BigInt
+  kategori_produk_nama String   @db.VarChar(100)
+  kode_produk          String   @db.VarChar(50)
+  nama_produk          String   @db.VarChar(200)
+  satuan               String   @db.VarChar(30)
+  qty                  Decimal  @default(1) @db.Decimal(18, 2)
+  harga                Decimal  @default(0) @db.Decimal(18, 2)
+  diskon_persen        Decimal  @default(0) @db.Decimal(5, 2)
+  diskon_nominal       Decimal  @default(0) @db.Decimal(18, 2)
+  subtotal             Decimal  @default(0) @db.Decimal(18, 2)
+  dibuat_oleh          String?  @db.VarChar(100)
+  dibuat_tanggal      DateTime @default(now()) @db.DateTime(0)
+  diubah_oleh          String?  @db.VarChar(100)
+  diubah_tanggal       DateTime? @db.DateTime(0)
+
+  versi_penawaran      VersiPenawaran @relation(fields: [versi_penawaran_id], references: [id], onDelete: Cascade)
+  produk               Produk         @relation(fields: [produk_id], references: [id])
+
+  @@index([versi_penawaran_id], map: "idx_detail_penawaran_versi")
+  @@index([produk_id], map: "idx_detail_penawaran_produk")
+  @@map("tb_detail_penawaran")
 }

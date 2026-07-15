@@ -19,6 +19,17 @@ export async function GET(request, context) {
         customer: true,
         cabang: { select: { id: true, nama: true, kode: true } },
         user: { select: { id: true, nama: true } },
+        versi_penawarans: {
+          orderBy: { versi: 'desc' },
+          include: {
+            details: true,
+          }
+        },
+        versi_penawaran_final: {
+          include: {
+            details: true,
+          }
+        },
         aktivitas_leads: {
           orderBy: { dibuat_tanggal: 'desc' },
           include: {
