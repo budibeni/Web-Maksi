@@ -139,7 +139,7 @@ Seluruh proses penjualan diselesaikan pada tahap ini.
 
 Status
 
-⬜ Belum Dimulai
+✅ Selesai
 
 Pekerjaan
 

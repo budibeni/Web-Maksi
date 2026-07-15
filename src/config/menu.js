@@ -98,6 +98,12 @@ export const APP_MENUS = [
         roles: [ROLE_ADMIN],
       },
       {
+        title: "Hasil Interaksi",
+        path: "/master/hasil-interaksi",
+        icon: FiActivity,
+        roles: [ROLE_ADMIN],
+      },
+      {
         title: "Cabang",
         path: "/master/cabang",
         icon: FiDatabase,
