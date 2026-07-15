@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/jwt';
+import { recordAuditLog } from '@/lib/audit';
 import { z } from 'zod';
 
 const serialize = (data) => JSON.parse(JSON.stringify(data, (_, v) => typeof v === 'bigint' ? v.toString() : v));
@@ -82,6 +83,16 @@ export async function POST(request) {
       });
 
       return updatedLead;
+    });
+
+    // Record Audit Log
+    await recordAuditLog({
+      user,
+      modul: "LEAD",
+      aksi: "DEAL",
+      referensi_id: leadId,
+      deskripsi: `Lead ${lead.nomor} dinyatakan DEAL dengan penawaran ${quotation.nomor} senilai Rp ${Number(quotation.grand_total).toLocaleString('id-ID')}`,
+      request
     });
 
     return NextResponse.json({

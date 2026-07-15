@@ -1,7 +1,7 @@
 import { ROLE_ADMIN, ROLE_TOP_MANAGEMENT, ROLE_BRANCH_MANAGER, ROLE_SALES } from "../constants/role";
 import { 
   FiHome, FiUsers, FiTarget, FiFileText, FiDatabase, FiSettings,
-  FiBox, FiActivity, FiBell, FiCheckCircle, FiXCircle, FiGrid
+  FiBox, FiActivity, FiBell, FiCheckCircle, FiXCircle, FiGrid, FiClock
 } from "react-icons/fi";
 
 export const APP_MENUS = [
@@ -111,7 +111,13 @@ export const APP_MENUS = [
       {
         title: "Pengguna",
         path: "/pengaturan/pengguna",
-        icon: FiUsers, // Should ideally be user icon
+        icon: FiUsers,
+        roles: [ROLE_ADMIN],
+      },
+      {
+        title: "Audit Log",
+        path: "/pengaturan/audit-log",
+        icon: FiClock,
         roles: [ROLE_ADMIN],
       },
       {

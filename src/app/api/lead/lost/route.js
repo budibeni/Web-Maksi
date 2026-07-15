@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/jwt';
+import { recordAuditLog } from '@/lib/audit';
 import { z } from 'zod';
 
 const serialize = (data) => JSON.parse(JSON.stringify(data, (_, v) => typeof v === 'bigint' ? v.toString() : v));
@@ -58,6 +59,16 @@ export async function POST(request) {
     await prisma.pengingat.updateMany({
       where: { lead_id: leadId, status: 'AKTIF' },
       data: { status: 'SELESAI', diubah_oleh: user.nama, diubah_tanggal: now },
+    });
+
+    // Record Audit Log
+    await recordAuditLog({
+      user,
+      modul: "LEAD",
+      aksi: "LOST",
+      referensi_id: leadId,
+      deskripsi: `Lead ${lead.nomor} ditandai LOST. Alasan: ${alasanLost.nama}`,
+      request
     });
 
     return NextResponse.json({ success: true, message: 'Lead berhasil ditandai sebagai Lost.' });

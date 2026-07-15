@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { 
   FiUser, FiMail, FiPhone, FiLock, FiSave, FiShield, 
   FiEye, FiEyeOff, FiCheckCircle, FiSettings, FiChevronRight,
-  FiEdit2, FiKey
+  FiEdit2, FiKey, FiSliders, FiHelpCircle
 } from "react-icons/fi";
 import { useAuthStore } from "@/store/auth.store";
 import { useUIStore } from "@/store/ui.store";
@@ -26,6 +26,17 @@ export default function SettingPage() {
   const [showBaru, setShowBaru] = useState(false);
   const [showKonfirmasi, setShowKonfirmasi] = useState(false);
 
+  // App settings state (stored in localStorage)
+  const [appForm, setAppForm] = useState({
+    appName: "MAKSI - Maksindo Sales Information System",
+    defaultPpn: 11,
+    defaultDp: 30,
+    defaultMasaBerlaku: 30,
+    compactView: "true",
+    primaryColor: "orange"
+  });
+  const [appLoading, setAppLoading] = useState(false);
+
   // Populate profile form when user data is available
   useEffect(() => {
     if (user) {
@@ -33,6 +44,25 @@ export default function SettingPage() {
         nama: user.nama || "",
         email: user.email || "",
         telepon: user.telepon || ""
+      });
+    }
+
+    // Load App settings from localStorage
+    if (typeof window !== "undefined") {
+      const storedName = localStorage.getItem("maksi_app_name");
+      const storedPpn = localStorage.getItem("maksi_default_ppn");
+      const storedDp = localStorage.getItem("maksi_default_dp");
+      const storedMasa = localStorage.getItem("maksi_default_masa");
+      const storedCompact = localStorage.getItem("maksi_compact_view");
+      const storedColor = localStorage.getItem("maksi_primary_color");
+
+      setAppForm({
+        appName: storedName || "MAKSI - Maksindo Sales Information System",
+        defaultPpn: storedPpn ? Number(storedPpn) : 11,
+        defaultDp: storedDp ? Number(storedDp) : 30,
+        defaultMasaBerlaku: storedMasa ? Number(storedMasa) : 30,
+        compactView: storedCompact !== null ? storedCompact : "true",
+        primaryColor: storedColor || "orange"
       });
     }
   }, [user]);
@@ -55,7 +85,7 @@ export default function SettingPage() {
       }
     } catch (error) {
       showToast("Terjadi kesalahan koneksi.", "error");
-    } finally {
+    } finale: {
       setProfileLoading(false);
     }
   };
@@ -91,6 +121,25 @@ export default function SettingPage() {
     }
   };
 
+  const handleAppSubmit = (e) => {
+    e.preventDefault();
+    setAppLoading(true);
+    try {
+      localStorage.setItem("maksi_app_name", appForm.appName);
+      localStorage.setItem("maksi_default_ppn", String(appForm.defaultPpn));
+      localStorage.setItem("maksi_default_dp", String(appForm.defaultDp));
+      localStorage.setItem("maksi_default_masa", String(appForm.defaultMasaBerlaku));
+      localStorage.setItem("maksi_compact_view", appForm.compactView);
+      localStorage.setItem("maksi_primary_color", appForm.primaryColor);
+      
+      showToast("Pengaturan aplikasi berhasil disimpan.", "success");
+    } catch (error) {
+      showToast("Gagal menyimpan pengaturan.", "error");
+    } finally {
+      setAppLoading(false);
+    }
+  };
+
   const getRoleColor = (roleName) => {
     switch (roleName?.toLowerCase()) {
       case "administrator": return "bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-400";
@@ -105,6 +154,10 @@ export default function SettingPage() {
     { key: "profil", label: "Profil Saya", icon: FiUser },
     { key: "password", label: "Ubah Password", icon: FiLock },
   ];
+
+  if (user?.role?.nama === "Administrator") {
+    tabs.push({ key: "aplikasi", label: "Pengaturan Aplikasi", icon: FiSliders });
+  }
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
@@ -438,6 +491,133 @@ export default function SettingPage() {
                   >
                     <FiKey className="w-4 h-4" />
                     {passwordLoading ? "Mengubah..." : "Ubah Password"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
+
+          {/* Pengaturan Aplikasi Tab */}
+          {activeTab === "aplikasi" && (
+            <div className="bg-white dark:bg-neutral-900 border border-neutral-200/50 dark:border-neutral-800 rounded-2xl shadow-sm overflow-hidden">
+              <div className="p-5 border-b border-neutral-100 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-900/50">
+                <h2 className="text-sm font-bold text-neutral-800 dark:text-neutral-200 flex items-center gap-2">
+                  <FiSliders className="w-4 h-4 text-orange-500" />
+                  Pengaturan Aplikasi
+                </h2>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
+                  Konfigurasikan preferensi sistem default untuk seluruh aplikasi (Admin saja).
+                </p>
+              </div>
+
+              <form onSubmit={handleAppSubmit} className="p-6 space-y-5">
+                {/* Nama Aplikasi */}
+                <div className="space-y-1.5">
+                  <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300">
+                    Nama Sistem / Aplikasi
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={appForm.appName}
+                    onChange={e => setAppForm(p => ({ ...p, appName: e.target.value }))}
+                    placeholder="Masukkan nama aplikasi"
+                    className="w-full px-4 py-2.5 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 text-sm font-semibold dark:text-white placeholder:text-neutral-400 transition-all"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  {/* Default PPN */}
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300">
+                      Default PPN (%)
+                    </label>
+                    <input
+                      type="number"
+                      required
+                      min={0}
+                      max={100}
+                      value={appForm.defaultPpn}
+                      onChange={e => setAppForm(p => ({ ...p, defaultPpn: Number(e.target.value) }))}
+                      className="w-full px-4 py-2.5 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 text-sm font-semibold dark:text-white placeholder:text-neutral-400 transition-all"
+                    />
+                  </div>
+
+                  {/* Default DP */}
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300">
+                      Default Minimal DP (%)
+                    </label>
+                    <input
+                      type="number"
+                      required
+                      min={0}
+                      max={100}
+                      value={appForm.defaultDp}
+                      onChange={e => setAppForm(p => ({ ...p, defaultDp: Number(e.target.value) }))}
+                      className="w-full px-4 py-2.5 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 text-sm font-semibold dark:text-white placeholder:text-neutral-400 transition-all"
+                    />
+                  </div>
+
+                  {/* Default Masa Berlaku */}
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300">
+                      Masa Berlaku Penawaran (Hari)
+                    </label>
+                    <input
+                      type="number"
+                      required
+                      min={1}
+                      max={365}
+                      value={appForm.defaultMasaBerlaku}
+                      onChange={e => setAppForm(p => ({ ...p, defaultMasaBerlaku: Number(e.target.value) }))}
+                      className="w-full px-4 py-2.5 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 text-sm font-semibold dark:text-white placeholder:text-neutral-400 transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Default Table View */}
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300">
+                      Tampilan Tabel Default
+                    </label>
+                    <select
+                      value={appForm.compactView}
+                      onChange={e => setAppForm(p => ({ ...p, compactView: e.target.value }))}
+                      className="w-full px-4 py-2.5 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 text-sm font-semibold dark:text-white transition-all appearance-none"
+                    >
+                      <option value="true">Padat (Compact)</option>
+                      <option value="false">Lebar (Comfortable)</option>
+                    </select>
+                  </div>
+
+                  {/* Primary Color Accent */}
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300">
+                      Aksen Warna Utama Aplikasi
+                    </label>
+                    <select
+                      value={appForm.primaryColor}
+                      onChange={e => setAppForm(p => ({ ...p, primaryColor: e.target.value }))}
+                      className="w-full px-4 py-2.5 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 text-sm font-semibold dark:text-white transition-all appearance-none"
+                    >
+                      <option value="orange">Oranye (Maksindo Default)</option>
+                      <option value="blue">Biru (Corporate)</option>
+                      <option value="purple">Ungu (Premium)</option>
+                      <option value="green">Hijau (Fresh)</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="pt-2 flex justify-end">
+                  <button
+                    type="submit"
+                    disabled={appLoading}
+                    className="flex items-center gap-2 px-6 py-2.5 bg-orange-500 hover:bg-orange-600 disabled:opacity-60 text-white font-bold rounded-xl text-sm transition-all duration-150 active:scale-95 shadow-sm shadow-orange-200 dark:shadow-orange-900/30"
+                  >
+                    <FiSave className="w-4 h-4" />
+                    {appLoading ? "Menyimpan..." : "Simpan Pengaturan"}
                   </button>
                 </div>
               </form>

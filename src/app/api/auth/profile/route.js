@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/jwt';
 import { hashPassword } from '@/lib/hash';
+import { recordAuditLog } from '@/lib/audit';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 
@@ -74,6 +75,17 @@ export async function PUT(request) {
       });
 
       const { password, ...rest } = updated;
+
+      // Record Audit Log
+      await recordAuditLog({
+        user,
+        modul: "USER",
+        aksi: "UPDATE",
+        referensi_id: id,
+        deskripsi: `Memperbarui profil sendiri: ${nama} (${email})`,
+        request
+      });
+
       return NextResponse.json({ success: true, message: 'Profil berhasil diperbarui.', data: serialize(rest) });
     }
 
@@ -112,6 +124,16 @@ export async function PUT(request) {
       await prisma.user.update({
         where: { id },
         data: { password: hashedNew, diubah_oleh: user.nama, diubah_tanggal: new Date() }
+      });
+
+      // Record Audit Log
+      await recordAuditLog({
+        user,
+        modul: "USER",
+        aksi: "CHANGE_PASSWORD",
+        referensi_id: id,
+        deskripsi: `Mengubah password sendiri`,
+        request
       });
 
       return NextResponse.json({ success: true, message: 'Password berhasil diubah.' });

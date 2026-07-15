@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getCurrentUsername } from '@/lib/jwt';
+import { getCurrentUser } from '@/lib/jwt';
+import { recordAuditLog } from '@/lib/audit';
 import { z } from 'zod';
 
 // Validasi input
@@ -71,6 +72,9 @@ export async function GET(request) {
 
 export async function POST(request) {
   try {
+    const user = await getCurrentUser(request);
+    if (!user) return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
+
     const body = await request.json();
     
     const result = customerSchema.safeParse(body);
@@ -82,9 +86,6 @@ export async function POST(request) {
     }
 
     const { nama, telepon, alamat, catatan } = result.data;
-    const currentUser = await getCurrentUsername(request);
-
-    // Cek duplikasi nomor telepon? (Opsional, tapi biasanya disarankan. Untuk saat ini kita jalankan saja)
 
     const newCustomer = await prisma.customer.create({
       data: {
@@ -92,15 +93,27 @@ export async function POST(request) {
         telepon,
         alamat: alamat || null,
         catatan: catatan || null,
-        dibuat_oleh: currentUser,
-        diubah_oleh: currentUser,
+        dibuat_oleh: user.nama,
+        diubah_oleh: user.nama,
       }
     });
 
-    return NextResponse.json(
-      { success: true, message: 'Customer berhasil ditambahkan', data: serializeData(newCustomer) },
-      { status: 201 }
-    );
+    // Record Audit Log
+    await recordAuditLog({
+      user,
+      modul: "CUSTOMER",
+      aksi: "CREATE",
+      referensi_id: newCustomer.id,
+      deskripsi: `Membuat customer baru: ${nama} (${telepon})`,
+      data_sesudah: newCustomer,
+      request
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: 'Data customer berhasil disimpan.',
+      data: serializeData(newCustomer)
+    }, { status: 201 });
   } catch (error) {
     console.error('Error creating customer:', error);
     return NextResponse.json(

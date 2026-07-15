@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { hashPassword } from "@/lib/hash";
+import { getCurrentUser } from "@/lib/jwt";
+import { recordAuditLog } from "@/lib/audit";
 
 const serialize = (data) => JSON.parse(JSON.stringify(data, (_, v) => typeof v === 'bigint' ? v.toString() : v));
 
@@ -62,6 +64,11 @@ export async function GET(request) {
 
 export async function POST(request) {
   try {
+    const currentUser = await getCurrentUser(request);
+    if (!currentUser) {
+      return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
+    }
+
     const body = await request.json();
     const result = userSchema.safeParse(body);
     
@@ -100,6 +107,17 @@ export async function POST(request) {
         role_id: BigInt(role_id),
         aktif
       }
+    });
+
+    // Record Audit Log
+    await recordAuditLog({
+      user: currentUser,
+      modul: "USER",
+      aksi: "CREATE",
+      referensi_id: newUser.id,
+      deskripsi: `Membuat pengguna baru: ${nama} (${username})`,
+      data_sesudah: newUser,
+      request
     });
     
     const { password: _, ...userData } = newUser;

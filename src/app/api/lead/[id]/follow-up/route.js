@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/jwt';
+import { recordAuditLog } from '@/lib/audit';
 import { z } from 'zod';
 
 const serialize = (data) => JSON.parse(JSON.stringify(data, (_, v) => typeof v === 'bigint' ? v.toString() : v));
@@ -78,6 +79,16 @@ export async function POST(request, context) {
     await prisma.lead.update({
       where: { id: leadId },
       data: { fase: faseBaru, diubah_oleh: user.nama, diubah_tanggal: new Date() },
+    });
+
+    // Record Audit Log
+    await recordAuditLog({
+      user,
+      modul: "LEAD",
+      aksi: "FOLLOW_UP",
+      referensi_id: leadId,
+      deskripsi: `Follow up lead ${lead.nomor}: ${hasilInteraksi.nama}`,
+      request
     });
 
     return NextResponse.json({ success: true, message: 'Follow up berhasil disimpan.' });

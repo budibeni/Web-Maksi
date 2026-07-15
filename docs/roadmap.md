@@ -182,7 +182,7 @@ Laporan menggunakan data dari seluruh modul transaksi.
 
 Status
 
-⬜ Belum Dimulai
+✅ Selesai
 
 Pekerjaan
 
@@ -197,7 +197,7 @@ Pekerjaan
 
 Status
 
-⬜ Belum Dimulai
+✅ Selesai
 
 Pekerjaan
 

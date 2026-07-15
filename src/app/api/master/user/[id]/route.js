@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { hashPassword } from "@/lib/hash";
+import { getCurrentUser } from "@/lib/jwt";
+import { recordAuditLog } from "@/lib/audit";
 
 const serialize = (data) => JSON.parse(JSON.stringify(data, (_, v) => typeof v === 'bigint' ? v.toString() : v));
 
@@ -43,6 +45,11 @@ export async function GET(request, context) {
 
 export async function PUT(request, context) {
   try {
+    const currentUser = await getCurrentUser(request);
+    if (!currentUser) {
+      return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
+    }
+
     const params = await context.params;
     const id = BigInt(params.id);
     const body = await request.json();
@@ -70,6 +77,12 @@ export async function PUT(request, context) {
       return NextResponse.json({ success: false, message: "Email sudah digunakan." }, { status: 409 });
     }
 
+    // Get user before change for audit logging
+    const userSebelum = await prisma.user.findUnique({ where: { id } });
+    if (!userSebelum) {
+      return NextResponse.json({ success: false, message: "Data tidak ditemukan." }, { status: 404 });
+    }
+
     const updateData = {
       nama,
       email,
@@ -89,6 +102,19 @@ export async function PUT(request, context) {
     }
 
     const updatedUser = await prisma.user.update({ where: { id }, data: updateData });
+
+    // Record Audit Log
+    await recordAuditLog({
+      user: currentUser,
+      modul: "USER",
+      aksi: "UPDATE",
+      referensi_id: id,
+      deskripsi: `Memperbarui pengguna: ${nama} (${username})`,
+      data_sebelum: userSebelum,
+      data_sesudah: updatedUser,
+      request
+    });
+
     const { password: _, ...userData } = updatedUser;
     
     return NextResponse.json({
@@ -108,6 +134,11 @@ export async function PUT(request, context) {
 
 export async function DELETE(request, context) {
   try {
+    const currentUser = await getCurrentUser(request);
+    if (!currentUser) {
+      return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
+    }
+
     const params = await context.params;
     const id = BigInt(params.id);
     
@@ -120,7 +151,24 @@ export async function DELETE(request, context) {
       }, { status: 409 });
     }
 
+    // Get user before delete
+    const userSebelum = await prisma.user.findUnique({ where: { id } });
+    if (!userSebelum) {
+      return NextResponse.json({ success: false, message: "Data tidak ditemukan." }, { status: 404 });
+    }
+
     await prisma.user.delete({ where: { id } });
+
+    // Record Audit Log
+    await recordAuditLog({
+      user: currentUser,
+      modul: "USER",
+      aksi: "DELETE",
+      referensi_id: id,
+      deskripsi: `Menghapus pengguna: ${userSebelum.nama} (${userSebelum.username})`,
+      data_sebelum: userSebelum,
+      request
+    });
     
     return NextResponse.json({ success: true, message: "Data pengguna berhasil dihapus." });
     

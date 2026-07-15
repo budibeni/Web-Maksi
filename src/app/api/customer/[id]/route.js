@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getCurrentUsername } from '@/lib/jwt';
+import { getCurrentUser } from '@/lib/jwt';
+import { recordAuditLog } from '@/lib/audit';
 import { z } from 'zod';
 
 const customerSchema = z.object({
@@ -41,6 +42,9 @@ export async function GET(request, context) {
 
 export async function PUT(request, context) {
   try {
+    const user = await getCurrentUser(request);
+    if (!user) return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
+
     const params = await context.params;
     const id = BigInt(params.id);
     const body = await request.json();
@@ -56,7 +60,6 @@ export async function PUT(request, context) {
     }
 
     const { nama, telepon, alamat, catatan } = result.data;
-    const currentUser = await getCurrentUsername(request);
 
     const updatedCustomer = await prisma.customer.update({
       where: { id },
@@ -65,9 +68,21 @@ export async function PUT(request, context) {
         telepon,
         alamat: alamat || null,
         catatan: catatan || null,
-        diubah_oleh: currentUser,
+        diubah_oleh: user.nama,
         diubah_tanggal: new Date(),
       }
+    });
+
+    // Record Audit Log
+    await recordAuditLog({
+      user,
+      modul: "CUSTOMER",
+      aksi: "UPDATE",
+      referensi_id: id,
+      deskripsi: `Memperbarui customer: ${nama} (${telepon})`,
+      data_sebelum: existingCustomer,
+      data_sesudah: updatedCustomer,
+      request
     });
 
     return NextResponse.json({
@@ -83,6 +98,9 @@ export async function PUT(request, context) {
 
 export async function DELETE(request, context) {
   try {
+    const user = await getCurrentUser(request);
+    if (!user) return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
+
     const params = await context.params;
     const id = BigInt(params.id);
 
@@ -91,10 +109,27 @@ export async function DELETE(request, context) {
       return NextResponse.json({ success: false, message: 'Data tidak ditemukan' }, { status: 404 });
     }
 
-    // TODO: Cek relasi dengan tb_lead (tidak boleh dihapus jika sudah ada Lead)
-    // Berhubung tb_lead belum ada, kita asumsikan ini bisa dihapus (atau ditambahkan logic-nya nanti)
+    // Guard: Cek relasi dengan tb_lead (tidak boleh dihapus jika sudah ada Lead)
+    const leadCount = await prisma.lead.count({ where: { customer_id: id } });
+    if (leadCount > 0) {
+      return NextResponse.json({
+        success: false,
+        message: "Customer ini memiliki data lead transaksi. Customer tidak dapat dihapus."
+      }, { status: 409 });
+    }
 
     await prisma.customer.delete({ where: { id } });
+
+    // Record Audit Log
+    await recordAuditLog({
+      user,
+      modul: "CUSTOMER",
+      aksi: "DELETE",
+      referensi_id: id,
+      deskripsi: `Menghapus customer: ${existingCustomer.nama} (${existingCustomer.telepon})`,
+      data_sebelum: existingCustomer,
+      request
+    });
 
     return NextResponse.json({
       success: true,
