@@ -58,9 +58,9 @@ export const APP_MENUS = [
         roles: [ROLE_ADMIN, ROLE_TOP_MANAGEMENT, ROLE_BRANCH_MANAGER],
       },
       {
-        title: "Laporan",
+        title: "Riwayat Lead",
         path: "/report",
-        icon: FiGrid,
+        icon: FiClock,
         roles: [ROLE_ADMIN, ROLE_TOP_MANAGEMENT, ROLE_BRANCH_MANAGER, ROLE_SALES],
       },
     ]

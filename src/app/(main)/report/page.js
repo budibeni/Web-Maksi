@@ -111,7 +111,7 @@ export default function LaporanSemuaLeadPage() {
         setLeads(json.data.leads || []);
         setPagination(json.data.pagination || { total: 0, page: 1, limit: 10, totalPages: 1 });
       } else {
-        showToast(json.message || "Gagal memuat laporan lead.", "error");
+        showToast(json.message || "Gagal memuat riwayat lead.", "error");
       }
     } catch (error) {
       console.error(error);
@@ -262,10 +262,10 @@ export default function LaporanSemuaLeadPage() {
       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4">
         <div>
           <div className="flex items-center gap-2 text-xs text-neutral-500 dark:text-neutral-400">
-            <span>Laporan</span><FiChevronRight className="w-3 h-3" />
+            <span>Riwayat Lead</span><FiChevronRight className="w-3 h-3" />
             <span className="font-semibold text-neutral-800 dark:text-neutral-200">Semua Lead</span>
           </div>
-          <h1 className="text-xl font-bold text-neutral-900 dark:text-white mt-1.5">Laporan Semua Lead</h1>
+          <h1 className="text-xl font-bold text-neutral-900 dark:text-white mt-1.5">Riwayat Lead</h1>
           <p className="text-xs text-neutral-500 dark:text-neutral-400">
             Menampilkan semua lead dari seluruh status (Lead Baru, Follow Up, Penawaran, Deal, Lost).
           </p>

@@ -23,7 +23,7 @@ Hak akses:
 - Mengelola seluruh Versi Penawaran
 - Mengelola seluruh Pengingat
 - Mengakses seluruh Dashboard
-- Mengakses seluruh Laporan
+- Mengakses seluruh Riwayat Lead
 - Melihat Audit Log
 
 ---
@@ -39,7 +39,7 @@ Hak akses:
 - Melihat seluruh Customer (tidak boleh menambah atau mengubah data)
 - Melihat seluruh Versi Penawaran
 - Melihat seluruh Aktivitas Lead
-- Melihat seluruh Laporan
+- Melihat seluruh Riwayat Lead
 - Melihat dan mengakses Master Kategori Produk, Master Produk, dan Harga Produk (tidak boleh mengubah data)
 
 Top Management tidak melakukan input data operasional.
@@ -57,7 +57,7 @@ Hak akses:
 - Melihat seluruh Aktivitas Lead pada cabangnya
 - Melihat seluruh Versi Penawaran pada cabangnya
 - Melihat Dashboard cabang
-- Melihat Laporan cabang
+- Melihat Riwayat Lead cabang
 
 Branch Manager tidak dapat mengubah Master Data.
 
