@@ -1,12 +1,13 @@
 "use client";
 
 import { useState, useEffect, use } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  FiArrowLeft, FiUser, FiPhone, FiMapPin, FiCalendar, FiClock,
+  FiUser, FiPhone, FiMapPin, FiCalendar,
   FiCheckCircle, FiXCircle, FiFileText, FiEdit3, FiBell, FiActivity,
-  FiAlertCircle, FiChevronRight, FiDollarSign, FiPlus
+  FiDollarSign, FiPlus, FiX
 } from "react-icons/fi";
 import dayjs from "dayjs";
 import 'dayjs/locale/id';
@@ -167,8 +168,9 @@ export default function LeadDetailPage({ params }) {
   const [isLoading, setIsLoading] = useState(true);
   const [showModalLost, setShowModalLost] = useState(false);
   const [showModalDeal, setShowModalDeal] = useState(false);
-  const [activeTab, setActiveTab] = useState("timeline"); // "timeline" or "penawaran"
+  const [activeTab, setActiveTab] = useState("timeline");
   const [selectedQuotationId, setSelectedQuotationId] = useState(null);
+  const [portalMounted, setPortalMounted] = useState(false);
 
   // Follow Up form
   const [hasilInteraksiList, setHasilInteraksiList] = useState([]);
@@ -206,6 +208,9 @@ export default function LeadDetailPage({ params }) {
       });
     }
   }, [id]);
+
+  // Mount portal after client-side hydration
+  useEffect(() => { setPortalMounted(true); return () => setPortalMounted(false); }, []);
 
   const handleFollowUp = async (e) => {
     e.preventDefault();
@@ -251,36 +256,41 @@ export default function LeadDetailPage({ params }) {
   const isOpen = lead.status === 1;
   const activeReminder = lead.pengingats?.[0];
   const reminderLate = activeReminder && dayjs(activeReminder.tanggal_pengingat).isBefore(dayjs());
+  const portalEl = portalMounted ? document.getElementById('header-actions-portal') : null;
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <Link href="/lead" className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-neutral-600 hover:text-neutral-900 bg-white hover:bg-neutral-50 dark:bg-neutral-900 dark:text-neutral-400 dark:hover:text-white dark:hover:bg-neutral-800 rounded-xl transition-colors border border-neutral-200 dark:border-neutral-800 shadow-sm">
-          <FiArrowLeft className="w-4 h-4" />
-          Kembali ke Daftar
-        </Link>
-        {isOpen && (
-          <div className="flex items-center gap-2">
-            {lead.versi_penawarans?.length > 0 && (
-              <button
-                onClick={() => setShowModalDeal(true)}
-                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl border border-green-200 text-green-600 hover:bg-green-50 dark:border-green-800 dark:text-green-400 dark:hover:bg-green-900/20 transition-colors"
-              >
-                <FiCheckCircle className="w-4 h-4" />
-                Tandai Deal
-              </button>
-            )}
+      {/* Inject tombol ke header portal */}
+      {portalEl && createPortal(
+        <div className="flex items-center gap-2">
+          <Link
+            href="/lead"
+            className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-neutral-600 hover:text-neutral-900 bg-white hover:bg-neutral-50 dark:bg-neutral-900 dark:text-neutral-400 dark:hover:text-white dark:hover:bg-neutral-800 rounded-lg transition-colors border border-neutral-200 dark:border-neutral-800"
+          >
+            <FiX className="w-4 h-4" />
+            Tutup
+          </Link>
+          {isOpen && lead.versi_penawarans?.length > 0 && (
+            <button
+              onClick={() => setShowModalDeal(true)}
+              className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-semibold rounded-lg border border-green-200 text-green-600 hover:bg-green-50 dark:border-green-800 dark:text-green-400 dark:hover:bg-green-900/20 transition-colors"
+            >
+              <FiCheckCircle className="w-4 h-4" />
+              Tandai Deal
+            </button>
+          )}
+          {isOpen && (
             <button
               onClick={() => setShowModalLost(true)}
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-xl border border-red-200 text-red-600 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/20 transition-colors"
+              className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-semibold rounded-lg border border-red-200 text-red-600 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/20 transition-colors"
             >
               <FiXCircle className="w-4 h-4" />
               Tandai Lost
             </button>
-          </div>
-        )}
-      </div>
+          )}
+        </div>,
+        document.getElementById('header-actions-portal')
+      )}
 
       {/* Info Lead */}
       <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200/50 dark:border-neutral-800 shadow-sm p-6">

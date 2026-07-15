@@ -5,6 +5,73 @@ import { z } from 'zod';
 
 const serialize = (data) => JSON.parse(JSON.stringify(data, (_, v) => typeof v === 'bigint' ? v.toString() : v));
 
+// GET /api/penawaran - Daftar Seluruh Penawaran Harga
+export async function GET(request) {
+  try {
+    const user = await getCurrentUser(request);
+    if (!user) return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
+
+    const { searchParams } = new URL(request.url);
+    const search = searchParams.get('search') || '';
+    const sales_id = searchParams.get('sales_id') || '';
+    const cabang_id = searchParams.get('cabang_id') || '';
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '10');
+    const skip = (page - 1) * limit;
+
+    // Role-based access restriction
+    const role = user.role?.toLowerCase();
+    let userFilter = {};
+    if (role === 'sales') {
+      userFilter = { lead: { user_id: BigInt(user.id) } };
+    } else if (role === 'branch manager') {
+      userFilter = { lead: { cabang_id: BigInt(user.cabang_id) } };
+    }
+
+    const where = {
+      ...userFilter,
+      ...(sales_id ? { lead: { user_id: BigInt(sales_id) } } : {}),
+      ...(cabang_id ? { lead: { cabang_id: BigInt(cabang_id) } } : {}),
+      ...(search ? {
+        OR: [
+          { nomor: { contains: search } },
+          { customer_nama: { contains: search } },
+          { sales_nama: { contains: search } },
+        ]
+      } : {}),
+    };
+
+    const quotations = await prisma.versiPenawaran.findMany({
+      where,
+      include: {
+        lead: {
+          select: {
+            id: true,
+            nomor: true,
+            status: true,
+            versi_penawaran_final_id: true,
+          }
+        }
+      },
+      orderBy: { id: 'desc' },
+      skip,
+      take: limit,
+    });
+
+    const totalData = await prisma.versiPenawaran.count({ where });
+    const totalPages = Math.ceil(totalData / limit);
+
+    return NextResponse.json({
+      success: true,
+      data: serialize(quotations),
+      pagination: { page, limit, totalData, totalPages },
+    });
+  } catch (error) {
+    console.error(error);
+    return NextResponse.json({ success: false, message: 'Terjadi kesalahan sistem' }, { status: 500 });
+  }
+}
+
 // Generate nomor penawaran: QT-[KODE_CABANG]-[YY][MM]-[NNNN]
 async function generateNomorPenawaran(cabangKode) {
   const now = new Date();
