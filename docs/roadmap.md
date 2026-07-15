@@ -116,7 +116,7 @@ Customer menjadi dasar pembuatan Lead.
 
 # Tahap 6 - Lead
 
-✅ Selesai
+🔄 Pengerjaan
 
 Pekerjaan
 

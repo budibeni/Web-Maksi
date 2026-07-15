@@ -17,10 +17,29 @@ export default function Sidebar() {
   const closeMobileMenu = useUIStore(state => state.closeMobileMenu);
 
   const [mounted, setMounted] = useState(false);
-  
+  const [dueReminderCount, setDueReminderCount] = useState(0);
+
+  const fetchDueReminderCount = async () => {
+    try {
+      const res = await fetch("/api/pengingat/today-count");
+      const json = await res.json();
+      if (json.success) {
+        setDueReminderCount(json.count || 0);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (user) {
+      fetchDueReminderCount();
+    }
+  }, [pathname, user]);
 
   // Filter groups based on user role
   const visibleGroups = APP_MENUS.map(group => {
@@ -124,9 +143,9 @@ export default function Sidebar() {
                               {menu.title}
                             </span>
                           </div>
-                          {menu.badge && !isCollapsed && (
+                          {((menu.title === "Pengingat" ? dueReminderCount : menu.badge) > 0) && !isCollapsed && (
                             <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
-                              {menu.badge}
+                              {menu.title === "Pengingat" ? dueReminderCount : menu.badge}
                             </span>
                           )}
                         </Link>
