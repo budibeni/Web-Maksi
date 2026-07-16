@@ -16,6 +16,16 @@ export async function GET(request) {
     const sales_id = searchParams.get('sales_id') || '';
     const tipe_customer = searchParams.get('tipe_customer') || ''; // 'BARU', 'EXISTING'
 
+    // Support multiple IDs (comma-separated)
+    let cabangIds = [];
+    if (cabang_id) {
+      cabangIds = cabang_id.split(',').map(id => BigInt(id));
+    }
+    let salesIds = [];
+    if (sales_id) {
+      salesIds = sales_id.split(',').map(id => BigInt(id));
+    }
+
     // Role-based filtering
     const role = user.role?.toLowerCase();
     let userFilter = {};
@@ -28,8 +38,8 @@ export async function GET(request) {
     // Build base query filter
     const baseFilter = {
       ...userFilter,
-      ...(cabang_id ? { cabang_id: BigInt(cabang_id) } : {}),
-      ...(sales_id ? { user_id: BigInt(sales_id) } : {}),
+      ...(cabangIds.length > 0 ? { cabang_id: { in: cabangIds } } : {}),
+      ...(salesIds.length > 0 ? { user_id: { in: salesIds } } : {}),
       ...(tipe_customer ? { status_customer: tipe_customer } : {}),
       ...(startDateStr || endDateStr ? {
         tanggal_deal: {
@@ -55,8 +65,8 @@ export async function GET(request) {
     const totalLeadsCount = await prisma.lead.count({
       where: {
         ...userFilter,
-        ...(cabang_id ? { cabang_id: BigInt(cabang_id) } : {}),
-        ...(sales_id ? { user_id: BigInt(sales_id) } : {}),
+        ...(cabangIds.length > 0 ? { cabang_id: { in: cabangIds } } : {}),
+        ...(salesIds.length > 0 ? { user_id: { in: salesIds } } : {}),
       }
     });
 

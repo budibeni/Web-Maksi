@@ -10,6 +10,7 @@ import {
 import { useAuthStore } from "@/store/auth.store";
 import { useUIStore } from "@/store/ui.store";
 import dayjs from "dayjs";
+import FilterPanel from "@/components/ui/FilterPanel";
 import 'dayjs/locale/id';
 
 dayjs.locale('id');
@@ -29,10 +30,11 @@ export default function LaporanLeadDealPage() {
   }, [user, router]);
 
   const [isLoading, setIsLoading] = useState(true);
-  const [startDate, setStartDate] = useState("2026-07-01");
-  const [endDate, setEndDate] = useState("2026-07-31");
-  const [cabangId, setCabangId] = useState("");
-  const [salesId, setSalesId] = useState("");
+  const [datePreset, setDatePreset] = useState("thisMonth");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [cabangIds, setCabangIds] = useState([]);
+  const [salesIds, setSalesIds] = useState([]);
   const [tipeCustomer, setTipeCustomer] = useState("");
   const [sumberLead, setSumberLead] = useState(""); // mockup filter
   const [nilaiRange, setNilaiRange] = useState(""); // mockup filter
@@ -95,8 +97,8 @@ export default function LaporanLeadDealPage() {
       const queryParams = new URLSearchParams({
         startDate,
         endDate,
-        cabang_id: cabangId,
-        sales_id: salesId,
+        cabang_id: cabangIds.join(","),
+        sales_id: salesIds.join(","),
         tipe_customer: tipeCustomer,
       });
 
@@ -116,9 +118,34 @@ export default function LaporanLeadDealPage() {
     }
   };
 
+  // Handle Preset changes
+  useEffect(() => {
+    const now = dayjs();
+    let start = "";
+    let end = "";
+    if (datePreset === "today") {
+      start = now.format("YYYY-MM-DD");
+      end = now.format("YYYY-MM-DD");
+    } else if (datePreset === "thisWeek") {
+      start = now.startOf("week").format("YYYY-MM-DD");
+      end = now.endOf("week").format("YYYY-MM-DD");
+    } else if (datePreset === "thisMonth") {
+      start = now.startOf("month").format("YYYY-MM-DD");
+      end = now.endOf("month").format("YYYY-MM-DD");
+    } else if (datePreset === "thisYear") {
+      start = now.startOf("year").format("YYYY-MM-DD");
+      end = now.endOf("year").format("YYYY-MM-DD");
+    }
+
+    if (start && end) {
+      setStartDate(start);
+      setEndDate(end);
+    }
+  }, [datePreset]);
+
   useEffect(() => {
     fetchStats();
-  }, [cabangId, salesId, tipeCustomer]);
+  }, [startDate, endDate, cabangIds, salesIds, tipeCustomer]);
 
   const handleApplyFilter = (e) => {
     e.preventDefault();
@@ -126,14 +153,12 @@ export default function LaporanLeadDealPage() {
   };
 
   const handleResetFilter = () => {
-    setStartDate("2026-07-01");
-    setEndDate("2026-07-31");
-    setCabangId("");
-    setSalesId("");
+    setDatePreset("thisMonth");
+    setCabangIds([]);
+    setSalesIds([]);
     setTipeCustomer("");
     setSumberLead("");
     setNilaiRange("");
-    setTimeout(() => fetchStats(), 50);
   };
 
   // Mock static data for fields not present in schema to match the mockup completely
@@ -227,167 +252,24 @@ export default function LaporanLeadDealPage() {
         </div>
       </div>
 
-      {/* Panel Filter Laporan */}
-      <div className="bg-white dark:bg-neutral-900 border border-neutral-200/50 dark:border-neutral-800 rounded-2xl p-5 shadow-sm space-y-4">
-        <h2 className="text-xs font-bold text-neutral-800 dark:text-neutral-200 flex items-center gap-1.5 uppercase tracking-wider">
-          <FiFilter className="w-4 h-4 text-orange-500" />
-          Filter Laporan
-        </h2>
-
-        <form onSubmit={handleApplyFilter} className="space-y-4">
-          {/* Row 1 */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
-            {/* Periode Deal */}
-            <div>
-              <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-1.5">
-                Periode Deal
-              </label>
-              <div className="flex items-center gap-2">
-                <input
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  className="w-full px-3 py-2 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 dark:text-white text-xs font-semibold"
-                />
-                <span className="text-xs text-neutral-400 font-bold">-</span>
-                <input
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  className="w-full px-3 py-2 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 dark:text-white text-xs font-semibold"
-                />
-              </div>
-            </div>
-
-            {/* Cabang dropdown */}
-            <div>
-              <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-1.5">
-                Cabang
-              </label>
-              <select
-                value={cabangId}
-                disabled={!isAdminOrTop}
-                onChange={(e) => setCabangId(e.target.value)}
-                className="w-full px-3 py-2.5 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 dark:text-white text-xs font-semibold"
-              >
-                <option value="">Semua Cabang</option>
-                {cabangs.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.nama}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Sales dropdown */}
-            <div>
-              <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-1.5">
-                Sales
-              </label>
-              <select
-                value={salesId}
-                onChange={(e) => setSalesId(e.target.value)}
-                className="w-full px-3 py-2.5 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 dark:text-white text-xs font-semibold"
-              >
-                <option value="">Semua Sales</option>
-                {users.map((u) => (
-                  <option key={u.id} value={u.id}>
-                    {u.nama}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Sumber Lead */}
-            <div>
-              <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-1.5">
-                Sumber Lead
-              </label>
-              <select
-                value={sumberLead}
-                onChange={(e) => setSumberLead(e.target.value)}
-                className="w-full px-3 py-2.5 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 dark:text-white text-xs font-semibold"
-              >
-                <option value="">Semua Sumber</option>
-                <option value="Referensi">Referensi</option>
-                <option value="Website">Website</option>
-                <option value="Pameran">Pameran</option>
-                <option value="Telemarketing">Telemarketing</option>
-                <option value="Media Sosial">Media Sosial</option>
-                <option value="Lainnya">Lainnya</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Row 2 */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-5 gap-3 items-end">
-            {/* Tipe Customer */}
-            <div>
-              <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-1.5">
-                Tipe Customer
-              </label>
-              <select
-                value={tipeCustomer}
-                onChange={(e) => setTipeCustomer(e.target.value)}
-                className="w-full px-3 py-2.5 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 dark:text-white text-xs font-semibold"
-              >
-                <option value="">Semua (Baru & Existing)</option>
-                <option value="BARU">Customer Baru</option>
-                <option value="EXISTING">Customer Existing</option>
-              </select>
-            </div>
-
-            {/* Produk */}
-            <div>
-              <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-1.5">
-                Produk
-              </label>
-              <select
-                className="w-full px-3 py-2.5 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 dark:text-white text-xs font-semibold"
-              >
-                <option value="">Semua Produk</option>
-                {charts.productList?.map((p, idx) => (
-                  <option key={idx} value={p.nama}>{p.nama}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* Nilai Deal */}
-            <div>
-              <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-1.5">
-                Nilai Deal
-              </label>
-              <select
-                value={nilaiRange}
-                onChange={(e) => setNilaiRange(e.target.value)}
-                className="w-full px-3 py-2.5 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 dark:text-white text-xs font-semibold"
-              >
-                <option value="">Semua Nilai</option>
-                <option value="under50">Di bawah Rp 50 Juta</option>
-                <option value="50to100">Rp 50 Juta - Rp 100 Juta</option>
-                <option value="over100">Di atas Rp 100 Juta</option>
-              </select>
-            </div>
-
-            {/* Button controls */}
-            <div className="flex gap-2 sm:col-span-3 md:col-span-2 justify-end w-full">
-              <button
-                type="button"
-                onClick={handleResetFilter}
-                className="bg-white hover:bg-neutral-50 dark:bg-neutral-900 dark:hover:bg-neutral-800 text-neutral-700 dark:text-neutral-300 px-5 py-2.5 border border-neutral-200 dark:border-neutral-800 rounded-xl text-xs font-bold transition-all w-1/2 sm:w-auto"
-              >
-                Reset Filter
-              </button>
-              <button
-                type="submit"
-                className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2.5 rounded-xl text-xs font-bold transition-all shadow-sm w-1/2 sm:w-auto"
-              >
-                Terapkan Filter
-              </button>
-            </div>
-          </div>
-        </form>
-      </div>
+      {/* Panel Filter Laporan (Segmen Reusable) */}
+      <FilterPanel 
+        title="Filter Data"
+        role={user?.role?.nama || user?.role}
+        branches={cabangs}
+        sales={users}
+        datePreset={datePreset}
+        setDatePreset={setDatePreset}
+        startDate={startDate}
+        setStartDate={setStartDate}
+        endDate={endDate}
+        setEndDate={setEndDate}
+        cabangIds={cabangIds}
+        setCabangIds={setCabangIds}
+        salesIds={salesIds}
+        setSalesIds={setSalesIds}
+        onReset={handleResetFilter}
+      />
 
       {/* Grid Visualisasi & Grafik */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

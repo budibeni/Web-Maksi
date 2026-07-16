@@ -18,6 +18,16 @@ export async function GET(request) {
     const tahap_lost      = searchParams.get('tahap_lost')      || '';
     const alasan_lost_id  = searchParams.get('alasan_lost_id')  || '';
 
+    // Support multiple IDs (comma-separated)
+    let cabangIds = [];
+    if (cabang_id) {
+      cabangIds = cabang_id.split(',').map(id => BigInt(id));
+    }
+    let salesIds = [];
+    if (sales_id) {
+      salesIds = sales_id.split(',').map(id => BigInt(id));
+    }
+
     // Role-based base filter
     const roleNama = (user.role || '').toLowerCase();
     let userFilter = {};
@@ -41,8 +51,8 @@ export async function GET(request) {
     const baseFilter = {
       ...userFilter,
       status: 3, // LOST
-      ...(cabang_id      ? { cabang_id:      BigInt(cabang_id)      } : {}),
-      ...(sales_id       ? { user_id:        BigInt(sales_id)       } : {}),
+      ...(cabangIds.length > 0   ? { cabang_id:      { in: cabangIds }      } : {}),
+      ...(salesIds.length > 0    ? { user_id:        { in: salesIds }       } : {}),
       ...(tipe_customer  ? { status_customer: tipe_customer         } : {}),
       ...(alasan_lost_id ? { alasan_lost_id: BigInt(alasan_lost_id) } : {}),
       ...(tahap_lost === 'awal'      ? { fase: { lte: 2 } } : {}),
@@ -65,8 +75,8 @@ export async function GET(request) {
     // Total lead and deal counts (same role/cabang/sales filter, no date/status filter)
     const totalAllFilter = {
       ...userFilter,
-      ...(cabang_id ? { cabang_id: BigInt(cabang_id) } : {}),
-      ...(sales_id  ? { user_id:   BigInt(sales_id)  } : {}),
+      ...(cabangIds.length > 0 ? { cabang_id: { in: cabangIds } } : {}),
+      ...(salesIds.length > 0  ? { user_id:   { in: salesIds }   } : {}),
     };
 
     const [totalLeads, totalDeal, totalLeadBaru, totalLeadExisting] = await Promise.all([

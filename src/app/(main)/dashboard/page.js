@@ -9,6 +9,7 @@ import { useAuthStore } from "@/store/auth.store";
 import { useUIStore } from "@/store/ui.store";
 import { formatCurrency } from "@/utils/format-currency";
 import dayjs from "dayjs";
+import FilterPanel from "@/components/ui/FilterPanel";
 
 export default function Dashboard() {
   const currentUser = useAuthStore((state) => state.user);
@@ -18,22 +19,39 @@ export default function Dashboard() {
   const [dashboardData, setDashboardData] = useState(null);
   
   // Filter States
+  const [datePreset, setDatePreset] = useState("thisMonth");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
-  const [cabangId, setCabangId] = useState("");
-  const [salesId, setSalesId] = useState("");
+  const [cabangIds, setCabangIds] = useState([]);
+  const [salesIds, setSalesIds] = useState([]);
 
   // Options for filters fetched from API
   const [filterOptions, setFilterOptions] = useState({ branches: [], sales: [] });
 
-  // Initialize dates to current month
+  // Handle Preset changes
   useEffect(() => {
-    const now = new Date();
-    const firstDay = dayjs(new Date(now.getFullYear(), now.getMonth(), 1)).format("YYYY-MM-DD");
-    const lastDay = dayjs(new Date(now.getFullYear(), now.getMonth() + 1, 0)).format("YYYY-MM-DD");
-    setStartDate(firstDay);
-    setEndDate(lastDay);
-  }, []);
+    const now = dayjs();
+    let start = "";
+    let end = "";
+    if (datePreset === "today") {
+      start = now.format("YYYY-MM-DD");
+      end = now.format("YYYY-MM-DD");
+    } else if (datePreset === "thisWeek") {
+      start = now.startOf("week").format("YYYY-MM-DD");
+      end = now.endOf("week").format("YYYY-MM-DD");
+    } else if (datePreset === "thisMonth") {
+      start = now.startOf("month").format("YYYY-MM-DD");
+      end = now.endOf("month").format("YYYY-MM-DD");
+    } else if (datePreset === "thisYear") {
+      start = now.startOf("year").format("YYYY-MM-DD");
+      end = now.endOf("year").format("YYYY-MM-DD");
+    }
+
+    if (start && end) {
+      setStartDate(start);
+      setEndDate(end);
+    }
+  }, [datePreset]);
 
   const fetchDashboardData = async () => {
     setIsLoading(true);
@@ -41,8 +59,8 @@ export default function Dashboard() {
       let url = `/api/dashboard?`;
       if (startDate) url += `startDate=${startDate}&`;
       if (endDate) url += `endDate=${endDate}&`;
-      if (cabangId) url += `cabang_id=${cabangId}&`;
-      if (salesId) url += `sales_id=${salesId}&`;
+      if (cabangIds.length > 0) url += `cabang_id=${cabangIds.join(",")}&`;
+      if (salesIds.length > 0) url += `sales_id=${salesIds.join(",")}&`;
 
       const res = await fetch(url);
       const json = await res.json();
@@ -67,16 +85,12 @@ export default function Dashboard() {
     if (startDate && endDate) {
       fetchDashboardData();
     }
-  }, [startDate, endDate, cabangId, salesId]);
+  }, [startDate, endDate, cabangIds, salesIds]);
 
   const handleResetFilters = () => {
-    const now = new Date();
-    const firstDay = dayjs(new Date(now.getFullYear(), now.getMonth(), 1)).format("YYYY-MM-DD");
-    const lastDay = dayjs(new Date(now.getFullYear(), now.getMonth() + 1, 0)).format("YYYY-MM-DD");
-    setStartDate(firstDay);
-    setEndDate(lastDay);
-    setCabangId("");
-    setSalesId("");
+    setDatePreset("thisMonth");
+    setCabangIds([]);
+    setSalesIds([]);
   };
 
   if (!currentUser || !dashboardData) {
@@ -132,85 +146,36 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      {/* Top Welcome and Filters Header */}
+      {/* Top Welcome Header */}
       <div className="bg-white dark:bg-neutral-900 border border-neutral-200/50 dark:border-neutral-800/60 rounded-3xl p-6 shadow-sm flex flex-col xl:flex-row xl:items-center justify-between gap-6 transition-colors duration-300">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-neutral-800 dark:text-neutral-100 flex items-center gap-2">
             Selamat Datang, <span className="text-orange-600 dark:text-orange-400">{currentUser.nama}</span>
           </h1>
           <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
-            CRM CRM Internal Maksindo - Peran Anda: <span className="font-semibold uppercase">{typeof currentUser.role === 'object' ? currentUser.role.nama : currentUser.role}</span>
+            Maksi Sales Information System - Peran Anda: <span className="font-semibold uppercase">{typeof currentUser.role === 'object' ? currentUser.role.nama : currentUser.role}</span>
           </p>
         </div>
-
-        {/* Dynamic Filters Form */}
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800/80 px-3 py-1.5 rounded-2xl">
-            <FiCalendar className="text-neutral-400 w-4 h-4" />
-            <input 
-              type="date" 
-              className="bg-transparent text-xs text-neutral-700 dark:text-neutral-300 focus:outline-none" 
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-            />
-            <span className="text-neutral-400 text-xs">s/d</span>
-            <input 
-              type="date" 
-              className="bg-transparent text-xs text-neutral-700 dark:text-neutral-300 focus:outline-none"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-            />
-          </div>
-
-          {/* Branch filter for admin/top management */}
-          {(role === 'administrator' || role === 'top management') && filterOptions.branches.length > 0 && (
-            <div className="flex items-center gap-1.5 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800/80 px-3 py-1.5 rounded-2xl">
-              <FiMapPin className="text-neutral-400 w-4 h-4" />
-              <select
-                className="bg-transparent text-xs text-neutral-700 dark:text-neutral-300 focus:outline-none pr-2 cursor-pointer"
-                value={cabangId}
-                onChange={(e) => {
-                  setCabangId(e.target.value);
-                  setSalesId(""); // Reset sales when branch changes
-                }}
-              >
-                <option value="">Semua Cabang</option>
-                {filterOptions.branches.map(b => (
-                  <option key={b.id} value={b.id.toString()}>{b.nama}</option>
-                ))}
-              </select>
-            </div>
-          )}
-
-          {/* Sales filter for admin/top/bm */}
-          {role !== 'sales' && filterOptions.sales.length > 0 && (
-            <div className="flex items-center gap-1.5 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800/80 px-3 py-1.5 rounded-2xl">
-              <FiUser className="text-neutral-400 w-4 h-4" />
-              <select
-                className="bg-transparent text-xs text-neutral-700 dark:text-neutral-300 focus:outline-none pr-2 cursor-pointer"
-                value={salesId}
-                onChange={(e) => setSalesId(e.target.value)}
-              >
-                <option value="">Semua Sales</option>
-                {filterOptions.sales
-                  .filter(s => !cabangId || s.cabang_id.toString() === cabangId)
-                  .map(s => (
-                    <option key={s.id} value={s.id.toString()}>{s.nama}</option>
-                  ))
-                }
-              </select>
-            </div>
-          )}
-
-          <button 
-            onClick={handleResetFilters}
-            className="p-2 text-neutral-500 hover:text-neutral-950 dark:text-neutral-400 dark:hover:text-white bg-white hover:bg-neutral-100 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-2xl transition-colors cursor-pointer"
-            title="Reset Filters"
-          >
-            <FiRefreshCw className="w-4 h-4" />
-          </button>
-        </div>
       </div>
+
+      {/* Panel Filter Laporan (Segmen Reusable) */}
+      <FilterPanel 
+        title="Filter Data"
+        role={role}
+        branches={filterOptions.branches}
+        sales={filterOptions.sales}
+        datePreset={datePreset}
+        setDatePreset={setDatePreset}
+        startDate={startDate}
+        setStartDate={setStartDate}
+        endDate={endDate}
+        setEndDate={setEndDate}
+        cabangIds={cabangIds}
+        setCabangIds={setCabangIds}
+        salesIds={salesIds}
+        setSalesIds={setSalesIds}
+        onReset={handleResetFilters}
+      />
 
       {/* Summary Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">

@@ -12,8 +12,18 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url);
     const startDateStr = searchParams.get('startDate') || '';
     const endDateStr = searchParams.get('endDate') || '';
-    const cabang_id = searchParams.get('cabang_id') || '';
-    const sales_id = searchParams.get('sales_id') || '';
+    const raw_cabang_id = searchParams.get('cabang_id') || '';
+    const raw_sales_id = searchParams.get('sales_id') || '';
+
+    // Support multiple IDs (comma-separated)
+    let cabangIds = [];
+    if (raw_cabang_id) {
+      cabangIds = raw_cabang_id.split(',').map(id => BigInt(id));
+    }
+    let salesIds = [];
+    if (raw_sales_id) {
+      salesIds = raw_sales_id.split(',').map(id => BigInt(id));
+    }
 
     // Role-based filtering
     const role = (user.role || '').toLowerCase();
@@ -50,8 +60,8 @@ export async function GET(request) {
     const baseFilter = {
       ...userFilter,
       ...dateFilter,
-      ...(cabang_id ? { cabang_id: BigInt(cabang_id) } : {}),
-      ...(sales_id ? { user_id: BigInt(sales_id) } : {}),
+      ...(cabangIds.length > 0 ? { cabang_id: { in: cabangIds } } : {}),
+      ...(salesIds.length > 0 ? { user_id: { in: salesIds } } : {}),
     };
 
     // 1. Core Summary Metrics
@@ -83,8 +93,8 @@ export async function GET(request) {
 
     const trendFilter = {
       ...userFilter,
-      ...(cabang_id ? { cabang_id: BigInt(cabang_id) } : {}),
-      ...(sales_id ? { user_id: BigInt(sales_id) } : {}),
+      ...(cabangIds.length > 0 ? { cabang_id: { in: cabangIds } } : {}),
+      ...(salesIds.length > 0 ? { user_id: { in: salesIds } } : {}),
       dibuat_tanggal: {
         gte: startOfYear,
         lte: endOfYear
@@ -209,8 +219,8 @@ export async function GET(request) {
         status: 'AKTIF',
         lead: {
           ...userFilter,
-          ...(cabang_id ? { cabang_id: BigInt(cabang_id) } : {}),
-          ...(sales_id ? { user_id: BigInt(sales_id) } : {}),
+          ...(cabangIds.length > 0 ? { cabang_id: { in: cabangIds } } : {}),
+          ...(salesIds.length > 0 ? { user_id: { in: salesIds } } : {}),
         }
       },
       include: {
@@ -231,8 +241,8 @@ export async function GET(request) {
       where: {
         lead: {
           ...userFilter,
-          ...(cabang_id ? { cabang_id: BigInt(cabang_id) } : {}),
-          ...(sales_id ? { user_id: BigInt(sales_id) } : {}),
+          ...(cabangIds.length > 0 ? { cabang_id: { in: cabangIds } } : {}),
+          ...(salesIds.length > 0 ? { user_id: { in: salesIds } } : {}),
         }
       },
       include: {
