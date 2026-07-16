@@ -30,12 +30,57 @@ export async function GET(request) {
     const sortField = searchParams.get('sortField') || 'id';
     const sortOrder = searchParams.get('sortOrder') || 'desc';
 
+    // Build base where clause from global search
     let whereClause = search ? {
       OR: [
         { nama: { contains: search } },
         { telepon: { contains: search } }
       ]
     } : {};
+
+    // Parse column filters: filter[colKey][operator] & filter[colKey][value]
+    const filterConditions = [];
+    const filterKeys = new Set();
+    for (const [paramKey] of searchParams.entries()) {
+      const match = paramKey.match(/^filter\[(.+?)\]\[operator\]$/);
+      if (match) filterKeys.add(match[1]);
+    }
+    for (const colKey of filterKeys) {
+      const operator = searchParams.get(`filter[${colKey}][operator]`);
+      const value = searchParams.get(`filter[${colKey}][value]`);
+      const value2 = searchParams.get(`filter[${colKey}][value2]`);
+      if (!operator || value === null || value === '') continue;
+      let condition = null;
+      if (operator === 'contains') condition = { [colKey]: { contains: value } };
+      else if (operator === 'startsWith') condition = { [colKey]: { startsWith: value } };
+      else if (operator === 'endsWith') condition = { [colKey]: { endsWith: value } };
+      else if (operator === 'equals' || operator === 'eq') condition = { [colKey]: value };
+      else if (operator === 'gt') condition = { [colKey]: { gt: isNaN(Number(value)) ? value : Number(value) } };
+      else if (operator === 'lt') condition = { [colKey]: { lt: isNaN(Number(value)) ? value : Number(value) } };
+      else if (operator === 'between' && value2) condition = { [colKey]: { gte: Number(value), lte: Number(value2) } };
+      else if (operator === 'in') condition = { [colKey]: { in: value.split(',') } };
+      else if (operator === 'today') {
+        const start = new Date(); start.setHours(0,0,0,0);
+        const end = new Date(); end.setHours(23,59,59,999);
+        condition = { [colKey]: { gte: start, lte: end } };
+      } else if (operator === 'thisWeek') {
+        const now = new Date();
+        const start = new Date(now); start.setDate(now.getDate() - now.getDay()); start.setHours(0,0,0,0);
+        const end = new Date(start); end.setDate(start.getDate() + 6); end.setHours(23,59,59,999);
+        condition = { [colKey]: { gte: start, lte: end } };
+      } else if (operator === 'thisMonth') {
+        const now = new Date();
+        const start = new Date(now.getFullYear(), now.getMonth(), 1);
+        const end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+        condition = { [colKey]: { gte: start, lte: end } };
+      } else if (operator === 'custom' && value && value2) {
+        condition = { [colKey]: { gte: new Date(value), lte: new Date(value2 + 'T23:59:59') } };
+      }
+      if (condition) filterConditions.push(condition);
+    }
+    if (filterConditions.length > 0) {
+      whereClause = { AND: [whereClause, ...filterConditions] };
+    }
 
     const customers = await prisma.customer.findMany({
       where: whereClause,

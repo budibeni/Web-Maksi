@@ -1,13 +1,15 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
-import { FiSearch, FiPlus, FiEdit2, FiTrash2, FiX, FiDownload, FiUser, FiPhone, FiMapPin, FiEye } from "react-icons/fi";
+import { FiPlus, FiEdit2, FiTrash2, FiX, FiDownload, FiUser, FiPhone, FiEye } from "react-icons/fi";
 import { exportToExcel } from "@/lib/excel";
 import { useUIStore } from "@/store/ui.store";
 import { useAuthStore } from "@/store/auth.store";
 import dayjs from "dayjs";
+import { DataTable } from "@/components/table";
+import { useDataTable } from "@/hooks/useDataTable";
 
 export default function CustomerPage() {
   const currentUser = useAuthStore(state => state.user);
@@ -18,41 +20,17 @@ export default function CustomerPage() {
 
   const [customers, setCustomers] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  
-  const formatWhatsAppUrl = (phone) => {
-    if (!phone) return '#';
-    let cleanPhone = phone.replace(/\D/g, '');
-    if (cleanPhone.startsWith('0')) {
-      cleanPhone = '62' + cleanPhone.substring(1);
-    }
-    return `https://wa.me/${cleanPhone}`;
-  };
 
-  const [searchTerm, setSearchTerm] = useState("");
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(10);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalData, setTotalData] = useState(0);
-  
-  const [sortField, setSortField] = useState("id");
-  const [sortOrder, setSortOrder] = useState("desc");
-
-  const handleSort = (field) => {
-    if (sortField === field) {
-      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortField(field);
-      setSortOrder('asc');
-    }
-    setPage(1);
-  };
-
-  const renderSortIcon = (field) => {
-    if (sortField !== field) return <span className="text-neutral-300 dark:text-neutral-700 opacity-0 group-hover:opacity-100">↑↓</span>;
-    return sortOrder === 'asc' 
-      ? <span className="text-orange-500">↑</span> 
-      : <span className="text-orange-500">↓</span>;
-  };
+  const {
+    tableState,
+    tableHandlers,
+    buildParams,
+    applyPagination,
+    clearAllFilters,
+  } = useDataTable({
+    defaultSortField: "id",
+    defaultSortOrder: "desc",
+  });
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -68,13 +46,13 @@ export default function CustomerPage() {
   const fetchCustomers = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch(`/api/customer?search=${encodeURIComponent(searchTerm)}&page=${page}&limit=${limit}&sortField=${sortField}&sortOrder=${sortOrder}`);
+      const params = buildParams();
+      const res = await fetch(`/api/customer?${params.toString()}`);
       const json = await res.json();
       if (json.success) {
         setCustomers(json.data);
         if (json.pagination) {
-          setTotalPages(json.pagination.totalPages);
-          setTotalData(json.pagination.totalData);
+          applyPagination(json.pagination);
         }
       }
     } catch (error) {
@@ -89,7 +67,14 @@ export default function CustomerPage() {
       fetchCustomers();
     }, 300);
     return () => clearTimeout(timer);
-  }, [searchTerm, page, limit, sortField, sortOrder]);
+  }, [
+    tableState.searchValue,
+    tableState.page,
+    tableState.pageSize,
+    tableState.sortField,
+    tableState.sortOrder,
+    tableState.columnFilters
+  ]);
 
   const handleOpenModal = (customer = null) => {
     if (customer) {
@@ -165,7 +150,6 @@ export default function CustomerPage() {
   };
 
   const handleExport = async () => {
-    // Export 1000 latest data
     try {
       const res = await fetch(`/api/customer?limit=1000`);
       const json = await res.json();
@@ -183,6 +167,140 @@ export default function CustomerPage() {
       console.error(error);
     }
   };
+
+  const formatWhatsAppUrl = (phone) => {
+    if (!phone) return '#';
+    let cleanPhone = phone.replace(/\D/g, '');
+    if (cleanPhone.startsWith('0')) {
+      cleanPhone = '62' + cleanPhone.substring(1);
+    }
+    return `https://wa.me/${cleanPhone}`;
+  };
+
+  // Definisi kolom DataTable
+  const columns = useMemo(() => [
+    {
+      key: "id",
+      label: "No",
+      sortable: true,
+      width: 80,
+      render: (row) => {
+        const idx = customers.findIndex(c => c.id === row.id);
+        return idx !== -1 ? (tableState.page - 1) * tableState.pageSize + idx + 1 : "—";
+      }
+    },
+    {
+      key: "nama",
+      label: "Nama",
+      sortable: true,
+      filter: { type: "text" },
+      render: (row) => (
+        <div className="flex items-center">
+          <div className="h-10 w-10 flex-shrink-0 rounded-full bg-gradient-to-br from-orange-100 to-orange-200 dark:from-orange-900/40 dark:to-orange-800/40 flex items-center justify-center">
+            <FiUser className="h-5 w-5 text-orange-600 dark:text-orange-500" />
+          </div>
+          <div className="ml-4">
+            <div className="text-sm font-medium text-neutral-900 dark:text-white">
+              {row.nama}
+            </div>
+          </div>
+        </div>
+      )
+    },
+    {
+      key: "telepon",
+      label: "Telepon",
+      sortable: true,
+      filter: { type: "text" },
+      render: (row) => (
+        <a 
+          href={formatWhatsAppUrl(row.telepon)} 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="text-sm text-orange-600 hover:text-orange-700 dark:text-orange-500 dark:hover:text-orange-400 font-medium flex items-center gap-1.5 transition-colors"
+          title="Chat via WhatsApp"
+        >
+          <FiPhone className="w-4 h-4" />
+          {row.telepon}
+        </a>
+      )
+    },
+    {
+      key: "alamat",
+      label: "Alamat",
+      sortable: true,
+      filter: { type: "text" },
+      render: (row) => (
+        <div className="text-sm text-neutral-600 dark:text-neutral-300 max-w-xs truncate" title={row.alamat}>
+          {row.alamat || "—"}
+        </div>
+      )
+    },
+    {
+      key: "catatan",
+      label: "Catatan",
+      sortable: true,
+      filter: { type: "text" },
+      render: (row) => (
+        <div className="text-sm text-neutral-600 dark:text-neutral-300 max-w-xs truncate" title={row.catatan}>
+          {row.catatan || "—"}
+        </div>
+      )
+    },
+    {
+      key: "dibuat_tanggal",
+      label: "Dibuat Oleh",
+      sortable: true,
+      filter: { type: "date" },
+      render: (row) => row.dibuat_oleh ? (
+        <div>
+          {row.dibuat_oleh}
+          <br/>
+          <span className="text-[10px] opacity-70">
+            {dayjs(row.dibuat_tanggal).format('DD/MM/YY HH:mm')}
+          </span>
+        </div>
+      ) : '—'
+    },
+    {
+      key: "diubah_tanggal",
+      label: "Diubah Oleh",
+      sortable: true,
+      filter: { type: "date" },
+      render: (row) => row.diubah_oleh ? (
+        <div>
+          {row.diubah_oleh}
+          <br/>
+          <span className="text-[10px] opacity-70">
+            {row.diubah_tanggal ? dayjs(row.diubah_tanggal).format('DD/MM/YY HH:mm') : '—'}
+          </span>
+        </div>
+      ) : '—'
+    }
+  ], [customers, tableState.page, tableState.pageSize]);
+
+  const actions = useMemo(() => [
+    {
+      label: "Lihat Detail",
+      icon: FiEye,
+      variant: "default",
+      onClick: (row) => window.location.href = `/customer/${row.id}`
+    },
+    {
+      label: "Edit",
+      icon: FiEdit2,
+      variant: "warning",
+      onClick: (row) => handleOpenModal(row),
+      show: () => canEditCustomer
+    },
+    {
+      label: "Hapus",
+      icon: FiTrash2,
+      variant: "danger",
+      onClick: (row) => handleDelete(row.id),
+      show: () => canDeleteCustomer
+    }
+  ], [canEditCustomer, canDeleteCustomer]);
 
   return (
     <div className="space-y-6">
@@ -208,212 +326,34 @@ export default function CustomerPage() {
           document.getElementById("header-actions-portal")
         )}
 
-      {/* Filter & Table Container */}
-      <div className="bg-white dark:bg-neutral-900 border border-neutral-200/50 dark:border-neutral-800 rounded-2xl shadow-sm overflow-hidden">
-        {/* Toolbar */}
-        <div className="p-4 border-b border-neutral-100 dark:border-neutral-800 flex flex-col sm:flex-row gap-4 justify-between items-center bg-neutral-50/50 dark:bg-neutral-900/50">
-          <div className="relative w-full sm:w-80">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <FiSearch className="text-neutral-400" />
-            </div>
-            <input
-              type="text"
-              className="block w-full pl-10 pr-3 py-2 border border-neutral-200 dark:border-neutral-700 rounded-xl leading-5 bg-white dark:bg-neutral-950 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-colors sm:text-sm"
-              placeholder="Cari nama atau telepon..."
-              value={searchTerm}
-              onChange={(e) => {
-                setSearchTerm(e.target.value);
-                setPage(1);
-              }}
-            />
-          </div>
-        </div>
-
-        {/* Table */}
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-neutral-200 dark:divide-neutral-800">
-            <thead className="bg-neutral-50 dark:bg-neutral-900">
-              <tr>
-                <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider cursor-pointer group" onClick={() => handleSort('id')}>
-                  <div className="flex items-center gap-1">No {renderSortIcon('id')}</div>
-                </th>
-                <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider cursor-pointer group" onClick={() => handleSort('nama')}>
-                  <div className="flex items-center gap-1">Nama {renderSortIcon('nama')}</div>
-                </th>
-                <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider cursor-pointer group" onClick={() => handleSort('telepon')}>
-                  <div className="flex items-center gap-1">Telepon {renderSortIcon('telepon')}</div>
-                </th>
-                <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider hidden md:table-cell cursor-pointer group" onClick={() => handleSort('alamat')}>
-                  <div className="flex items-center gap-1">Alamat {renderSortIcon('alamat')}</div>
-                </th>
-                <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider hidden lg:table-cell cursor-pointer group" onClick={() => handleSort('catatan')}>
-                  <div className="flex items-center gap-1">Catatan {renderSortIcon('catatan')}</div>
-                </th>
-                <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider cursor-pointer group" onClick={() => handleSort('dibuat_tanggal')}>
-                  <div className="flex items-center gap-1">Dibuat Oleh {renderSortIcon('dibuat_tanggal')}</div>
-                </th>
-                <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider cursor-pointer group" onClick={() => handleSort('diubah_tanggal')}>
-                  <div className="flex items-center gap-1">Diubah Oleh {renderSortIcon('diubah_tanggal')}</div>
-                </th>
-                <th scope="col" className="px-6 py-4 text-right text-xs font-semibold text-neutral-500 uppercase tracking-wider">Aksi</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
-              {isLoading ? (
-                <tr>
-                  <td colSpan="8" className="px-6 py-8 text-center text-neutral-500">
-                    <div className="flex items-center justify-center gap-2">
-                      <div className="w-5 h-5 border-2 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
-                      <span>Memuat data...</span>
-                    </div>
-                  </td>
-                </tr>
-              ) : customers.length === 0 ? (
-                <tr>
-                  <td colSpan="8" className="px-6 py-8 text-center text-neutral-500">
-                    Tidak ada data customer yang ditemukan.
-                  </td>
-                </tr>
-              ) : (
-                customers.map((c, i) => (
-                  <tr key={c.id} className="hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors group">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-neutral-500">
-                      {(page - 1) * limit + i + 1}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="h-10 w-10 flex-shrink-0 rounded-full bg-gradient-to-br from-orange-100 to-orange-200 dark:from-orange-900/40 dark:to-orange-800/40 flex items-center justify-center">
-                          <FiUser className="h-5 w-5 text-orange-600 dark:text-orange-500" />
-                        </div>
-                        <div className="ml-4">
-                          <div className="text-sm font-medium text-neutral-900 dark:text-white">
-                            {c.nama}
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <a 
-                        href={formatWhatsAppUrl(c.telepon)} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="text-sm text-orange-600 hover:text-orange-700 dark:text-orange-500 dark:hover:text-orange-400 font-medium flex items-center gap-1.5 transition-colors"
-                        title="Chat via WhatsApp"
-                      >
-                        <FiPhone className="w-4 h-4" />
-                        {c.telepon}
-                      </a>
-                    </td>
-                    <td className="px-6 py-4 hidden md:table-cell">
-                      <div className="text-sm text-neutral-600 dark:text-neutral-300 max-w-xs truncate" title={c.alamat}>
-                        {c.alamat || ""}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 hidden lg:table-cell">
-                      <div className="text-sm text-neutral-600 dark:text-neutral-300 max-w-xs truncate" title={c.catatan}>
-                        {c.catatan || ""}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-xs text-neutral-500">
-                      {c.dibuat_oleh ? <div>{c.dibuat_oleh} <br/><span className="text-[10px] opacity-70">{dayjs(c.dibuat_tanggal).format('DD/MM/YY HH:mm')}</span></div> : '-'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-xs text-neutral-500">
-                      {c.diubah_oleh ? <div>{c.diubah_oleh} <br/><span className="text-[10px] opacity-70">{c.diubah_tanggal ? dayjs(c.diubah_tanggal).format('DD/MM/YY HH:mm') : '-'}</span></div> : '-'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <div className="flex items-center justify-end gap-2">
-                        <Link 
-                          href={`/customer/${c.id}`}
-                          className="p-2 text-neutral-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
-                          title="Lihat Detail"
-                        >
-                          <FiEye className="w-4 h-4" />
-                        </Link>
-                        {canEditCustomer && (
-                          <button 
-                            onClick={() => handleOpenModal(c)}
-                            className="p-2 text-neutral-400 hover:text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/30 rounded-lg transition-colors"
-                            title="Edit"
-                          >
-                            <FiEdit2 className="w-4 h-4" />
-                          </button>
-                        )}
-                        {canDeleteCustomer && (
-                          <button 
-                            onClick={() => handleDelete(c.id)}
-                            className="p-2 text-neutral-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
-                            title="Hapus"
-                          >
-                            <FiTrash2 className="w-4 h-4" />
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Pagination */}
-        {!isLoading && customers.length > 0 && (
-          <div className="px-6 py-4 border-t border-neutral-100 dark:border-neutral-800 flex flex-col sm:flex-row items-center justify-between gap-4 bg-white dark:bg-neutral-900">
-            <div className="flex flex-col sm:flex-row items-center gap-4">
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-neutral-500 dark:text-neutral-400">Baris:</span>
-                <select 
-                  value={limit} 
-                  onChange={(e) => {
-                    setLimit(Number(e.target.value));
-                    setPage(1);
-                  }}
-                  className="bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 text-sm rounded-lg focus:ring-orange-500 focus:border-orange-500 block px-2.5 py-1.5 outline-none cursor-pointer"
-                >
-                  <option value="10">10</option>
-                  <option value="25">25</option>
-                  <option value="50">50</option>
-                  <option value="100">100</option>
-                </select>
-              </div>
-              <div className="text-sm text-neutral-500 dark:text-neutral-400">
-                Menampilkan <span className="font-medium text-neutral-900 dark:text-white">{(page - 1) * limit + 1}</span> - <span className="font-medium text-neutral-900 dark:text-white">{Math.min(page * limit, totalData)}</span> dari <span className="font-medium text-neutral-900 dark:text-white">{totalData}</span>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <button 
-                onClick={() => setPage(p => Math.max(1, p - 1))}
-                disabled={page === 1}
-                className="px-3 py-1.5 text-sm font-medium rounded-lg border border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-neutral-700 dark:text-neutral-300"
-              >
-                Sebelumnya
-              </button>
-              
-              <div className="text-sm font-medium text-neutral-700 dark:text-neutral-300 px-2 flex items-center gap-2">
-                Hal 
-                <select 
-                  value={page}
-                  onChange={(e) => setPage(Number(e.target.value))}
-                  className="bg-white dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 text-sm rounded-lg focus:ring-orange-500 focus:border-orange-500 block px-2 py-1 outline-none cursor-pointer text-center min-w-[3rem]"
-                >
-                  {Array.from({length: Math.max(1, totalPages)}, (_, i) => i + 1).map(p => (
-                    <option key={p} value={p}>{p}</option>
-                  ))}
-                </select> 
-                dari {totalPages}
-              </div>
-
-              <button 
-                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                disabled={page >= totalPages}
-                className="px-3 py-1.5 text-sm font-medium rounded-lg border border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-neutral-700 dark:text-neutral-300"
-              >
-                Selanjutnya
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
+      <DataTable
+        columns={columns}
+        data={customers}
+        isLoading={isLoading}
+        emptyText="Tidak ada data customer yang ditemukan."
+        rowKey="id"
+        // Pagination
+        page={tableState.page}
+        pageSize={tableState.pageSize}
+        totalData={tableState.totalData}
+        totalPages={tableState.totalPages}
+        onPageChange={tableHandlers.onPageChange}
+        onLimitChange={tableHandlers.onLimitChange}
+        // Sorting
+        sortField={tableState.sortField}
+        sortOrder={tableState.sortOrder}
+        onSortChange={tableHandlers.onSortChange}
+        // Search
+        searchValue={tableState.searchValue}
+        onSearchChange={tableHandlers.onSearchChange}
+        searchPlaceholder="Cari nama atau telepon..."
+        // Filter
+        columnFilters={tableState.columnFilters}
+        onFilterChange={tableHandlers.onFilterChange}
+        onResetFilters={() => { clearAllFilters(); tableHandlers.onSearchChange(""); }}
+        // Actions
+        actions={actions}
+      />
 
       {/* Modal */}
       {isModalOpen && (

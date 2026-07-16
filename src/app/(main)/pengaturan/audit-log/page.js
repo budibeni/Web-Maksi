@@ -1,15 +1,35 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { createPortal } from "react-dom";
 import { 
-  FiSearch, FiFilter, FiRefreshCw, FiDownload, FiChevronLeft, FiChevronRight, 
-  FiClock, FiUser, FiShield, FiBox, FiTarget, FiUsers, FiInfo, FiChevronRight as FiCr
+  FiClock, FiUser, FiShield, FiBox, FiTarget, FiUsers, FiInfo, FiRefreshCw, FiDownload 
 } from "react-icons/fi";
 import { exportToExcel } from "@/lib/excel";
 import { useUIStore } from "@/store/ui.store";
+import { DataTable } from "@/components/table";
+import { useDataTable } from "@/hooks/useDataTable";
 
-const MODUL_OPTIONS = ["", "AUTH", "USER", "CUSTOMER", "LEAD", "PENAWARAN"];
-const AKSI_OPTIONS = ["", "LOGIN", "LOGOUT", "CREATE", "UPDATE", "DELETE", "FOLLOW_UP", "DEAL", "LOST", "DEACTIVATE", "CHANGE_PASSWORD"];
+const MODUL_OPTIONS = [
+  { value: "AUTH", label: "AUTH" },
+  { value: "USER", label: "USER" },
+  { value: "CUSTOMER", label: "CUSTOMER" },
+  { value: "LEAD", label: "LEAD" },
+  { value: "PENAWARAN", label: "PENAWARAN" }
+];
+
+const AKSI_OPTIONS = [
+  { value: "LOGIN", label: "LOGIN" },
+  { value: "LOGOUT", label: "LOGOUT" },
+  { value: "CREATE", label: "CREATE" },
+  { value: "UPDATE", label: "UPDATE" },
+  { value: "DELETE", label: "DELETE" },
+  { value: "FOLLOW_UP", label: "FOLLOW_UP" },
+  { value: "DEAL", label: "DEAL" },
+  { value: "LOST", label: "LOST" },
+  { value: "DEACTIVATE", label: "DEACTIVATE" },
+  { value: "CHANGE_PASSWORD", label: "CHANGE_PASSWORD" }
+];
 
 const AKSI_BADGE = {
   "LOGIN": "bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-400",
@@ -45,37 +65,40 @@ export default function AuditLogPage() {
   const { showToast } = useUIStore();
   const [logs, setLogs] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [pagination, setPagination] = useState({ page: 1, limit: 25, total: 0, totalPages: 1 });
-
   const [selectedLog, setSelectedLog] = useState(null);
+  const [mounted, setMounted] = useState(false);
 
-  const [filters, setFilters] = useState({
-    search: "",
-    modul: "",
-    aksi: "",
-    startDate: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10),
-    endDate: new Date().toISOString().slice(0, 10),
+  const {
+    tableState,
+    tableHandlers,
+    buildParams,
+    applyPagination,
+    clearAllFilters,
+  } = useDataTable({
+    defaultPageSize: 25,
+    defaultSortField: "dibuat_tanggal",
+    defaultSortOrder: "desc"
   });
 
-  const fetchLogs = async (page = 1) => {
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const fetchLogs = async () => {
     setIsLoading(true);
     try {
-      const params = new URLSearchParams({
-        search: filters.search,
-        modul: filters.modul,
-        aksi: filters.aksi,
-        startDate: filters.startDate,
-        endDate: filters.endDate,
-        page: String(page),
-        limit: String(pagination.limit),
-      });
-
-      const res = await fetch(`/api/audit-log?${params}`);
+      const params = buildParams();
+      const res = await fetch(`/api/audit-log?${params.toString()}`);
       const json = await res.json();
       
       if (json.success) {
         setLogs(json.data);
-        setPagination(p => ({ ...p, ...json.pagination }));
+        if (json.pagination) {
+          applyPagination({
+            totalData: json.pagination.total,
+            totalPages: json.pagination.totalPages
+          });
+        }
       } else {
         showToast(json.message || "Gagal memuat data.", "error");
       }
@@ -87,13 +110,18 @@ export default function AuditLogPage() {
   };
 
   useEffect(() => {
-    fetchLogs(1);
-  }, []);
-
-  const handleSearch = (e) => {
-    e.preventDefault();
-    fetchLogs(1);
-  };
+    const timer = setTimeout(() => {
+      fetchLogs();
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [
+    tableState.searchValue,
+    tableState.page,
+    tableState.pageSize,
+    tableState.sortField,
+    tableState.sortOrder,
+    tableState.columnFilters
+  ]);
 
   const handleExport = () => {
     if (!logs.length) { showToast("Tidak ada data untuk diexport.", "error"); return; }
@@ -106,240 +134,147 @@ export default function AuditLogPage() {
       DESKRIPSI: log.deskripsi || "",
       IP_ADDRESS: log.ip_address || "",
     }));
-    exportToExcel(exportData, `audit_log_${filters.startDate}_${filters.endDate}.xlsx`);
+    exportToExcel(exportData, `audit_log.xlsx`);
   };
+
+  const columns = useMemo(() => [
+    {
+      key: "dibuat_tanggal",
+      label: "Waktu",
+      sortable: true,
+      filter: { type: "date" },
+      render: (row) => formatDateTime(row.dibuat_tanggal)
+    },
+    {
+      key: "nama_user",
+      label: "Pengguna",
+      sortable: true,
+      filter: { type: "text" },
+      render: (row) => (
+        <div className="flex items-center gap-2">
+          <div className="h-7 w-7 rounded-full bg-orange-50 dark:bg-orange-950/30 flex items-center justify-center text-orange-600 dark:text-orange-500 font-black text-[10px]">
+            {row.nama_user?.charAt(0)?.toUpperCase() || "?"}
+          </div>
+          <span className="font-bold text-neutral-900 dark:text-white">{row.nama_user}</span>
+        </div>
+      )
+    },
+    {
+      key: "modul",
+      label: "Modul",
+      sortable: true,
+      filter: { type: "select", options: MODUL_OPTIONS },
+      render: (row) => {
+        const ModulIcon = MODUL_ICON[row.modul] || FiInfo;
+        return (
+          <div className="flex items-center gap-1.5">
+            <ModulIcon className="w-3.5 h-3.5 text-neutral-400" />
+            <span>{row.modul}</span>
+          </div>
+        );
+      }
+    },
+    {
+      key: "aksi",
+      label: "Aksi",
+      sortable: true,
+      filter: { type: "select", options: AKSI_OPTIONS },
+      render: (row) => (
+        <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase border-0 ${AKSI_BADGE[row.aksi] || "bg-neutral-100 text-neutral-500"}`}>
+          {row.aksi}
+        </span>
+      )
+    },
+    {
+      key: "deskripsi",
+      label: "Deskripsi",
+      sortable: true,
+      filter: { type: "text" },
+      render: (row) => (
+        <p className="max-w-xs truncate" title={row.deskripsi || ""}>
+          {row.deskripsi || "—"}
+        </p>
+      )
+    },
+    {
+      key: "ip_address",
+      label: "IP Address",
+      sortable: true,
+      filter: { type: "text" },
+      render: (row) => row.ip_address || "—"
+    }
+  ], []);
+
+  const actions = useMemo(() => [
+    {
+      label: "Lihat Detail Perubahan",
+      icon: FiInfo,
+      variant: "default",
+      onClick: (row) => setSelectedLog(row),
+      show: (row) => !!(row.data_sebelum || row.data_sesudah)
+    }
+  ], []);
 
   return (
     <div className="space-y-6">
-
-
-      {/* Filter Card */}
-      <div className="bg-white dark:bg-neutral-900 border border-neutral-200/50 dark:border-neutral-800 rounded-2xl shadow-sm overflow-hidden">
-        <div className="p-4 border-b border-neutral-100 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-900/50 flex items-center gap-2">
-          <FiFilter className="w-4 h-4 text-orange-500" />
-          <span className="text-xs font-bold text-neutral-700 dark:text-neutral-300">Filter</span>
-        </div>
-        <form onSubmit={handleSearch} className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-          {/* Search */}
-          <div className="relative lg:col-span-2">
-            <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <FiSearch className="w-4 h-4 text-neutral-400" />
-            </span>
-            <input
-              type="text"
-              value={filters.search}
-              onChange={e => setFilters(p => ({ ...p, search: e.target.value }))}
-              placeholder="Cari nama user atau deskripsi..."
-              className="w-full pl-10 pr-3 py-2 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 text-xs font-semibold dark:text-white placeholder:text-neutral-400 transition-all"
-            />
-          </div>
-
-          {/* Modul */}
-          <select
-            value={filters.modul}
-            onChange={e => setFilters(p => ({ ...p, modul: e.target.value }))}
-            className="py-2 px-3 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 text-xs font-semibold dark:text-white transition-all appearance-none"
-          >
-            {MODUL_OPTIONS.map(m => <option key={m} value={m}>{m || "Semua Modul"}</option>)}
-          </select>
-
-          {/* Aksi */}
-          <select
-            value={filters.aksi}
-            onChange={e => setFilters(p => ({ ...p, aksi: e.target.value }))}
-            className="py-2 px-3 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 text-xs font-semibold dark:text-white transition-all appearance-none"
-          >
-            {AKSI_OPTIONS.map(a => <option key={a} value={a}>{a || "Semua Aksi"}</option>)}
-          </select>
-
-          {/* Tanggal Awal */}
-          <input
-            type="date"
-            value={filters.startDate}
-            onChange={e => setFilters(p => ({ ...p, startDate: e.target.value }))}
-            className="py-2 px-3 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 text-xs font-semibold dark:text-white transition-all"
-          />
-
-          {/* Tanggal Akhir */}
-          <input
-            type="date"
-            value={filters.endDate}
-            onChange={e => setFilters(p => ({ ...p, endDate: e.target.value }))}
-            className="py-2 px-3 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 text-xs font-semibold dark:text-white transition-all"
-          />
-
-          <div className="sm:col-span-2 lg:col-span-5 flex justify-end gap-2 pt-1">
-            <button
-              type="button"
-              onClick={handleExport}
-              className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-neutral-600 dark:text-neutral-400 font-bold rounded-xl text-xs hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-all active:scale-95"
-            >
-              <FiDownload className="w-4 h-4" />
-              Export Excel
-            </button>
-            <button
-              type="submit"
-              className="flex items-center gap-2 px-5 py-2 bg-orange-500 hover:bg-orange-600 text-white font-bold rounded-xl text-xs transition-all active:scale-95 shadow-sm"
-            >
-              <FiSearch className="w-4 h-4" />
-              Tampilkan
-            </button>
-          </div>
-        </form>
-      </div>
-
-      {/* Table */}
-      <div className="bg-white dark:bg-neutral-900 border border-neutral-200/50 dark:border-neutral-800 rounded-2xl shadow-sm overflow-hidden">
-        <div className="p-4 border-b border-neutral-100 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-900/50 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <FiClock className="w-4 h-4 text-orange-500" />
-            <span className="text-xs font-bold text-neutral-700 dark:text-neutral-300">
-              Ditemukan {pagination.total.toLocaleString('id-ID')} data
-            </span>
-          </div>
+      {mounted && document.getElementById("header-actions-portal") && createPortal(
+        <div className="flex items-center gap-2">
           <button 
-            onClick={() => fetchLogs(pagination.page)} 
-            className="p-2 text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors"
+            className="p-2 text-neutral-500 hover:text-neutral-900 bg-white hover:bg-neutral-100 dark:bg-neutral-900 dark:text-neutral-400 dark:hover:text-white dark:hover:bg-neutral-800 rounded-full transition-colors border border-neutral-200 dark:border-neutral-800"
+            title="Export ke Excel"
+            onClick={handleExport}
+          >
+            <FiDownload className="w-4 h-4" />
+          </button>
+          <button 
+            className="p-2 text-neutral-500 hover:text-neutral-900 bg-white hover:bg-neutral-100 dark:bg-neutral-900 dark:text-neutral-400 dark:hover:text-white dark:hover:bg-neutral-800 rounded-full transition-colors border border-neutral-200 dark:border-neutral-800"
             title="Refresh"
+            onClick={fetchLogs}
           >
             <FiRefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
           </button>
-        </div>
+        </div>,
+        document.getElementById("header-actions-portal")
+      )}
 
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-neutral-200 dark:divide-neutral-800">
-            <thead className="bg-neutral-50 dark:bg-neutral-900 text-neutral-400 text-[10px] uppercase font-bold tracking-wider">
-              <tr>
-                <th className="px-5 py-4 text-left">Waktu</th>
-                <th className="px-5 py-4 text-left">Pengguna</th>
-                <th className="px-5 py-4 text-left">Modul</th>
-                <th className="px-5 py-4 text-left">Aksi</th>
-                <th className="px-5 py-4 text-left">Deskripsi</th>
-                <th className="px-5 py-4 text-left">IP Address</th>
-                <th className="px-5 py-4 text-center">Detail</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800 text-xs font-semibold text-neutral-700 dark:text-neutral-300">
-              {isLoading ? (
-                <tr>
-                  <td colSpan="7" className="px-5 py-10 text-center text-neutral-400">
-                    <div className="flex justify-center items-center gap-2">
-                      <div className="w-5 h-5 border-2 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
-                      <span>Memuat data...</span>
-                    </div>
-                  </td>
-                </tr>
-              ) : logs.length === 0 ? (
-                <tr>
-                  <td colSpan="7" className="px-5 py-10 text-center">
-                    <div className="flex flex-col items-center gap-2 text-neutral-400">
-                      <FiClock className="w-8 h-8 opacity-30" />
-                      <span className="font-medium">Tidak ada data ditemukan.</span>
-                    </div>
-                  </td>
-                </tr>
-              ) : (
-                logs.map(log => {
-                  const ModulIcon = MODUL_ICON[log.modul] || FiInfo;
-                  return (
-                    <tr key={log.id} className="hover:bg-neutral-50/50 dark:hover:bg-neutral-850/20 transition-colors">
-                      <td className="px-5 py-4 whitespace-nowrap text-neutral-500 dark:text-neutral-400">
-                        {formatDateTime(log.dibuat_tanggal)}
-                      </td>
-                      <td className="px-5 py-4 whitespace-nowrap">
-                        <div className="flex items-center gap-2">
-                          <div className="h-7 w-7 rounded-full bg-orange-50 dark:bg-orange-950/30 flex items-center justify-center text-orange-600 dark:text-orange-500 font-black text-[10px]">
-                            {log.nama_user?.charAt(0)?.toUpperCase() || "?"}
-                          </div>
-                          <span className="font-bold text-neutral-900 dark:text-white">{log.nama_user}</span>
-                        </div>
-                      </td>
-                      <td className="px-5 py-4 whitespace-nowrap">
-                        <div className="flex items-center gap-1.5">
-                          <ModulIcon className="w-3.5 h-3.5 text-neutral-400" />
-                          <span>{log.modul}</span>
-                        </div>
-                      </td>
-                      <td className="px-5 py-4 whitespace-nowrap">
-                        <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase border-0 ${AKSI_BADGE[log.aksi] || "bg-neutral-100 text-neutral-500"}`}>
-                          {log.aksi}
-                        </span>
-                      </td>
-                      <td className="px-5 py-4 max-w-xs">
-                        <p className="truncate" title={log.deskripsi || ""}>{log.deskripsi || "-"}</p>
-                      </td>
-                      <td className="px-5 py-4 whitespace-nowrap text-neutral-400">
-                        {log.ip_address || "-"}
-                      </td>
-                      <td className="px-5 py-4 text-center">
-                        {(log.data_sebelum || log.data_sesudah) && (
-                          <button
-                            onClick={() => setSelectedLog(log)}
-                            className="p-1.5 text-neutral-400 hover:text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20 rounded-lg transition-colors"
-                            title="Lihat Detail Perubahan"
-                          >
-                            <FiInfo className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Pagination */}
-        {pagination.totalPages > 1 && (
-          <div className="p-4 border-t border-neutral-100 dark:border-neutral-800 flex items-center justify-between">
-            <span className="text-xs text-neutral-500 dark:text-neutral-400 font-medium">
-              Halaman {pagination.page} dari {pagination.totalPages}
-            </span>
-            <div className="flex items-center gap-1.5">
-              <button
-                onClick={() => fetchLogs(pagination.page - 1)}
-                disabled={pagination.page <= 1}
-                className="p-2 rounded-lg border border-neutral-200 dark:border-neutral-800 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-              >
-                <FiChevronLeft className="w-4 h-4" />
-              </button>
-              {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
-                const page = Math.max(1, Math.min(pagination.page - 2, pagination.totalPages - 4)) + i;
-                return (
-                  <button
-                    key={page}
-                    onClick={() => fetchLogs(page)}
-                    className={`w-8 h-8 rounded-lg text-xs font-bold transition-colors ${
-                      page === pagination.page 
-                        ? "bg-orange-500 text-white shadow-sm" 
-                        : "border border-neutral-200 dark:border-neutral-800 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800"
-                    }`}
-                  >
-                    {page}
-                  </button>
-                );
-              })}
-              <button
-                onClick={() => fetchLogs(pagination.page + 1)}
-                disabled={pagination.page >= pagination.totalPages}
-                className="p-2 rounded-lg border border-neutral-200 dark:border-neutral-800 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-              >
-                <FiChevronRight className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
+      <DataTable
+        columns={columns}
+        data={logs}
+        isLoading={isLoading}
+        emptyText="Tidak ada riwayat audit ditemukan."
+        rowKey="id"
+        // Pagination
+        page={tableState.page}
+        pageSize={tableState.pageSize}
+        totalData={tableState.totalData}
+        totalPages={tableState.totalPages}
+        onPageChange={tableHandlers.onPageChange}
+        onLimitChange={tableHandlers.onLimitChange}
+        limitOptions={[10, 25, 50, 100]}
+        // Sorting
+        sortField={tableState.sortField}
+        sortOrder={tableState.sortOrder}
+        onSortChange={tableHandlers.onSortChange}
+        // Search
+        searchValue={tableState.searchValue}
+        onSearchChange={tableHandlers.onSearchChange}
+        searchPlaceholder="Cari nama user atau deskripsi..."
+        // Filter
+        columnFilters={tableState.columnFilters}
+        onFilterChange={tableHandlers.onFilterChange}
+        onResetFilters={() => { clearAllFilters(); tableHandlers.onSearchChange(""); }}
+        // Actions
+        actions={actions}
+      />
 
       {/* Detail Modal */}
       {selectedLog && (
         <div 
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-neutral-900/60 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-neutral-900/60 backdrop-blur-sm animate-in fade-in"
           onClick={() => setSelectedLog(null)}
         >
           <div 
-            className="bg-white dark:bg-neutral-900 rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden"
+            className="bg-white dark:bg-neutral-900 rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden animate-in zoom-in-95"
             onClick={e => e.stopPropagation()}
           >
             <div className="px-6 py-4 border-b border-neutral-100 dark:border-neutral-800 flex items-center justify-between bg-neutral-50/50 dark:bg-neutral-900/50">
@@ -349,13 +284,13 @@ export default function AuditLogPage() {
               </h3>
               <button 
                 onClick={() => setSelectedLog(null)}
-                className="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 transition-colors"
+                className="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200 transition-colors font-bold"
               >
                 ✕
               </button>
             </div>
 
-            <div className="p-6 space-y-4">
+            <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
               <div className="grid grid-cols-2 gap-4 text-xs">
                 <div>
                   <p className="text-neutral-400 font-medium mb-0.5">Pengguna</p>
@@ -371,7 +306,7 @@ export default function AuditLogPage() {
                 </div>
                 <div>
                   <p className="text-neutral-400 font-medium mb-0.5">Aksi</p>
-                  <span className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${AKSI_BADGE[selectedLog.aksi] || "bg-neutral-100 text-neutral-500"}`}>
+                  <span className={`inline-block px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${AKSI_BADGE[selectedLog.aksi] || "bg-neutral-100 text-neutral-500"}`}>
                     {selectedLog.aksi}
                   </span>
                 </div>

@@ -9,8 +9,8 @@ export async function GET(request) {
     const page = parseInt(searchParams.get('page')) || 1;
     const limit = parseInt(searchParams.get('limit')) || 10;
     const isExport = searchParams.get('export') === 'true';
-    const sortBy = searchParams.get('sortBy') || 'id';
-    const sortOrder = searchParams.get('sortOrder') || 'desc';
+    const sortField = searchParams.get('sortField') || searchParams.get('sortBy') || 'id';
+    const sortOrder = (searchParams.get('sortOrder') || searchParams.get('sortOrder') || 'desc') === 'asc' ? 'asc' : 'desc';
     
     const skip = (page - 1) * limit;
 
@@ -31,24 +31,77 @@ export async function GET(request) {
     
     if (kategori_id && kategori_id !== "all") {
       whereClause.produk = {
+        ...whereClause.produk,
         kategori_produk_id: BigInt(kategori_id)
       };
-      if (search) {
-        whereClause.produk.OR = [
-          { nama: { contains: search } },
-          { kode: { contains: search } }
-        ];
-        delete whereClause.OR;
+    }
+
+    // Parse column filters
+    const filterConditions = [];
+    const filterKeys = new Set();
+    for (const [paramKey] of searchParams.entries()) {
+      const match = paramKey.match(/^filter\[(.+?)\]\[operator\]$/);
+      if (match) filterKeys.add(match[1]);
+    }
+    for (const colKey of filterKeys) {
+      const operator = searchParams.get(`filter[${colKey}][operator]`);
+      const value = searchParams.get(`filter[${colKey}][value]`);
+      const value2 = searchParams.get(`filter[${colKey}][value2]`);
+      if (!operator || value === null || value === '') continue;
+      
+      let condition = null;
+      if (colKey === 'produk.kode') {
+        if (operator === 'contains') condition = { produk: { kode: { contains: value } } };
+        else if (operator === 'equals') condition = { produk: { kode: value } };
+      } else if (colKey === 'produk.nama') {
+        if (operator === 'contains') condition = { produk: { nama: { contains: value } } };
+        else if (operator === 'equals') condition = { produk: { nama: value } };
+      } else if (colKey === 'cabang.nama') {
+        if (operator === 'contains') condition = { cabang: { nama: { contains: value } } };
+        else if (operator === 'equals') condition = { cabang: { nama: value } };
+      } else if (operator === 'contains') condition = { [colKey]: { contains: value } };
+      else if (operator === 'startsWith') condition = { [colKey]: { startsWith: value } };
+      else if (operator === 'endsWith') condition = { [colKey]: { endsWith: value } };
+      else if (operator === 'equals' || operator === 'eq') {
+        condition = { [colKey]: colKey === 'cabang_id' || colKey === 'produk_id' ? BigInt(value) : value };
+      } else if (operator === 'gt') condition = { [colKey]: { gt: isNaN(Number(value)) ? value : Number(value) } };
+      else if (operator === 'lt') condition = { [colKey]: { lt: isNaN(Number(value)) ? value : Number(value) } };
+      else if (operator === 'between' && value2) condition = { [colKey]: { gte: Number(value), lte: Number(value2) } };
+      else if (operator === 'in') {
+        const parsedVals = value.split(',').map(v => isNaN(Number(v)) ? v : BigInt(v));
+        condition = { [colKey]: { in: parsedVals } };
+      } else if (operator === 'today') {
+        const start = new Date(); start.setHours(0,0,0,0);
+        const end = new Date(); end.setHours(23,59,59,999);
+        condition = { [colKey]: { gte: start, lte: end } };
+      } else if (operator === 'thisWeek') {
+        const now = new Date();
+        const start = new Date(now); start.setDate(now.getDate() - now.getDay()); start.setHours(0,0,0,0);
+        const end = new Date(start); end.setDate(start.getDate() + 6); end.setHours(23,59,59,999);
+        condition = { [colKey]: { gte: start, lte: end } };
+      } else if (operator === 'thisMonth') {
+        const now = new Date();
+        const start = new Date(now.getFullYear(), now.getMonth(), 1);
+        const end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+        condition = { [colKey]: { gte: start, lte: end } };
+      } else if (operator === 'custom' && value && value2) {
+        condition = { [colKey]: { gte: new Date(value), lte: new Date(value2 + 'T23:59:59') } };
       }
+      if (condition) filterConditions.push(condition);
+    }
+    if (filterConditions.length > 0) {
+      whereClause = { AND: [whereClause, ...filterConditions] };
     }
 
     let orderByClause = {};
-    if (sortBy === 'produk') {
+    if (sortField === 'produk' || sortField === 'produk.kode') {
       orderByClause = { produk: { kode: sortOrder } };
-    } else if (sortBy === 'cabang') {
+    } else if (sortField === 'produk.nama') {
+      orderByClause = { produk: { nama: sortOrder } };
+    } else if (sortField === 'cabang' || sortField === 'cabang.nama') {
       orderByClause = { cabang: { nama: sortOrder } };
     } else {
-      orderByClause[sortBy] = sortOrder;
+      orderByClause[sortField] = sortOrder;
     }
 
     const hargaProduks = await prisma.hargaProduk.findMany({

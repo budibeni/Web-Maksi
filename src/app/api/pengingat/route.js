@@ -49,6 +49,10 @@ export async function GET(request) {
     endOfTomorrow.setDate(endOfTomorrow.getDate() + 1);
     endOfTomorrow.setHours(23, 59, 59, 999);
 
+    // Sort configuration
+    const sortField = searchParams.get('sortField') || 'tanggal_pengingat';
+    const sortOrder = (searchParams.get('sortOrder') || 'asc') === 'asc' ? 'asc' : 'desc';
+
     // Build the dynamic where object
     let dateFilter = {};
     let statusFilter = status ? { status } : {};
@@ -81,7 +85,7 @@ export async function GET(request) {
       };
     }
 
-    const where = {
+    let where = {
       ...userFilter,
       ...statusFilter,
       ...dateFilter,
@@ -95,6 +99,69 @@ export async function GET(request) {
         ]
       } : {}),
     };
+
+    // Parse column filters
+    const filterConditions = [];
+    const filterKeys = new Set();
+    for (const [paramKey] of searchParams.entries()) {
+      const match = paramKey.match(/^filter\[(.+?)\]\[operator\]$/);
+      if (match) filterKeys.add(match[1]);
+    }
+    for (const colKey of filterKeys) {
+      const operator = searchParams.get(`filter[${colKey}][operator]`);
+      const value = searchParams.get(`filter[${colKey}][value]`);
+      const value2 = searchParams.get(`filter[${colKey}][value2]`);
+      if (!operator || value === null || value === '') continue;
+      
+      let condition = null;
+      if (colKey === 'lead.nomor') {
+        if (operator === 'contains') condition = { lead: { nomor: { contains: value } } };
+        else if (operator === 'equals') condition = { lead: { nomor: value } };
+      } else if (colKey === 'lead.customer.nama') {
+        if (operator === 'contains') condition = { lead: { customer: { nama: { contains: value } } } };
+        else if (operator === 'equals') condition = { lead: { customer: { nama: value } } };
+      } else if (operator === 'contains') condition = { [colKey]: { contains: value } };
+      else if (operator === 'startsWith') condition = { [colKey]: { startsWith: value } };
+      else if (operator === 'endsWith') condition = { [colKey]: { endsWith: value } };
+      else if (operator === 'equals' || operator === 'eq') {
+        condition = { [colKey]: colKey === 'cabang_id' || colKey === 'sales_id' ? BigInt(value) : value };
+      } else if (operator === 'gt') condition = { [colKey]: { gt: isNaN(Number(value)) ? value : Number(value) } };
+      else if (operator === 'lt') condition = { [colKey]: { lt: isNaN(Number(value)) ? value : Number(value) } };
+      else if (operator === 'between' && value2) condition = { [colKey]: { gte: Number(value), lte: Number(value2) } };
+      else if (operator === 'in') {
+        const parsedVals = value.split(',').map(v => isNaN(Number(v)) ? v : BigInt(v));
+        condition = { [colKey]: { in: parsedVals } };
+      } else if (operator === 'today') {
+        const start = new Date(); start.setHours(0,0,0,0);
+        const end = new Date(); end.setHours(23,59,59,999);
+        condition = { [colKey]: { gte: start, lte: end } };
+      } else if (operator === 'thisWeek') {
+        const now = new Date();
+        const start = new Date(now); start.setDate(now.getDate() - now.getDay()); start.setHours(0,0,0,0);
+        const end = new Date(start); end.setDate(start.getDate() + 6); end.setHours(23,59,59,999);
+        condition = { [colKey]: { gte: start, lte: end } };
+      } else if (operator === 'thisMonth') {
+        const now = new Date();
+        const start = new Date(now.getFullYear(), now.getMonth(), 1);
+        const end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+        condition = { [colKey]: { gte: start, lte: end } };
+      } else if (operator === 'custom' && value && value2) {
+        condition = { [colKey]: { gte: new Date(value), lte: new Date(value2 + 'T23:59:59') } };
+      }
+      if (condition) filterConditions.push(condition);
+    }
+    if (filterConditions.length > 0) {
+      where = { AND: [where, ...filterConditions] };
+    }
+
+    let orderByClause = {};
+    if (sortField === 'lead.nomor') {
+      orderByClause = { lead: { nomor: sortOrder } };
+    } else if (sortField === 'lead.customer.nama') {
+      orderByClause = { lead: { customer: { nama: sortOrder } } };
+    } else {
+      orderByClause[sortField] = sortOrder;
+    }
 
     const reminders = await prisma.pengingat.findMany({
       where,
@@ -128,7 +195,7 @@ export async function GET(request) {
           }
         }
       },
-      orderBy: { tanggal_pengingat: 'asc' },
+      orderBy: orderByClause,
       skip,
       take: limit,
     });

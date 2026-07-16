@@ -73,11 +73,77 @@ export async function GET(request) {
     ]);
 
     // Apply the specific fase and status filters to query the actual list
-    const listFilters = {
+    let listFilters = {
       ...baseFilters,
       ...(fase ? { fase: parseInt(fase) } : {}),
       ...(status ? { status: parseInt(status) } : {}),
     };
+
+    // Parse column filters
+    const filterConditions = [];
+    const filterKeys = new Set();
+    for (const [paramKey] of searchParams.entries()) {
+      const match = paramKey.match(/^filter\[(.+?)\]\[operator\]$/);
+      if (match) filterKeys.add(match[1]);
+    }
+    for (const colKey of filterKeys) {
+      const operator = searchParams.get(`filter[${colKey}][operator]`);
+      const value = searchParams.get(`filter[${colKey}][value]`);
+      const value2 = searchParams.get(`filter[${colKey}][value2]`);
+      if (!operator || value === null || value === '') continue;
+
+      let condition = null;
+      if (colKey === 'customer_nama') {
+        if (operator === 'contains') condition = { customer: { nama: { contains: value } } };
+        else if (operator === 'equals') condition = { customer: { nama: value } };
+        else if (operator === 'startsWith') condition = { customer: { nama: { startsWith: value } } };
+        else if (operator === 'endsWith') condition = { customer: { nama: { endsWith: value } } };
+      } else if (colKey === 'sales_nama') {
+        if (operator === 'contains') condition = { user: { nama: { contains: value } } };
+        else if (operator === 'equals') condition = { user: { nama: value } };
+      } else if (colKey === 'cabang_nama') {
+        if (operator === 'contains') condition = { cabang: { nama: { contains: value } } };
+        else if (operator === 'equals') condition = { cabang: { nama: value } };
+      } else if (colKey === 'fase') {
+        condition = { fase: parseInt(value) };
+      } else if (colKey === 'status') {
+        condition = { status: parseInt(value) };
+      } else if (operator === 'contains') condition = { [colKey]: { contains: value } };
+      else if (operator === 'startsWith') condition = { [colKey]: { startsWith: value } };
+      else if (operator === 'endsWith') condition = { [colKey]: { endsWith: value } };
+      else if (operator === 'equals' || operator === 'eq') {
+        condition = { [colKey]: value };
+      } else if (operator === 'today') {
+        const start = new Date(); start.setHours(0,0,0,0);
+        const end = new Date(); end.setHours(23,59,59,999);
+        condition = { [colKey]: { gte: start, lte: end } };
+      } else if (operator === 'thisMonth') {
+        const now = new Date();
+        const start = new Date(now.getFullYear(), now.getMonth(), 1);
+        const end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+        condition = { [colKey]: { gte: start, lte: end } };
+      } else if (operator === 'custom' && value && value2) {
+        condition = { [colKey]: { gte: new Date(value), lte: new Date(value2 + 'T23:59:59') } };
+      }
+      if (condition) filterConditions.push(condition);
+    }
+    if (filterConditions.length > 0) {
+      listFilters = { AND: [listFilters, ...filterConditions] };
+    }
+
+    // Sorting
+    const sortField = searchParams.get('sortField') || 'dibuat_tanggal';
+    const sortOrder = (searchParams.get('sortOrder') || 'desc') === 'asc' ? 'asc' : 'desc';
+    let orderByClause = {};
+    if (sortField === 'customer_nama') {
+      orderByClause = { customer: { nama: sortOrder } };
+    } else if (sortField === 'sales_nama') {
+      orderByClause = { user: { nama: sortOrder } };
+    } else if (sortField === 'cabang_nama') {
+      orderByClause = { cabang: { nama: sortOrder } };
+    } else {
+      orderByClause[sortField] = sortOrder;
+    }
 
     // Query list count
     const filteredCount = await prisma.lead.count({ where: listFilters });
@@ -96,7 +162,7 @@ export async function GET(request) {
           take: 1
         }
       },
-      orderBy: { dibuat_tanggal: 'desc' },
+      orderBy: orderByClause,
       skip,
       take: limit,
     });
