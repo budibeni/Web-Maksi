@@ -384,10 +384,16 @@ export default function ProdukPage() {
       )
     },
     {
-      key: "dibuat_tanggal",
+      key: "dibuat_oleh",
       label: "Dibuat Oleh",
       sortable: true,
-      filter: { type: "date" },
+      filter: {
+        type: "composite",
+        fields: [
+          { key: "dibuat_oleh", label: "Nama Pembuat", type: "text" },
+          { key: "dibuat_tanggal", label: "Tanggal Dibuat", type: "date_range" }
+        ]
+      },
       render: (row) => row.dibuat_oleh ? (
         <div>
           {row.dibuat_oleh}
@@ -399,10 +405,16 @@ export default function ProdukPage() {
       ) : '—'
     },
     {
-      key: "diubah_tanggal",
+      key: "diubah_oleh",
       label: "Diubah Oleh",
       sortable: true,
-      filter: { type: "date" },
+      filter: {
+        type: "composite",
+        fields: [
+          { key: "diubah_oleh", label: "Nama Pengubah", type: "text" },
+          { key: "diubah_tanggal", label: "Tanggal Diubah", type: "date_range" }
+        ]
+      },
       render: (row) => row.diubah_oleh ? (
         <div>
           {row.diubah_oleh}

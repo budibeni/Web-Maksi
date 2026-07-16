@@ -86,6 +86,9 @@ export default function DataTable({
 
   // Extra
   className = "",
+
+  // Header actions (Tambah, Import, etc.)
+  headerActions,
 }) {
   const [hiddenColumns, setHiddenColumns] = useState(new Set(defaultHiddenColumns));
 
@@ -218,6 +221,7 @@ export default function DataTable({
         columnFilters={columnFilters}
         onResetFilters={onResetFilters}
         onExport={onExport}
+        headerActions={headerActions}
       />
 
       {/* Active Filter Summary — ditampilkan hanya jika ada filter aktif */}

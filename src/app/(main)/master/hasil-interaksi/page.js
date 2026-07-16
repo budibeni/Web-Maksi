@@ -335,10 +335,34 @@ export default function HasilInteraksiPage() {
     {
       key: "dibuat_oleh",
       label: "Dibuat Oleh",
+      filter: {
+        type: "composite",
+        fields: [
+          { key: "dibuat_oleh", label: "Nama Pembuat", type: "text" },
+          { key: "dibuat_tanggal", label: "Tanggal Dibuat", type: "date_range" }
+        ]
+      },
       render: (row) => row.dibuat_oleh ? (
         <div className="text-xs text-neutral-500">
           {row.dibuat_oleh}
           <div className="text-[10px] opacity-70">{dayjs(row.dibuat_tanggal).format('DD/MM/YY HH:mm')}</div>
+        </div>
+      ) : '-'
+    },
+    {
+      key: "diubah_oleh",
+      label: "Diubah Oleh",
+      filter: {
+        type: "composite",
+        fields: [
+          { key: "diubah_oleh", label: "Nama Pengubah", type: "text" },
+          { key: "diubah_tanggal", label: "Tanggal Diubah", type: "date_range" }
+        ]
+      },
+      render: (row) => row.diubah_oleh ? (
+        <div className="text-xs text-neutral-500">
+          {row.diubah_oleh}
+          <div className="text-[10px] opacity-70">{dayjs(row.diubah_tanggal).format('DD/MM/YY HH:mm')}</div>
         </div>
       ) : '-'
     }

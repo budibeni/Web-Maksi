@@ -179,7 +179,7 @@ export default function ColumnFilter({ column, value, onChange }) {
                 <label className="text-[10px] font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">
                   {field.label}
                 </label>
-                <div className="flex gap-1">
+                <div className="flex flex-col gap-1.5">
                   {field.type === "select" ? (
                     <select
                       value={fieldDraft.value || ""}
@@ -202,6 +202,78 @@ export default function ColumnFilter({ column, value, onChange }) {
                         <option key={o.value} value={o.value}>{o.label}</option>
                       ))}
                     </select>
+                  ) : field.type === "date_range" ? (
+                    <>
+                      <div className="flex flex-wrap gap-1.5">
+                        {DATE_PRESETS.map((op) => (
+                          <button
+                            key={op.value}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setDraft((d) => {
+                                const nextVal = { ...(d.value || {}) };
+                                nextVal[field.key] = { operator: op.value, value: "", value2: "" };
+                                return { ...d, operator: "composite", value: nextVal };
+                              });
+                            }}
+                            className={`flex-1 min-w-[5rem] px-2 py-1.5 text-[10px] font-semibold rounded-lg border transition-colors ${
+                              fieldDraft.operator === op.value
+                                ? "bg-orange-500 text-white border-orange-500"
+                                : "bg-neutral-50 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 border-neutral-200 dark:border-neutral-700 hover:border-orange-300"
+                            }`}
+                          >
+                            {op.label}
+                          </button>
+                        ))}
+                      </div>
+                      {fieldDraft.operator === "custom" && (
+                        <div className="space-y-1.5">
+                          <label className="text-[10px] font-medium text-neutral-500 dark:text-neutral-400">Dari tanggal</label>
+                          <input
+                            type="date"
+                            value={fieldDraft.value || ""}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setDraft((d) => {
+                                const nextVal = { ...(d.value || {}) };
+                                nextVal[field.key] = { ...fieldDraft, value: val };
+                                return { ...d, operator: "composite", value: nextVal };
+                              });
+                            }}
+                            className={INPUT_CLASS}
+                          />
+                          <label className="text-[10px] font-medium text-neutral-500 dark:text-neutral-400">Sampai tanggal</label>
+                          <input
+                            type="date"
+                            value={fieldDraft.value2 || ""}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setDraft((d) => {
+                                const nextVal = { ...(d.value || {}) };
+                                nextVal[field.key] = { ...fieldDraft, value2: val };
+                                return { ...d, operator: "composite", value: nextVal };
+                              });
+                            }}
+                            className={INPUT_CLASS}
+                          />
+                        </div>
+                      )}
+                      {fieldDraft.operator && fieldDraft.operator !== "custom" && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDraft((d) => {
+                              const nextVal = { ...(d.value || {}) };
+                              delete nextVal[field.key];
+                              return { ...d, operator: "composite", value: nextVal };
+                            });
+                          }}
+                          className="text-[10px] text-neutral-400 hover:text-red-500 transition-colors text-left"
+                        >
+                          Hapus filter tanggal ini
+                        </button>
+                      )}
+                    </>
                   ) : (
                     <>
                       <select
@@ -214,7 +286,7 @@ export default function ColumnFilter({ column, value, onChange }) {
                             return { ...d, operator: "composite", value: nextVal };
                           });
                         }}
-                        className="w-24 px-1.5 py-1.5 text-[10px] bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-700 rounded-lg outline-none"
+                        className={INPUT_CLASS}
                       >
                         {TEXT_OPERATORS.map((op) => (
                           <option key={op.value} value={op.value}>{op.label}</option>
@@ -232,7 +304,7 @@ export default function ColumnFilter({ column, value, onChange }) {
                             return { ...d, operator: "composite", value: nextVal };
                           });
                         }}
-                        className="flex-1 px-2 py-1.5 text-xs bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-700 rounded-lg outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 dark:text-white"
+                        className={INPUT_CLASS}
                         onKeyDown={(e) => e.key === "Enter" && handleApply()}
                       />
                     </>

@@ -206,7 +206,14 @@ export default function PenggunaPage() {
       key: "nama",
       label: "Nama Lengkap",
       sortable: true,
-      filter: { type: "text" },
+      filter: {
+        type: "composite",
+        fields: [
+          { key: "nama", label: "Nama", type: "text" },
+          { key: "email", label: "Email", type: "text" },
+          { key: "telepon", label: "Telepon", type: "text" }
+        ]
+      },
       render: (row) => (
         <div className="flex items-center">
           <div className="h-8 w-8 rounded-full bg-orange-50 dark:bg-orange-950/40 flex items-center justify-center text-orange-600 dark:text-orange-500 font-black text-xs shrink-0">

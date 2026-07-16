@@ -4,6 +4,7 @@ import { z } from "zod";
 import { hashPassword } from "@/lib/hash";
 import { getCurrentUser } from "@/lib/jwt";
 import { recordAuditLog } from "@/lib/audit";
+import { parsePrismaFilters } from "@/lib/prisma-helper";
 
 const serialize = (data) => JSON.parse(JSON.stringify(data, (_, v) => typeof v === 'bigint' ? v.toString() : v));
 
@@ -56,40 +57,22 @@ export async function GET(request) {
       ];
     }
 
-    // Parse column filters
-    const filterConditions = [];
-    const filterKeys = new Set();
-    for (const [paramKey] of searchParams.entries()) {
-      const match = paramKey.match(/^filter\[(.+?)\]\[operator\]$/);
-      if (match) filterKeys.add(match[1]);
-    }
-    for (const colKey of filterKeys) {
-      const operator = searchParams.get(`filter[${colKey}][operator]`);
-      const value = searchParams.get(`filter[${colKey}][value]`);
-      if (!operator || value === null || value === '') continue;
-
-      let condition = null;
-      if (colKey === 'role.nama') {
-        condition = { role: { nama: operator === 'equals' ? value : { contains: value } } };
-      } else if (colKey === 'cabang.nama') {
-        condition = { cabang: { nama: operator === 'equals' ? value : { contains: value } } };
-      } else if (colKey === 'nama' && operator === 'contains') {
-        condition = {
-          OR: [
-            { nama: { contains: value } },
-            { email: { contains: value } },
-            { telepon: { contains: value } }
-          ]
-        };
-      } else if (operator === 'contains') {
-        condition = { [colKey]: { contains: value } };
-      } else if (operator === 'equals' || operator === 'eq') {
-        condition = { [colKey]: colKey === 'aktif' ? parseInt(value) : value };
+    // Parse column filters dynamically
+    const filterConditions = parsePrismaFilters(searchParams);
+    
+    // Konversi field bertipe integer/boolean
+    const cleanedConditions = filterConditions.map(cond => {
+      if (cond.aktif !== undefined) {
+        if (typeof cond.aktif === 'object' && cond.aktif.equals !== undefined) {
+          return { aktif: parseInt(cond.aktif.equals) };
+        }
+        return { aktif: parseInt(cond.aktif) };
       }
-      if (condition) filterConditions.push(condition);
-    }
-    if (filterConditions.length > 0) {
-      whereClause = { AND: [whereClause, ...filterConditions] };
+      return cond;
+    });
+
+    if (cleanedConditions.length > 0) {
+      whereClause = { AND: [whereClause, ...cleanedConditions] };
     }
 
     const totalData = await prisma.user.count({ where: whereClause });

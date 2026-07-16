@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/jwt';
 import { recordAuditLog } from '@/lib/audit';
+import { parsePrismaFilters } from '@/lib/prisma-helper';
 import { z } from 'zod';
 
 const serialize = (data) => JSON.parse(JSON.stringify(data, (_, v) => typeof v === 'bigint' ? v.toString() : v));
@@ -77,81 +78,30 @@ export async function GET(request) {
       } : {}),
     };
 
-    // Parse column filters
-    const filterConditions = [];
-    const filterKeys = new Set();
-    for (const [paramKey] of searchParams.entries()) {
-      const match = paramKey.match(/^filter\[(.+?)\]\[operator\]$/);
-      if (match) filterKeys.add(match[1]);
-    }
-    for (const colKey of filterKeys) {
-      const operator = searchParams.get(`filter[${colKey}][operator]`);
-      const value = searchParams.get(`filter[${colKey}][value]`);
-      const value2 = searchParams.get(`filter[${colKey}][value2]`);
-      if (!operator || value === null || value === '') continue;
-      
-      let condition = null;
-      if (colKey === 'customer.nama') {
-        if (operator === 'contains') {
-          condition = {
-            customer: {
-              OR: [
-                { nama: { contains: value } },
-                { telepon: { contains: value } }
-              ]
-            }
-          };
-        } else if (operator === 'equals') {
-          condition = { customer: { nama: value } };
+    // Parse column filters dynamically
+    const filterConditions = parsePrismaFilters(searchParams);
+    
+    // Khusus untuk field Integer/BigInt yang dikonversi dari equals/eq filter
+    const cleanedConditions = filterConditions.map(cond => {
+      // Jika filter adalah 'fase', convert string value menjadi integer
+      if (cond.fase !== undefined) {
+        if (typeof cond.fase === 'object' && cond.fase.equals !== undefined) {
+          return { fase: parseInt(cond.fase.equals) };
         }
-      } else if (colKey === 'user.nama') {
-        if (operator === 'contains') {
-          condition = {
-            OR: [
-              { user: { nama: { contains: value } } },
-              { cabang: { nama: { contains: value } } }
-            ]
-          };
-        } else if (operator === 'equals') {
-          condition = { user: { nama: value } };
-        }
-      } else if (colKey === 'cabang.nama') {
-        if (operator === 'contains') condition = { cabang: { nama: { contains: value } } };
-        else if (operator === 'equals') condition = { cabang: { nama: value } };
-      } else if (colKey === 'fase') {
-        condition = { fase: parseInt(value) };
-      } else if (operator === 'contains') condition = { [colKey]: { contains: value } };
-      else if (operator === 'startsWith') condition = { [colKey]: { startsWith: value } };
-      else if (operator === 'endsWith') condition = { [colKey]: { endsWith: value } };
-      else if (operator === 'equals' || operator === 'eq') {
-        condition = { [colKey]: colKey === 'cabang_id' || colKey === 'user_id' ? BigInt(value) : value };
-      } else if (operator === 'gt') condition = { [colKey]: { gt: isNaN(Number(value)) ? value : Number(value) } };
-      else if (operator === 'lt') condition = { [colKey]: { lt: isNaN(Number(value)) ? value : Number(value) } };
-      else if (operator === 'between' && value2) condition = { [colKey]: { gte: Number(value), lte: Number(value2) } };
-      else if (operator === 'in') {
-        const parsedVals = value.split(',').map(v => isNaN(Number(v)) ? v : BigInt(v));
-        condition = { [colKey]: { in: parsedVals } };
-      } else if (operator === 'today') {
-        const start = new Date(); start.setHours(0,0,0,0);
-        const end = new Date(); end.setHours(23,59,59,999);
-        condition = { [colKey]: { gte: start, lte: end } };
-      } else if (operator === 'thisWeek') {
-        const now = new Date();
-        const start = new Date(now); start.setDate(now.getDate() - now.getDay()); start.setHours(0,0,0,0);
-        const end = new Date(start); end.setDate(start.getDate() + 6); end.setHours(23,59,59,999);
-        condition = { [colKey]: { gte: start, lte: end } };
-      } else if (operator === 'thisMonth') {
-        const now = new Date();
-        const start = new Date(now.getFullYear(), now.getMonth(), 1);
-        const end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
-        condition = { [colKey]: { gte: start, lte: end } };
-      } else if (operator === 'custom' && value && value2) {
-        condition = { [colKey]: { gte: new Date(value), lte: new Date(value2 + 'T23:59:59') } };
+        return { fase: parseInt(cond.fase) };
       }
-      if (condition) filterConditions.push(condition);
-    }
-    if (filterConditions.length > 0) {
-      where = { AND: [where, ...filterConditions] };
+      // Jika key filter adalah user_id atau cabang_id, konversi ke BigInt
+      if (cond.user_id !== undefined) {
+        return { user_id: BigInt(cond.user_id) };
+      }
+      if (cond.cabang_id !== undefined) {
+        return { cabang_id: BigInt(cond.cabang_id) };
+      }
+      return cond;
+    });
+
+    if (cleanedConditions.length > 0) {
+      where = { AND: [where, ...cleanedConditions] };
     }
 
     let orderByClause = {};

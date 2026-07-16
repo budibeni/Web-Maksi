@@ -171,7 +171,13 @@ export default function LeadPage() {
       key: "customer.nama",
       label: "Customer",
       sortable: true,
-      filter: { type: "text" },
+      filter: {
+        type: "composite",
+        fields: [
+          { key: "customer.nama", label: "Nama Customer", type: "text" },
+          { key: "customer.telepon", label: "No Telepon", type: "text" }
+        ]
+      },
       render: (row) => (
         <div>
           <div className="font-medium text-neutral-900 dark:text-white">{row.customer?.nama}</div>
@@ -183,7 +189,13 @@ export default function LeadPage() {
       key: "user.nama",
       label: "Sales",
       sortable: true,
-      filter: { type: "text" },
+      filter: {
+        type: "composite",
+        fields: [
+          { key: "user.nama", label: "Nama Sales", type: "text" },
+          { key: "cabang.nama", label: "Cabang", type: "text" }
+        ]
+      },
       render: (row) => (
         <div>
           <div className="font-medium text-neutral-900 dark:text-white">{row.user?.nama}</div>
