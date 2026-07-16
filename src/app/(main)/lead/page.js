@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   FiPlus, FiDownload, FiEye, FiRefreshCw,
-  FiUsers, FiTrendingUp, FiTarget, FiZap, FiInbox
+  FiUsers, FiTrendingUp, FiTarget, FiZap, FiInbox, FiArrowRight
 } from "react-icons/fi";
 import dayjs from "dayjs";
 import 'dayjs/locale/id';
@@ -89,7 +89,7 @@ export default function LeadPage() {
     try {
       showToast("Sedang menyiapkan file export...", "info");
       let dataToExport = [];
-      
+
       if (type === "page") {
         dataToExport = leads;
       } else {
@@ -146,14 +146,22 @@ export default function LeadPage() {
 
   const columns = useMemo(() => [
     {
-      key: "id",
-      label: "No",
-      sortable: true,
-      width: 80,
-      render: (row) => {
-        const idx = leads.findIndex(l => l.id === row.id);
-        return idx !== -1 ? (tableState.page - 1) * tableState.pageSize + idx + 1 : "—";
-      }
+      key: "aksi",
+      label: "",
+      sortable: false,
+      width: 110,
+      render: (row) => (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            router.push(`/lead/${row.id}`);
+          }}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-neutral-100 hover:bg-neutral-200 text-neutral-700 dark:bg-neutral-800 dark:hover:bg-neutral-750 dark:text-neutral-200 border border-neutral-200 dark:border-neutral-700 font-bold text-[11px] rounded-xl transition-all duration-200 cursor-pointer"
+        >
+          <span>Proses</span>
+          <FiArrowRight className="w-3.5 h-3.5" />
+        </button>
+      )
     },
     {
       key: "nomor",
@@ -246,19 +254,19 @@ export default function LeadPage() {
     }
   ], [leads, tableState.page, tableState.pageSize]);
 
-  const actions = useMemo(() => [
-    {
-      label: "Lihat Detail",
-      icon: FiEye,
-      variant: "primary",
-      onClick: (row) => {
-        router.push(`/lead/${row.id}`);
-      }
-    }
-  ], [router]);
-
   return (
     <div className="space-y-6">
+      {/* Portal: Header Actions (Refresh button next to dark mode) */}
+      {mounted && document.getElementById("header-actions-portal") && createPortal(
+        <button
+          onClick={fetchLeads}
+          className="p-2 text-neutral-500 hover:text-neutral-900 bg-white hover:bg-neutral-100 dark:bg-neutral-900 dark:text-neutral-400 dark:hover:text-white dark:hover:bg-neutral-800 rounded-full transition-colors border border-neutral-200 dark:border-neutral-800 relative cursor-pointer"
+          title="Refresh Data"
+        >
+          <FiRefreshCw className="h-4 w-4 animate-none hover:rotate-180 transition-transform duration-500" />
+        </button>,
+        document.getElementById("header-actions-portal")
+      )}
 
       {/* Summary Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -342,27 +350,18 @@ export default function LeadPage() {
         // Export
         onExport={handleExport}
         // Actions
-        actions={actions}
         headerActions={
           <>
             {!isTopManagement && (
               <button
                 onClick={() => router.push('/lead/baru')}
-                className="flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold text-white bg-neutral-900 dark:bg-neutral-800 hover:bg-neutral-800 dark:hover:bg-neutral-700 rounded-xl transition-colors border border-neutral-800 dark:border-neutral-700 cursor-pointer"
+                className="flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold text-white bg-orange-600 hover:bg-orange-700 rounded-xl transition-all duration-200 cursor-pointer shadow-sm hover:shadow"
                 title="Lead Baru"
               >
                 <FiPlus className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">Lead Baru</span>
               </button>
             )}
-            <button
-              className="flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold text-neutral-600 dark:text-neutral-400 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-xl hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
-              title="Refresh"
-              onClick={fetchLeads}
-            >
-              <FiRefreshCw className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Refresh</span>
-            </button>
           </>
         }
       />

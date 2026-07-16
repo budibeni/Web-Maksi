@@ -330,7 +330,7 @@ export default function AlasanLostPage() {
           <>
             <button
               onClick={() => handleOpenModal()}
-              className="flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold text-white bg-neutral-900 dark:bg-neutral-800 hover:bg-neutral-800 dark:hover:bg-neutral-700 rounded-xl transition-colors border border-neutral-800 dark:border-neutral-700 cursor-pointer"
+              className="flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold text-white bg-orange-600 hover:bg-orange-700 rounded-xl transition-all duration-200 cursor-pointer shadow-sm hover:shadow"
               title="Tambah Alasan"
             >
               <FiPlus className="w-3.5 h-3.5" />

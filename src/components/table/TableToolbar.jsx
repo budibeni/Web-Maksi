@@ -107,7 +107,7 @@ export default function TableToolbar({
         </div>
       </div>
 
-      {/* Kelompok 2: Sisi Kanan (sisanya: Reset, Kolom, Export) */}
+      {/* Kelompok 2: Sisi Kanan (Reset, Kolom, Export) */}
       <div className="flex items-center gap-2 self-end md:self-auto">
         {/* Reset All Filters */}
         {hasActiveFilters && (
