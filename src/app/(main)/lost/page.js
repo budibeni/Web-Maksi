@@ -161,6 +161,24 @@ export default function LaporanLeadLostPage() {
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
 
+      {/* Panel Filter Laporan (Segmen Reusable) */}
+      <FilterPanel 
+        title="Filter Data"
+        role={user.role?.nama || user.role}
+        branches={cabangs}
+        sales={users}
+        datePreset={datePreset}
+        setDatePreset={setDatePreset}
+        startDate={startDate}
+        setStartDate={setStartDate}
+        endDate={endDate}
+        setEndDate={setEndDate}
+        cabangIds={cabangIds}
+        setCabangIds={setCabangIds}
+        salesIds={salesIds}
+        setSalesIds={setSalesIds}
+        onReset={handleReset}
+      />
 
       {/* Summary Cards */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
@@ -228,25 +246,6 @@ export default function LaporanLeadLostPage() {
           </div>
         </div>
       </div>
-
-      {/* Panel Filter Laporan (Segmen Reusable) */}
-      <FilterPanel 
-        title="Filter Data"
-        role={user.role?.nama || user.role}
-        branches={cabangs}
-        sales={users}
-        datePreset={datePreset}
-        setDatePreset={setDatePreset}
-        startDate={startDate}
-        setStartDate={setStartDate}
-        endDate={endDate}
-        setEndDate={setEndDate}
-        cabangIds={cabangIds}
-        setCabangIds={setCabangIds}
-        salesIds={salesIds}
-        setSalesIds={setSalesIds}
-        onReset={handleReset}
-      />
 
       {/* Row 1: Donut Charts */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

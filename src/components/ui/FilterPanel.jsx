@@ -20,7 +20,10 @@ export default function FilterPanel({
   setSalesIds,
   onReset
 }) {
-  const isAdminOrTop = role === "administrator" || role === "top management";
+  const roleStr = typeof role === "string" ? role.toLowerCase() : "";
+  const isAdminOrTop = roleStr === "administrator" || roleStr === "top management";
+  const isBranchManager = roleStr === "branch manager" || roleStr === "bm";
+  const isSalesRole = roleStr === "sales";
 
   return (
     <div className="bg-white dark:bg-neutral-900 border border-neutral-200/50 dark:border-neutral-800 rounded-2xl p-5 shadow-sm space-y-4">
@@ -91,31 +94,25 @@ export default function FilterPanel({
           )}
         </div>
 
-        {/* Cabang dropdown */}
-        {branches.length > 0 && (
+        {/* Cabang dropdown (Hanya tampil untuk Administrator & Top Management) */}
+        {isAdminOrTop && branches.length > 0 && (
           <div className="space-y-2.5">
             <label className="block text-[10px] font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider">Cabang</label>
-            {isAdminOrTop ? (
-              <MultiSelect
-                options={branches.map(b => ({ value: b.id.toString(), label: b.nama }))}
-                selectedValues={cabangIds}
-                onChange={(vals) => {
-                  setCabangIds(vals);
-                  setSalesIds([]); // Reset sales when branch changes
-                }}
-                placeholder="Semua Cabang"
-                labelAll="Semua Cabang"
-              />
-            ) : (
-              <div className="w-full px-3 py-2.5 bg-neutral-100 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl text-neutral-500 text-xs font-semibold">
-                Semua Cabang
-              </div>
-            )}
+            <MultiSelect
+              options={branches.map(b => ({ value: b.id.toString(), label: b.nama }))}
+              selectedValues={cabangIds}
+              onChange={(vals) => {
+                setCabangIds(vals);
+                setSalesIds([]); // Reset sales when branch changes
+              }}
+              placeholder="Semua Cabang"
+              labelAll="Semua Cabang"
+            />
           </div>
         )}
 
-        {/* Sales dropdown */}
-        {role !== 'sales' && sales.length > 0 && (
+        {/* Sales dropdown (Tampil untuk Admin, Top Management, & Branch Manager) */}
+        {(isAdminOrTop || isBranchManager) && sales.length > 0 && (
           <div className="space-y-2.5">
             <label className="block text-[10px] font-bold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider">Sales</label>
             <MultiSelect
