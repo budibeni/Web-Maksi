@@ -11,7 +11,7 @@ import { useEffect, useState } from "react";
 export default function Sidebar() {
   const pathname = usePathname();
   const user = useAuthStore((state) => state.user);
-  
+
   const isCollapsed = useUIStore(state => state.isSidebarCollapsed);
   const isMobileOpen = useUIStore(state => state.isMobileMenuOpen);
   const closeMobileMenu = useUIStore(state => state.closeMobileMenu);
@@ -48,7 +48,7 @@ export default function Sidebar() {
       return null;
     }
 
-    const visibleItems = group.items.filter(menu => 
+    const visibleItems = group.items.filter(menu =>
       !user || !menu.roles || menu.roles.includes(user?.role?.nama)
     );
 
@@ -63,7 +63,7 @@ export default function Sidebar() {
   };
 
   return (
-    <div 
+    <div
       className={`
         fixed md:static inset-y-0 left-0 z-50 flex flex-col bg-neutral-100 dark:bg-neutral-950 md:bg-transparent md:dark:bg-transparent text-neutral-800 dark:text-white min-h-screen transition-all duration-300 ease-in-out
         ${isMobileOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full md:translate-x-0'}
@@ -71,18 +71,18 @@ export default function Sidebar() {
         w-56 flex-shrink-0
       `}
     >
-      <div className={`flex items-center h-20 bg-transparent px-5 ${isCollapsed ? 'md:justify-center px-0' : 'justify-between md:justify-center'}`}>
+      <div className={`flex items-center h-16 bg-transparent px-5 ${isCollapsed ? 'md:justify-center px-0' : 'justify-between md:justify-center'}`}>
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-neutral-900 dark:bg-white flex items-center justify-center">
-            <h1 className="text-xl font-black text-white dark:text-neutral-900">M</h1>
+          <div className="w-8 h-8 rounded-sm bg-orange-600 dark:bg-orange-500 flex items-center justify-center">
+            <h1 className="text-lg font-black text-white dark:text-neutral-900">M</h1>
           </div>
-          <h1 className={`text-xl font-bold tracking-tight text-neutral-900 dark:text-white ${isCollapsed ? 'md:hidden' : 'block'}`}>MAKSI</h1>
+          <h1 className={`text-sm font-bold tracking-tight text-neutral-900 dark:text-white ${isCollapsed ? 'md:hidden' : 'block'}`}>Bensoft <span className="text-lg text-orange-600 dark:text-orange-500">Maksi</span></h1>
         </div>
         <button onClick={closeMobileMenu} className="md:hidden text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white transition-colors p-2 rounded-full hover:bg-white dark:hover:bg-neutral-800">
           <FiX className="h-6 w-6" />
         </button>
       </div>
-      
+
       <div className="flex-1 overflow-y-auto py-4 scrollbar-hide">
         <nav className="space-y-1.5 px-3">
           {visibleGroups.map((group, groupIdx) => (
@@ -93,22 +93,22 @@ export default function Sidebar() {
               <div className="space-y-1.5">
                 {group.items.map((menu, menuIdx) => {
                   const hasChildren = menu.children && menu.children.length > 0;
-                  const isActive = pathname === menu.path || pathname.startsWith(`${menu.path}/`) || 
-                                   (hasChildren && menu.children.some(child => pathname === child.path));
+                  const isActive = pathname === menu.path || pathname.startsWith(`${menu.path}/`) ||
+                    (hasChildren && menu.children.some(child => pathname === child.path));
                   const isExpanded = expandedMenus[menu.title];
                   const Icon = menu.icon;
 
                   return (
                     <div key={menuIdx}>
                       {hasChildren ? (
-                        <button 
+                        <button
                           onClick={() => toggleMenu(menu.title)}
                           title={isCollapsed ? menu.title : ""}
                           className={`
                             w-full flex items-center justify-between px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-300 group
                             ${isCollapsed ? 'md:justify-center md:px-0' : ''}
                             ${isActive || isExpanded
-                              ? "bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white shadow-sm ring-1 ring-neutral-200/50 dark:ring-neutral-800" 
+                              ? "bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white shadow-sm ring-1 ring-neutral-200/50 dark:ring-neutral-800"
                               : "text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-200"
                             }
                           `}
@@ -124,15 +124,15 @@ export default function Sidebar() {
                           )}
                         </button>
                       ) : (
-                        <Link 
+                        <Link
                           href={menu.path || "#"}
                           onClick={closeMobileMenu}
                           title={isCollapsed ? menu.title : ""}
                           className={`
                             flex items-center justify-between px-3 py-2.5 text-sm font-medium rounded-xl transition-all duration-300 group
                             ${isCollapsed ? 'md:justify-center md:px-0' : ''}
-                            ${isActive 
-                              ? "bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white shadow-sm ring-1 ring-neutral-200/50 dark:ring-neutral-800" 
+                            ${isActive
+                              ? "bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white shadow-sm ring-1 ring-neutral-200/50 dark:ring-neutral-800"
                               : "text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-200"
                             }
                           `}
@@ -183,7 +183,7 @@ export default function Sidebar() {
           ))}
         </nav>
       </div>
-      
+
 
     </div>
   );

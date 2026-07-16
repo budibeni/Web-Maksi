@@ -52,9 +52,14 @@ export default function LoginPage() {
       <div className="w-full max-w-md">
         <div className="bg-white dark:bg-neutral-900 rounded-2xl shadow-xl overflow-hidden border border-white/20 dark:border-neutral-800 transition-colors duration-300">
           <div className="p-8">
-            <div className="text-center mb-8">
-              <h1 className="text-3xl font-extrabold text-neutral-900 dark:text-white tracking-tight">MAKSI</h1>
-              <p className="text-neutral-500 dark:text-neutral-400 mt-2 text-sm font-medium">Sistem Manajemen Pelanggan</p>
+            <div className={`flex items-center h-16 bg-transparent px-5 md:justify-center px-0 mb-8`}>
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-sm bg-orange-600 dark:bg-orange-500 flex items-center justify-center">
+                  <h1 className="text-xl font-black text-white dark:text-neutral-900">M</h1>
+                </div>
+                <h1 className={`text-lg font-bold tracking-tight text-neutral-900 dark:text-white block`}>Bensoft <span className="text-xl text-orange-600 dark:text-orange-500">Maksi</span></h1>
+              </div>
+
             </div>
 
             <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
