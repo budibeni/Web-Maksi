@@ -92,11 +92,29 @@ export async function GET(request) {
       
       let condition = null;
       if (colKey === 'customer.nama') {
-        if (operator === 'contains') condition = { customer: { nama: { contains: value } } };
-        else if (operator === 'equals') condition = { customer: { nama: value } };
+        if (operator === 'contains') {
+          condition = {
+            customer: {
+              OR: [
+                { nama: { contains: value } },
+                { telepon: { contains: value } }
+              ]
+            }
+          };
+        } else if (operator === 'equals') {
+          condition = { customer: { nama: value } };
+        }
       } else if (colKey === 'user.nama') {
-        if (operator === 'contains') condition = { user: { nama: { contains: value } } };
-        else if (operator === 'equals') condition = { user: { nama: value } };
+        if (operator === 'contains') {
+          condition = {
+            OR: [
+              { user: { nama: { contains: value } } },
+              { cabang: { nama: { contains: value } } }
+            ]
+          };
+        } else if (operator === 'equals') {
+          condition = { user: { nama: value } };
+        }
       } else if (colKey === 'cabang.nama') {
         if (operator === 'contains') condition = { cabang: { nama: { contains: value } } };
         else if (operator === 'equals') condition = { cabang: { nama: value } };

@@ -84,6 +84,20 @@ export function useDataTable({
       // Append column filters
       Object.entries(columnFilters).forEach(([colKey, filterVal]) => {
         if (!filterVal) return;
+
+        if (filterVal.operator === "composite" && typeof filterVal.value === "object" && filterVal.value !== null) {
+          // Send each composite child filter separately
+          Object.entries(filterVal.value).forEach(([subKey, subVal]) => {
+            if (!subVal || subVal.value === undefined || subVal.value === null || subVal.value === "") return;
+            params.set(`filter[${subKey}][operator]`, subVal.operator || "contains");
+            params.set(`filter[${subKey}][value]`, String(subVal.value));
+            if (subVal.value2 !== undefined && subVal.value2 !== "") {
+              params.set(`filter[${subKey}][value2]`, String(subVal.value2));
+            }
+          });
+          return;
+        }
+
         params.set(`filter[${colKey}][operator]`, filterVal.operator || "");
         if (filterVal.value !== undefined && filterVal.value !== null && filterVal.value !== "") {
           if (Array.isArray(filterVal.value)) {

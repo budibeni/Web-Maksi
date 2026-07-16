@@ -169,6 +169,81 @@ export default function ColumnFilter({ column, value, onChange }) {
         </div>
       )}
 
+      {/* ---- COMPOSITE (Multi Field) ---- */}
+      {filterDef.type === "composite" && (
+        <div className="space-y-3">
+          {(filterDef.fields || []).map((field) => {
+            const fieldDraft = (draft.value && draft.value[field.key]) || { operator: "contains", value: "" };
+            return (
+              <div key={field.key} className="space-y-1">
+                <label className="text-[10px] font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wide">
+                  {field.label}
+                </label>
+                <div className="flex gap-1">
+                  {field.type === "select" ? (
+                    <select
+                      value={fieldDraft.value || ""}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setDraft((d) => {
+                          const nextVal = { ...(d.value || {}) };
+                          if (val === "") {
+                            delete nextVal[field.key];
+                          } else {
+                            nextVal[field.key] = { operator: "equals", value: val };
+                          }
+                          return { ...d, operator: "composite", value: nextVal };
+                        });
+                      }}
+                      className={INPUT_CLASS}
+                    >
+                      <option value="">Semua</option>
+                      {(field.options || []).map((o) => (
+                        <option key={o.value} value={o.value}>{o.label}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <>
+                      <select
+                        value={fieldDraft.operator || "contains"}
+                        onChange={(e) => {
+                          const op = e.target.value;
+                          setDraft((d) => {
+                            const nextVal = { ...(d.value || {}) };
+                            nextVal[field.key] = { ...fieldDraft, operator: op };
+                            return { ...d, operator: "composite", value: nextVal };
+                          });
+                        }}
+                        className="w-24 px-1.5 py-1.5 text-[10px] bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-700 rounded-lg outline-none"
+                      >
+                        {TEXT_OPERATORS.map((op) => (
+                          <option key={op.value} value={op.value}>{op.label}</option>
+                        ))}
+                      </select>
+                      <input
+                        type="text"
+                        placeholder="Nilai..."
+                        value={fieldDraft.value || ""}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setDraft((d) => {
+                            const nextVal = { ...(d.value || {}) };
+                            nextVal[field.key] = { ...fieldDraft, value: val };
+                            return { ...d, operator: "composite", value: nextVal };
+                          });
+                        }}
+                        className="flex-1 px-2 py-1.5 text-xs bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-700 rounded-lg outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 dark:text-white"
+                        onKeyDown={(e) => e.key === "Enter" && handleApply()}
+                      />
+                    </>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
       {/* ---- NUMBER ---- */}
       {filterDef.type === "number" && (
         <div className="space-y-2">

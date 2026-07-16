@@ -119,6 +119,39 @@ export default function DataTable({
       const colDef = columns.find((c) => c.key === colKey);
       const colLabel = colDef?.label || colKey;
 
+      if (filterVal.operator === "composite") {
+        const subFilters = Object.entries(filterVal.value)
+          .filter(([_, subVal]) => subVal && subVal.value !== undefined && subVal.value !== null && subVal.value !== "")
+          .map(([subKey, subVal]) => {
+            const fieldDef = colDef?.filter?.fields?.find((f) => f.key === subKey);
+            const fieldLabel = fieldDef?.label || subKey;
+            
+            let displayVal = String(subVal.value);
+            if (fieldDef?.type === "select") {
+              const opts = fieldDef.options || [];
+              displayVal = opts.find((o) => o.value === subVal.value)?.label || subVal.value;
+            }
+
+            const opText = {
+              contains: "mengandung",
+              startsWith: "diawali",
+              endsWith: "diakhiri",
+              equals: "=",
+              eq: "="
+            }[subVal.operator] || subVal.operator;
+
+            return `${fieldLabel} ${opText} "${displayVal}"`;
+          });
+
+        if (subFilters.length > 0) {
+          items.push({
+            key: colKey,
+            label: `${colLabel} (${subFilters.join(" & ")})`,
+          });
+        }
+        return;
+      }
+
       let valueLabel = "";
       if (filterVal.operator === "in" && Array.isArray(filterVal.value)) {
         // For select multi, try to map values to labels

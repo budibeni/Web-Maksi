@@ -57,6 +57,14 @@ export default function TableHeader({
   return (
     <thead className="sticky top-0 z-10 bg-neutral-50 dark:bg-neutral-900/95 backdrop-blur-sm">
       <tr>
+        {hasActions && (
+          <th
+            scope="col"
+            style={{ width: "50px", minWidth: "50px" }}
+            className="px-5 py-3.5 text-center text-[11px] font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider border-b border-neutral-200 dark:border-neutral-800"
+          >
+          </th>
+        )}
         {columns.map((col) => (
           <th
             key={col.key}
@@ -81,14 +89,6 @@ export default function TableHeader({
             </div>
           </th>
         ))}
-        {hasActions && (
-          <th
-            scope="col"
-            className="px-5 py-3.5 text-right text-[11px] font-bold text-neutral-500 dark:text-neutral-400 uppercase tracking-wider border-b border-neutral-200 dark:border-neutral-800"
-          >
-            Aksi
-          </th>
-        )}
       </tr>
     </thead>
   );

@@ -22,39 +22,120 @@ export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
     const search = searchParams.get('search') || '';
-    const cabang_id = searchParams.get('cabang_id') || '';
-    const role_id = searchParams.get('role_id') || '';
+    const page = parseInt(searchParams.get('page')) || 1;
+    const limit = parseInt(searchParams.get('limit')) || 10;
+    const isExport = searchParams.get('export') === 'true';
+    const sortField = searchParams.get('sortField') || 'nama';
+    const sortOrder = (searchParams.get('sortOrder') || 'asc') === 'asc' ? 'asc' : 'desc';
 
-    const where = {
-      ...(search ? {
-        OR: [
-          { nama: { contains: search } },
-          { username: { contains: search } },
-          { email: { contains: search } },
-        ]
-      } : {}),
-      ...(cabang_id ? { cabang_id: BigInt(cabang_id) } : {}),
-      ...(role_id ? { role_id: BigInt(role_id) } : {}),
-    };
+    const isPaginated = searchParams.has('page') || searchParams.has('limit') || searchParams.has('search') || isExport;
+
+    if (!isPaginated) {
+      const users = await prisma.user.findMany({
+        include: {
+          role: { select: { id: true, nama: true } },
+          cabang: { select: { id: true, nama: true, kode: true } }
+        },
+        orderBy: { nama: 'asc' }
+      });
+      const sanitizedUsers = users.map(({ password, ...rest }) => rest);
+      return NextResponse.json({
+        success: true,
+        message: "Data berhasil diambil.",
+        data: serialize(sanitizedUsers)
+      });
+    }
+
+    let whereClause = {};
+
+    if (search) {
+      whereClause.OR = [
+        { nama: { contains: search } },
+        { username: { contains: search } },
+        { email: { contains: search } },
+      ];
+    }
+
+    // Parse column filters
+    const filterConditions = [];
+    const filterKeys = new Set();
+    for (const [paramKey] of searchParams.entries()) {
+      const match = paramKey.match(/^filter\[(.+?)\]\[operator\]$/);
+      if (match) filterKeys.add(match[1]);
+    }
+    for (const colKey of filterKeys) {
+      const operator = searchParams.get(`filter[${colKey}][operator]`);
+      const value = searchParams.get(`filter[${colKey}][value]`);
+      if (!operator || value === null || value === '') continue;
+
+      let condition = null;
+      if (colKey === 'role.nama') {
+        condition = { role: { nama: operator === 'equals' ? value : { contains: value } } };
+      } else if (colKey === 'cabang.nama') {
+        condition = { cabang: { nama: operator === 'equals' ? value : { contains: value } } };
+      } else if (colKey === 'nama' && operator === 'contains') {
+        condition = {
+          OR: [
+            { nama: { contains: value } },
+            { email: { contains: value } },
+            { telepon: { contains: value } }
+          ]
+        };
+      } else if (operator === 'contains') {
+        condition = { [colKey]: { contains: value } };
+      } else if (operator === 'equals' || operator === 'eq') {
+        condition = { [colKey]: colKey === 'aktif' ? parseInt(value) : value };
+      }
+      if (condition) filterConditions.push(condition);
+    }
+    if (filterConditions.length > 0) {
+      whereClause = { AND: [whereClause, ...filterConditions] };
+    }
+
+    const totalData = await prisma.user.count({ where: whereClause });
+    const take = isExport ? 1000 : limit;
+    const skip = isExport ? 0 : (page - 1) * limit;
+
+    let orderByClause = {};
+    if (sortField === 'role.nama') {
+      orderByClause = { role: { nama: sortOrder } };
+    } else if (sortField === 'cabang.nama') {
+      orderByClause = { cabang: { nama: sortOrder } };
+    } else {
+      orderByClause[sortField] = sortOrder;
+    }
 
     const users = await prisma.user.findMany({
-      where,
+      where: whereClause,
       include: {
         role: { select: { id: true, nama: true } },
         cabang: { select: { id: true, nama: true, kode: true } }
       },
-      orderBy: { nama: 'asc' }
+      orderBy: orderByClause,
+      take,
+      skip
     });
 
-    const sanitizedUsers = users.map(user => {
-      const { password, ...rest } = user;
-      return rest;
-    });
+    const sanitizedUsers = users.map(({ password, ...rest }) => rest);
+
+    if (isExport) {
+      return NextResponse.json({
+        success: true,
+        message: "Data berhasil diambil.",
+        data: serialize(sanitizedUsers)
+      });
+    }
 
     return NextResponse.json({
       success: true,
       message: "Data berhasil diambil.",
-      data: serialize(sanitizedUsers)
+      data: serialize(sanitizedUsers),
+      pagination: {
+        totalData,
+        totalPages: Math.ceil(totalData / limit),
+        page,
+        limit
+      }
     });
   } catch (error) {
     console.error("GET User Error:", error);
