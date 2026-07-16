@@ -444,42 +444,6 @@ export default function ProdukPage() {
 
   return (
     <div className="space-y-6">
-      {mounted && document.getElementById("header-actions-portal") && createPortal(
-          <>
-            <button 
-              onClick={() => handleOpenModal()}
-              className="bg-neutral-900 hover:bg-neutral-800 dark:bg-white dark:hover:bg-neutral-200 text-white dark:text-neutral-900 px-4 py-1.5 rounded-full font-medium flex items-center gap-2 transition-colors shadow-sm text-sm mr-1"
-            >
-              <FiPlus className="w-4 h-4" />
-              <span className="hidden sm:inline">Tambah Produk</span>
-            </button>
-            
-            <input 
-              type="file" 
-              accept=".xlsx, .xls" 
-              ref={fileInputRef} 
-              className="hidden" 
-              onChange={handleImport} 
-            />
-            
-            <button 
-              className="p-2 text-neutral-500 hover:text-neutral-900 bg-white hover:bg-neutral-100 dark:bg-neutral-900 dark:text-neutral-400 dark:hover:text-white dark:hover:bg-neutral-800 rounded-full transition-colors border border-neutral-200 dark:border-neutral-800"
-              title="Download Template Import"
-              onClick={handleDownloadTemplate}
-            >
-              <FiFileText className="w-4 h-4" />
-            </button>
-            <button 
-              className="p-2 text-neutral-500 hover:text-neutral-900 bg-white hover:bg-neutral-100 dark:bg-neutral-900 dark:text-neutral-400 dark:hover:text-white dark:hover:bg-neutral-800 rounded-full transition-colors border border-neutral-200 dark:border-neutral-800"
-              title="Import dari Excel"
-              onClick={() => fileInputRef.current?.click()}
-            >
-              <FiUpload className="w-4 h-4" />
-            </button>
-          </>,
-          document.getElementById("header-actions-portal")
-        )}
-
       <DataTable
         columns={columns}
         data={produks}
@@ -509,6 +473,43 @@ export default function ProdukPage() {
         onExport={handleExport}
         // Actions
         actions={actions}
+        headerActions={
+          <>
+            <button 
+              onClick={() => handleOpenModal()}
+              className="flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold text-white bg-neutral-900 dark:bg-neutral-800 hover:bg-neutral-800 dark:hover:bg-neutral-700 rounded-xl transition-colors border border-neutral-800 dark:border-neutral-700 cursor-pointer"
+              title="Tambah Produk"
+            >
+              <FiPlus className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Tambah Produk</span>
+            </button>
+            
+            <input 
+              type="file" 
+              accept=".xlsx, .xls" 
+              ref={fileInputRef} 
+              className="hidden" 
+              onChange={handleImport} 
+            />
+            
+            <button 
+              className="flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold text-neutral-600 dark:text-neutral-400 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-xl hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
+              title="Download Template Import"
+              onClick={handleDownloadTemplate}
+            >
+              <FiFileText className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Template</span>
+            </button>
+            <button 
+              className="flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold text-neutral-600 dark:text-neutral-400 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-xl hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
+              title="Import dari Excel"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <FiUpload className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Import</span>
+            </button>
+          </>
+        }
       />
 
       {/* Modal */}

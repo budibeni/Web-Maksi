@@ -28,6 +28,7 @@ export default function TableToolbar({
   columnFilters = {},
   onResetFilters,
   onExport,
+  headerActions,
 }) {
   const [inputValue, setInputValue] = useState(searchValue);
   const [colPanelOpen, setColPanelOpen] = useState(false);
@@ -74,31 +75,40 @@ export default function TableToolbar({
     searchValue !== "" || Object.keys(columnFilters).length > 0;
 
   return (
-    <div className="px-4 py-3 border-b border-neutral-100 dark:border-neutral-800 flex flex-col sm:flex-row gap-3 justify-between items-center bg-neutral-50/50 dark:bg-neutral-900/50">
-      {/* Global Search */}
-      <div className="relative w-full sm:w-80">
-        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-          <FiSearch className="text-neutral-400 w-4 h-4" />
-        </div>
-        <input
-          type="text"
-          value={inputValue}
-          onChange={handleInput}
-          placeholder={searchPlaceholder}
-          className="block w-full pl-10 pr-8 py-2 border border-neutral-200 dark:border-neutral-700 rounded-xl leading-5 bg-white dark:bg-neutral-950 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-colors text-sm dark:text-white font-medium"
-        />
-        {inputValue && (
-          <button
-            onClick={() => { setInputValue(""); onSearchChange?.(""); }}
-            className="absolute inset-y-0 right-0 pr-3 flex items-center text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200"
-          >
-            <FiX className="w-3.5 h-3.5" />
-          </button>
+    <div className="px-4 py-3 border-b border-neutral-100 dark:border-neutral-800 flex flex-col md:flex-row gap-3 justify-between items-center bg-neutral-50/50 dark:bg-neutral-900/50">
+      {/* Kelompok 1: Sisi Kiri (tambah, template, import, cari) */}
+      <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+        {headerActions && (
+          <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+            {headerActions}
+          </div>
         )}
+        
+        {/* Global Search */}
+        <div className="relative w-full sm:w-80">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <FiSearch className="text-neutral-400 w-4 h-4" />
+          </div>
+          <input
+            type="text"
+            value={inputValue}
+            onChange={handleInput}
+            placeholder={searchPlaceholder}
+            className="block w-full pl-10 pr-8 py-2 border border-neutral-200 dark:border-neutral-700 rounded-xl leading-5 bg-white dark:bg-neutral-950 placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-colors text-sm dark:text-white font-medium"
+          />
+          {inputValue && (
+            <button
+              onClick={() => { setInputValue(""); onSearchChange?.(""); }}
+              className="absolute inset-y-0 right-0 pr-3 flex items-center text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200"
+            >
+              <FiX className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* Right side */}
-      <div className="flex items-center gap-2 self-end sm:self-auto">
+      {/* Kelompok 2: Sisi Kanan (sisanya: Reset, Kolom, Export) */}
+      <div className="flex items-center gap-2 self-end md:self-auto">
         {/* Reset All Filters */}
         {hasActiveFilters && (
           <button

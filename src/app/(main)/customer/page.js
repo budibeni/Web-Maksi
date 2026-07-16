@@ -319,21 +319,6 @@ export default function CustomerPage() {
 
   return (
     <div className="space-y-6">
-      {mounted && document.getElementById("header-actions-portal") && createPortal(
-          <>
-            {!isTopManagement && (
-              <button 
-                onClick={() => handleOpenModal()}
-                className="bg-neutral-900 hover:bg-neutral-800 dark:bg-white dark:hover:bg-neutral-200 text-white dark:text-neutral-900 px-4 py-1.5 rounded-full font-medium flex items-center gap-2 transition-colors shadow-sm text-sm mr-1"
-              >
-                <FiPlus className="w-4 h-4" />
-                <span className="hidden sm:inline">Tambah Customer</span>
-              </button>
-            )}
-          </>,
-          document.getElementById("header-actions-portal")
-        )}
-
       <DataTable
         columns={columns}
         data={customers}
@@ -363,6 +348,20 @@ export default function CustomerPage() {
         onExport={handleExport}
         // Actions
         actions={actions}
+        headerActions={
+          <>
+            {!isTopManagement && (
+              <button 
+                onClick={() => handleOpenModal()}
+                className="flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold text-white bg-neutral-900 dark:bg-neutral-800 hover:bg-neutral-800 dark:hover:bg-neutral-700 rounded-xl transition-colors border border-neutral-800 dark:border-neutral-700 cursor-pointer"
+                title="Tambah Customer"
+              >
+                <FiPlus className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Tambah Customer</span>
+              </button>
+            )}
+          </>
+        }
       />
 
       {/* Modal */}
