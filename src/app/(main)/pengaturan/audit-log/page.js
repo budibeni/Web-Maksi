@@ -123,18 +123,40 @@ export default function AuditLogPage() {
     tableState.columnFilters
   ]);
 
-  const handleExport = () => {
-    if (!logs.length) { showToast("Tidak ada data untuk diexport.", "error"); return; }
-    const exportData = logs.map(log => ({
-      ID: log.id,
-      WAKTU: formatDateTime(log.dibuat_tanggal),
-      PENGGUNA: log.nama_user,
-      MODUL: log.modul,
-      AKSI: log.aksi,
-      DESKRIPSI: log.deskripsi || "",
-      IP_ADDRESS: log.ip_address || "",
-    }));
-    exportToExcel(exportData, `audit_log.xlsx`);
+  const handleExport = async (type) => {
+    try {
+      showToast("Sedang menyiapkan file export...", "info");
+      let dataToExport = [];
+      
+      if (type === "page") {
+        dataToExport = logs;
+      } else {
+        const params = buildParams({ limit: "1000", page: "1" });
+        const res = await fetch(`/api/audit-log?${params.toString()}`);
+        const json = await res.json();
+        if (json.success && json.data) {
+          dataToExport = json.data;
+        } else {
+          showToast("Gagal mengambil data untuk export", "error");
+          return;
+        }
+      }
+
+      const exportData = dataToExport.map(log => ({
+        ID: log.id,
+        WAKTU: formatDateTime(log.dibuat_tanggal),
+        PENGGUNA: log.nama_user,
+        MODUL: log.modul,
+        AKSI: log.aksi,
+        DESKRIPSI: log.deskripsi || "",
+        IP_ADDRESS: log.ip_address || "",
+      }));
+      exportToExcel(exportData, `audit_log.xlsx`);
+      showToast("Audit log berhasil diexport.", "success");
+    } catch (error) {
+      console.error(error);
+      showToast("Terjadi kesalahan saat mengexport data", "error");
+    }
   };
 
   const columns = useMemo(() => [
@@ -221,13 +243,6 @@ export default function AuditLogPage() {
         <div className="flex items-center gap-2">
           <button 
             className="p-2 text-neutral-500 hover:text-neutral-900 bg-white hover:bg-neutral-100 dark:bg-neutral-900 dark:text-neutral-400 dark:hover:text-white dark:hover:bg-neutral-800 rounded-full transition-colors border border-neutral-200 dark:border-neutral-800"
-            title="Export ke Excel"
-            onClick={handleExport}
-          >
-            <FiDownload className="w-4 h-4" />
-          </button>
-          <button 
-            className="p-2 text-neutral-500 hover:text-neutral-900 bg-white hover:bg-neutral-100 dark:bg-neutral-900 dark:text-neutral-400 dark:hover:text-white dark:hover:bg-neutral-800 rounded-full transition-colors border border-neutral-200 dark:border-neutral-800"
             title="Refresh"
             onClick={fetchLogs}
           >
@@ -241,7 +256,7 @@ export default function AuditLogPage() {
         columns={columns}
         data={logs}
         isLoading={isLoading}
-        emptyText="Tidak ada riwayat audit ditemukan."
+        emptyText="Tidak ada log audit yang ditemukan."
         rowKey="id"
         // Pagination
         page={tableState.page}
@@ -263,6 +278,8 @@ export default function AuditLogPage() {
         columnFilters={tableState.columnFilters}
         onFilterChange={tableHandlers.onFilterChange}
         onResetFilters={() => { clearAllFilters(); tableHandlers.onSearchChange(""); }}
+        // Export
+        onExport={handleExport}
         // Actions
         actions={actions}
       />

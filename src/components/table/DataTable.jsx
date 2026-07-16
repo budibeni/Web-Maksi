@@ -78,6 +78,9 @@ export default function DataTable({
   // Actions
   actions = [],
 
+  // Export
+  onExport,
+
   // Visibility
   defaultHiddenColumns = [],
 
@@ -181,35 +184,12 @@ export default function DataTable({
         debounceMs={debounceMs}
         columnFilters={columnFilters}
         onResetFilters={onResetFilters}
+        onExport={onExport}
       />
-
-      {/* Table */}
-      <div className="overflow-x-auto">
-        <table className="min-w-full">
-          <TableHeader
-            columns={visibleColumns}
-            sortField={sortField}
-            sortOrder={sortOrder}
-            onSortChange={onSortChange}
-            hasActions={actions.length > 0}
-            columnFilters={columnFilters}
-            onFilterChange={onFilterChange}
-          />
-          <TableBody
-            columns={visibleColumns}
-            data={data}
-            isLoading={isLoading}
-            emptyText={emptyText}
-            emptyIcon={emptyIcon}
-            actions={actions}
-            rowKey={rowKey}
-          />
-        </table>
-      </div>
 
       {/* Active Filter Summary — ditampilkan hanya jika ada filter aktif */}
       {!isLoading && activeFilterSummary.length > 0 && (
-        <div className="px-4 py-2.5 border-t border-neutral-100 dark:border-neutral-800 bg-orange-50/60 dark:bg-orange-950/10 flex flex-wrap items-center gap-2">
+        <div className="px-4 py-2.5 border-b border-neutral-100 dark:border-neutral-800 bg-orange-50/60 dark:bg-orange-950/10 flex flex-wrap items-center gap-2">
           <span className="text-[10px] font-bold text-orange-600/70 dark:text-orange-400/60 uppercase tracking-wider shrink-0">
             Filter aktif:
           </span>
@@ -238,6 +218,30 @@ export default function DataTable({
           )}
         </div>
       )}
+
+      {/* Table */}
+      <div className="overflow-x-auto">
+        <table className="min-w-full">
+          <TableHeader
+            columns={visibleColumns}
+            sortField={sortField}
+            sortOrder={sortOrder}
+            onSortChange={onSortChange}
+            hasActions={actions.length > 0}
+            columnFilters={columnFilters}
+            onFilterChange={onFilterChange}
+          />
+          <TableBody
+            columns={visibleColumns}
+            data={data}
+            isLoading={isLoading}
+            emptyText={emptyText}
+            emptyIcon={emptyIcon}
+            actions={actions}
+            rowKey={rowKey}
+          />
+        </table>
+      </div>
 
       {/* Pagination */}
       <TablePagination

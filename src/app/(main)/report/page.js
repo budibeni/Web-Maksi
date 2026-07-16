@@ -119,31 +119,41 @@ export default function LaporanSemuaLeadPage() {
     setEndDate(pendingEnd);
   };
 
-  const handleExport = async () => {
+  const handleExport = async (type) => {
     setIsExporting(true);
     try {
-      const params = new URLSearchParams({ startDate, endDate, page: "1", limit: "100000" });
-      const res = await fetch(`/api/lead/report?${params}`);
-      const json = await res.json();
-      if (json.success && json.data?.leads) {
-        const formattedExport = json.data.leads.map((l, idx) => ({
-          "No": idx + 1,
-          "Kode Lead": l.nomor,
-          "Nama Customer": l.customer_nama,
-          "Telepon": l.customer_telepon,
-          "Sales PIC": l.sales_nama,
-          "Cabang": l.cabang_nama,
-          "Fase": l.fase === 1 ? "Lead Baru" : l.fase === 2 ? "Follow Up" : "Penawaran",
-          "Status": l.status === 1 ? "Open" : l.status === 2 ? "Deal" : "Lost",
-          "Tanggal Lead": l.dibuat_tanggal ? dayjs(l.dibuat_tanggal).format("DD/MM/YYYY") : "-",
-          "Terakhir Follow Up": l.terakhir_follow_up ? dayjs(l.terakhir_follow_up).format("DD/MM/YYYY HH:mm") : "-",
-          "Nilai Potensi (Rp)": l.nilai_potensi ?? "-"
-        }));
-        await exportToExcel(formattedExport, "Laporan_Semua_Lead");
-        showToast("Laporan berhasil diexport ke Excel.", "success");
+      showToast("Sedang menyiapkan file export...", "info");
+      let dataToExport = [];
+      
+      if (type === "page") {
+        dataToExport = leads;
       } else {
-        showToast("Gagal mengunduh data untuk diexport.", "error");
+        const params = new URLSearchParams({ startDate, endDate, page: "1", limit: "1000" });
+        const res = await fetch(`/api/lead/report?${params}`);
+        const json = await res.json();
+        if (json.success && json.data?.leads) {
+          dataToExport = json.data.leads;
+        } else {
+          showToast("Gagal mengunduh data untuk diexport.", "error");
+          return;
+        }
       }
+
+      const formattedExport = dataToExport.map((l, idx) => ({
+        "No": idx + 1,
+        "Kode Lead": l.nomor || l.kode_lead || "-",
+        "Nama Customer": l.customer_nama || l.customer?.nama || "-",
+        "Telepon": l.customer_telepon || l.customer?.telepon || "-",
+        "Sales PIC": l.sales_nama || l.sales?.nama || "-",
+        "Cabang": l.cabang_nama || l.cabang?.nama || "-",
+        "Fase": l.fase === 1 ? "Lead Baru" : l.fase === 2 ? "Follow Up" : "Penawaran",
+        "Status": l.status === 1 ? "Open" : l.status === 2 ? "Deal" : "Lost",
+        "Tanggal Lead": l.dibuat_tanggal ? dayjs(l.dibuat_tanggal).format("DD/MM/YYYY") : "-",
+        "Terakhir Follow Up": l.terakhir_follow_up ? dayjs(l.terakhir_follow_up).format("DD/MM/YYYY HH:mm") : "-",
+        "Nilai Potensi (Rp)": l.nilai_potensi ?? "-"
+      }));
+      await exportToExcel(formattedExport, "Laporan_Semua_Lead");
+      showToast("Laporan berhasil diexport ke Excel.", "success");
     } catch (error) {
       console.error(error);
       showToast("Terjadi kesalahan saat mengeksport data.", "error");
@@ -309,14 +319,6 @@ export default function LaporanSemuaLeadPage() {
       {mounted && document.getElementById("header-actions-portal") && createPortal(
         <>
           <button
-            onClick={handleExport}
-            disabled={isExporting}
-            className="p-2 text-neutral-500 hover:text-neutral-900 bg-white hover:bg-neutral-100 dark:bg-neutral-900 dark:text-neutral-400 dark:hover:text-white dark:hover:bg-neutral-800 rounded-full transition-colors border border-neutral-200 dark:border-neutral-800 disabled:opacity-50"
-            title="Export ke Excel"
-          >
-            <FiDownload className="w-4 h-4" />
-          </button>
-          <button
             onClick={fetchReport}
             className="p-2 text-neutral-500 hover:text-neutral-900 bg-white hover:bg-neutral-100 dark:bg-neutral-900 dark:text-neutral-400 dark:hover:text-white dark:hover:bg-neutral-800 rounded-full transition-colors border border-neutral-200 dark:border-neutral-800"
             title="Refresh"
@@ -411,6 +413,8 @@ export default function LaporanSemuaLeadPage() {
         // Filter
         columnFilters={tableState.columnFilters}
         onFilterChange={tableHandlers.onFilterChange}
+        // Export
+        onExport={handleExport}
         // Actions
         actions={actions}
       />

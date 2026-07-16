@@ -13,18 +13,91 @@ const cabangSchema = z.object({
 
 export async function GET(request) {
   try {
-    const cabangs = await prisma.cabang.findMany({
-      orderBy: { id: 'desc' }
+    const { searchParams } = new URL(request.url);
+    const search = searchParams.get('search') || '';
+    const page = parseInt(searchParams.get('page')) || 1;
+    const limit = parseInt(searchParams.get('limit')) || 10;
+    const isExport = searchParams.get('export') === 'true';
+    const sortField = searchParams.get('sortField') || 'id';
+    const sortOrder = (searchParams.get('sortOrder') || 'desc') === 'asc' ? 'asc' : 'desc';
+
+    // If called without pagination params (legacy usage for dropdowns etc.), return all data
+    const isPaginated = searchParams.has('page') || searchParams.has('limit') || searchParams.has('search') || isExport;
+
+    if (!isPaginated) {
+      const cabangs = await prisma.cabang.findMany({ orderBy: { id: 'desc' } });
+      const serializedData = JSON.parse(JSON.stringify(cabangs, (key, value) =>
+        typeof value === 'bigint' ? value.toString() : value
+      ));
+      return NextResponse.json({ success: true, message: "Data berhasil diambil.", data: serializedData });
+    }
+
+    let whereClause = {};
+
+    if (search) {
+      whereClause.OR = [
+        { kode: { contains: search } },
+        { nama: { contains: search } },
+        { telepon: { contains: search } },
+        { alamat: { contains: search } }
+      ];
+    }
+
+    // Parse column filters
+    const filterConditions = [];
+    const filterKeys = new Set();
+    for (const [paramKey] of searchParams.entries()) {
+      const match = paramKey.match(/^filter\[(.+?)\]\[operator\]$/);
+      if (match) filterKeys.add(match[1]);
+    }
+    for (const colKey of filterKeys) {
+      const operator = searchParams.get(`filter[${colKey}][operator]`);
+      const value = searchParams.get(`filter[${colKey}][value]`);
+      if (!operator || value === null || value === '') continue;
+
+      let condition = null;
+      if (operator === 'contains') condition = { [colKey]: { contains: value } };
+      else if (operator === 'startsWith') condition = { [colKey]: { startsWith: value } };
+      else if (operator === 'endsWith') condition = { [colKey]: { endsWith: value } };
+      else if (operator === 'equals' || operator === 'eq') {
+        condition = { [colKey]: colKey === 'aktif' ? parseInt(value) : value };
+      }
+      if (condition) filterConditions.push(condition);
+    }
+    if (filterConditions.length > 0) {
+      whereClause = { AND: [whereClause, ...filterConditions] };
+    }
+
+    const totalData = await prisma.cabang.count({ where: whereClause });
+    const orderByClause = { [sortField]: sortOrder };
+    const take = isExport ? 1000 : limit;
+    const skip = isExport ? 0 : (page - 1) * limit;
+
+    const data = await prisma.cabang.findMany({
+      where: whereClause,
+      orderBy: orderByClause,
+      take,
+      skip
     });
 
-    const serializedData = JSON.parse(JSON.stringify(cabangs, (key, value) =>
+    const serializedData = JSON.parse(JSON.stringify(data, (key, value) =>
       typeof value === 'bigint' ? value.toString() : value
     ));
+
+    if (isExport) {
+      return NextResponse.json({ success: true, message: "Data berhasil diambil.", data: serializedData });
+    }
 
     return NextResponse.json({
       success: true,
       message: "Data berhasil diambil.",
-      data: serializedData
+      data: serializedData,
+      pagination: {
+        totalData,
+        totalPages: Math.ceil(totalData / limit),
+        page,
+        limit
+      }
     });
   } catch (error) {
     console.error("GET Cabang Error:", error);
@@ -50,11 +123,7 @@ export async function POST(request) {
     
     const { kode, nama, alamat, telepon, aktif } = result.data;
     
-    // Check for unique kode
-    const existing = await prisma.cabang.findFirst({
-      where: { kode }
-    });
-
+    const existing = await prisma.cabang.findFirst({ where: { kode } });
     if (existing) {
       return NextResponse.json({
         success: false,
@@ -65,14 +134,7 @@ export async function POST(request) {
     const currentUser = await getCurrentUsername(request);
 
     const newCabang = await prisma.cabang.create({
-      data: {
-        kode,
-        nama,
-        alamat,
-        telepon,
-        aktif,
-        dibuat_oleh: currentUser
-      }
+      data: { kode, nama, alamat, telepon, aktif, dibuat_oleh: currentUser }
     });
     
     const serializedData = JSON.parse(JSON.stringify(newCabang, (key, value) =>

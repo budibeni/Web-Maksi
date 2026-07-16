@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { FiSearch, FiColumns, FiCheck, FiX } from "react-icons/fi";
+import { FiSearch, FiColumns, FiCheck, FiX, FiDownload } from "react-icons/fi";
 
 /**
  * TableToolbar — toolbar di atas tabel.
@@ -15,6 +15,7 @@ import { FiSearch, FiColumns, FiCheck, FiX } from "react-icons/fi";
  *   debounceMs         number (default 400)
  *   columnFilters      object  — { [key]: filterValue }
  *   onResetFilters     fn()    — dipanggil saat tombol reset diklik
+ *   onExport           fn()    — dipanggil saat tombol export diklik
  */
 export default function TableToolbar({
   searchValue = "",
@@ -26,10 +27,13 @@ export default function TableToolbar({
   debounceMs = 400,
   columnFilters = {},
   onResetFilters,
+  onExport,
 }) {
   const [inputValue, setInputValue] = useState(searchValue);
   const [colPanelOpen, setColPanelOpen] = useState(false);
+  const [exportPanelOpen, setExportPanelOpen] = useState(false);
   const colPanelRef = useRef(null);
+  const exportPanelRef = useRef(null);
   const debounceRef = useRef(null);
 
   // Sync input if searchValue cleared externally
@@ -51,11 +55,14 @@ export default function TableToolbar({
     onResetFilters?.();
   };
 
-  // Close col panel on outside click
+  // Close panels on outside click
   useEffect(() => {
     const handler = (e) => {
       if (colPanelRef.current && !colPanelRef.current.contains(e.target)) {
         setColPanelOpen(false);
+      }
+      if (exportPanelRef.current && !exportPanelRef.current.contains(e.target)) {
+        setExportPanelOpen(false);
       }
     };
     document.addEventListener("mousedown", handler);
@@ -134,6 +141,48 @@ export default function TableToolbar({
                     </button>
                   );
                 })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Export Button (with Dropdown choices) */}
+        {onExport && (
+          <div className="relative" ref={exportPanelRef}>
+            <button
+              onClick={() => setExportPanelOpen((o) => !o)}
+              className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-neutral-600 dark:text-neutral-400 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-xl hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
+              title="Export ke Excel"
+            >
+              <FiDownload className="w-3.5 h-3.5" />
+              <span>Export</span>
+            </button>
+
+            {exportPanelOpen && (
+              <div className="absolute right-0 top-full mt-1 z-50 w-56 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-xl shadow-xl py-1.5">
+                <div className="px-3 py-1.5 text-[10px] font-bold text-neutral-400 uppercase tracking-wider border-b border-neutral-100 dark:border-neutral-800 mb-1">
+                  Pilih Data Ekspor
+                </div>
+                <button
+                  onClick={() => {
+                    onExport?.("page");
+                    setExportPanelOpen(false);
+                  }}
+                  className="w-full text-left px-3 py-2 text-xs text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors flex flex-col gap-0.5"
+                >
+                  <span className="font-bold">Halaman Ini</span>
+                  <span className="text-[10px] text-neutral-400 dark:text-neutral-500 font-medium">Hanya baris yang tampil saat ini</span>
+                </button>
+                <button
+                  onClick={() => {
+                    onExport?.("all");
+                    setExportPanelOpen(false);
+                  }}
+                  className="w-full text-left px-3 py-2 text-xs text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors border-t border-neutral-100 dark:border-neutral-800 flex flex-col gap-0.5"
+                >
+                  <span className="font-bold text-orange-600 dark:text-orange-400">Semua Terfilter</span>
+                  <span className="text-[10px] text-neutral-400 dark:text-neutral-500 font-medium">Maksimal 1000 data terfilter</span>
+                </button>
               </div>
             )}
           </div>

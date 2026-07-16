@@ -174,26 +174,35 @@ export default function ProdukPage() {
     });
   };
 
-  const handleExport = async () => {
+  const handleExport = async (type) => {
     try {
       showToast("Sedang menyiapkan file export...", "info");
-      const params = buildParams({ export: "true" });
-      const res = await fetch(`/api/master/produk?${params.toString()}`);
-      const json = await res.json();
+      let dataToExport = [];
       
-      if (json.success) {
-        const exportData = json.data.map(p => ({
-          KODE: p.kode,
-          NAMA: p.nama,
-          KATEGORI: p.kategori?.nama || "-",
-          SATUAN: p.satuan,
-          HARGA_PUSAT: p.harga_default,
-          STATUS: p.aktif === 1 ? "Aktif" : "Nonaktif"
-        }));
-        exportToExcel(exportData, `master_produk.xlsx`);
+      if (type === "page") {
+        dataToExport = produks;
       } else {
-        showToast("Gagal mengambil data untuk export", "error");
+        const params = buildParams({ export: "true" });
+        const res = await fetch(`/api/master/produk?${params.toString()}`);
+        const json = await res.json();
+        if (json.success) {
+          dataToExport = json.data;
+        } else {
+          showToast("Gagal mengambil data untuk export", "error");
+          return;
+        }
       }
+
+      const exportData = dataToExport.map(p => ({
+        KODE: p.kode,
+        NAMA: p.nama,
+        KATEGORI: p.kategori?.nama || "-",
+        SATUAN: p.satuan,
+        HARGA_PUSAT: p.harga_default,
+        STATUS: p.aktif === 1 ? "Aktif" : "Nonaktif"
+      }));
+      exportToExcel(exportData, `master_produk.xlsx`);
+      showToast("Data produk berhasil diexport.", "success");
     } catch (error) {
       console.error(error);
       showToast("Terjadi kesalahan sistem", "error");
@@ -455,13 +464,6 @@ export default function ProdukPage() {
             >
               <FiUpload className="w-4 h-4" />
             </button>
-            <button 
-              className="p-2 text-neutral-500 hover:text-neutral-900 bg-white hover:bg-neutral-100 dark:bg-neutral-900 dark:text-neutral-400 dark:hover:text-white dark:hover:bg-neutral-800 rounded-full transition-colors border border-neutral-200 dark:border-neutral-800"
-              title="Export ke Excel"
-              onClick={handleExport}
-            >
-              <FiDownload className="w-4 h-4" />
-            </button>
           </>,
           document.getElementById("header-actions-portal")
         )}
@@ -491,6 +493,8 @@ export default function ProdukPage() {
         columnFilters={tableState.columnFilters}
         onFilterChange={tableHandlers.onFilterChange}
         onResetFilters={() => { clearAllFilters(); tableHandlers.onSearchChange(""); }}
+        // Export
+        onExport={handleExport}
         // Actions
         actions={actions}
       />

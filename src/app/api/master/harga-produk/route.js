@@ -115,7 +115,7 @@ export async function GET(request) {
         cabang: true
       },
       orderBy: orderByClause,
-      ...(isExport ? {} : { skip, take: limit })
+      ...(isExport ? { take: 1000 } : { skip, take: limit })
     });
 
     const serializedData = JSON.parse(JSON.stringify(hargaProduks, (key, value) =>

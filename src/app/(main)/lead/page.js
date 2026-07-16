@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   FiPlus, FiDownload, FiEye, FiRefreshCw,
-  FiUsers, FiTrendingUp, FiTarget, FiZap
+  FiUsers, FiTrendingUp, FiTarget, FiZap, FiInbox
 } from "react-icons/fi";
 import dayjs from "dayjs";
 import 'dayjs/locale/id';
@@ -42,7 +42,8 @@ export default function LeadPage() {
     tableHandlers,
     buildParams,
     applyPagination,
-    setFilterValue
+    setFilterValue,
+    clearAllFilters
   } = useDataTable({
     defaultSortField: "id",
     defaultSortOrder: "desc"
@@ -84,20 +85,42 @@ export default function LeadPage() {
     tableState.columnFilters
   ]);
 
-  const handleExport = async () => {
-    const data = leads.map((l, i) => ({
-      No: i + 1,
-      "Kode Lead": l.nomor,
-      Customer: l.customer?.nama,
-      Telepon: l.customer?.telepon,
-      Sales: l.user?.nama,
-      Cabang: l.cabang?.nama,
-      Fase: FASE_LABEL[l.fase] || '-',
-      "Tanggal Lead": dayjs(l.dibuat_tanggal).format('DD/MM/YYYY'),
-      "Reminder Berikutnya": l.pengingats?.[0] ? dayjs(l.pengingats[0].tanggal_pengingat).format('DD/MM/YYYY HH:mm') : '-',
-    }));
-    exportToExcel(data, 'daftar-lead');
-    showToast('Export berhasil!', 'success');
+  const handleExport = async (type) => {
+    try {
+      showToast("Sedang menyiapkan file export...", "info");
+      let dataToExport = [];
+      
+      if (type === "page") {
+        dataToExport = leads;
+      } else {
+        const params = buildParams({ limit: "1000", page: "1" });
+        const res = await fetch(`/api/lead?${params.toString()}`);
+        const json = await res.json();
+        if (json.success && json.data) {
+          dataToExport = json.data;
+        } else {
+          showToast('Gagal mengambil data untuk export', 'error');
+          return;
+        }
+      }
+
+      const data = dataToExport.map((l, i) => ({
+        No: i + 1,
+        "Kode Lead": l.nomor,
+        Customer: l.customer?.nama || "-",
+        Telepon: l.customer?.telepon || "-",
+        Sales: l.user?.nama || "-",
+        Cabang: l.cabang?.nama || "-",
+        Fase: FASE_LABEL[l.fase] || '-',
+        "Tanggal Lead": dayjs(l.dibuat_tanggal).format('DD/MM/YYYY'),
+        "Reminder Berikutnya": l.pengingats?.[0] ? dayjs(l.pengingats[0].tanggal_pengingat).format('DD/MM/YYYY HH:mm') : '-',
+      }));
+      exportToExcel(data, 'daftar-lead');
+      showToast('Export berhasil!', 'success');
+    } catch (error) {
+      console.error(error);
+      showToast('Terjadi kesalahan saat mengexport data', 'error');
+    }
   };
 
   const reminderStatus = (pengingat) => {
@@ -238,13 +261,6 @@ export default function LeadPage() {
           )}
           <button
             className="p-2 text-neutral-500 hover:text-neutral-900 bg-white hover:bg-neutral-100 dark:bg-neutral-900 dark:text-neutral-400 dark:hover:text-white dark:hover:bg-neutral-800 rounded-full transition-colors border border-neutral-200 dark:border-neutral-800"
-            title="Export ke Excel"
-            onClick={handleExport}
-          >
-            <FiDownload className="w-4 h-4" />
-          </button>
-          <button
-            className="p-2 text-neutral-500 hover:text-neutral-900 bg-white hover:bg-neutral-100 dark:bg-neutral-900 dark:text-neutral-400 dark:hover:text-white dark:hover:bg-neutral-800 rounded-full transition-colors border border-neutral-200 dark:border-neutral-800"
             title="Refresh"
             onClick={fetchLeads}
           >
@@ -275,31 +291,31 @@ export default function LeadPage() {
           <div className="flex items-center gap-3">
             <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-xl"><FiUsers className="w-5 h-5 text-blue-600 dark:text-blue-400" /></div>
             <div>
-              <div className="text-xs text-neutral-500 dark:text-neutral-400 font-medium">Lead Baru</div>
+              <div className="text-xs text-neutral-500 dark:text-neutral-400 font-medium">Fase 1: Kualifikasi</div>
               <div className="text-2xl font-bold text-neutral-900 dark:text-white">{summary.totalLeadBaru}</div>
             </div>
           </div>
         </div>
         <div
-          className={`bg-white dark:bg-neutral-900 rounded-2xl border p-5 shadow-sm cursor-pointer transition-all ${currentFaseFilter === '2' ? 'border-yellow-500 ring-1 ring-yellow-500/30' : 'border-neutral-200/50 dark:border-neutral-800 hover:border-yellow-300'}`}
+          className={`bg-white dark:bg-neutral-900 rounded-2xl border p-5 shadow-sm cursor-pointer transition-all ${currentFaseFilter === '2' ? 'border-purple-500 ring-1 ring-purple-500/30' : 'border-neutral-200/50 dark:border-neutral-800 hover:border-purple-300'}`}
           onClick={() => handleCardClick('2')}
         >
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-yellow-100 dark:bg-yellow-900/30 rounded-xl"><FiTrendingUp className="w-5 h-5 text-yellow-600 dark:text-yellow-400" /></div>
+            <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-xl"><FiRefreshCw className="w-5 h-5 text-purple-600 dark:text-purple-400" /></div>
             <div>
-              <div className="text-xs text-neutral-500 dark:text-neutral-400 font-medium">Follow Up</div>
+              <div className="text-xs text-neutral-500 dark:text-neutral-400 font-medium">Fase 2: Follow Up</div>
               <div className="text-2xl font-bold text-neutral-900 dark:text-white">{summary.totalFollowUp}</div>
             </div>
           </div>
         </div>
         <div
-          className={`bg-white dark:bg-neutral-900 rounded-2xl border p-5 shadow-sm cursor-pointer transition-all ${currentFaseFilter === '3' ? 'border-purple-500 ring-1 ring-purple-500/30' : 'border-neutral-200/50 dark:border-neutral-800 hover:border-purple-300'}`}
+          className={`bg-white dark:bg-neutral-900 rounded-2xl border p-5 shadow-sm cursor-pointer transition-all ${currentFaseFilter === '3' ? 'border-teal-500 ring-1 ring-teal-500/30' : 'border-neutral-200/50 dark:border-neutral-800 hover:border-teal-300'}`}
           onClick={() => handleCardClick('3')}
         >
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-xl"><FiZap className="w-5 h-5 text-purple-600 dark:text-purple-400" /></div>
+            <div className="p-2 bg-teal-100 dark:bg-teal-900/30 rounded-xl"><FiInbox className="w-5 h-5 text-teal-600 dark:text-teal-400" /></div>
             <div>
-              <div className="text-xs text-neutral-500 dark:text-neutral-400 font-medium">Penawaran</div>
+              <div className="text-xs text-neutral-500 dark:text-neutral-400 font-medium">Fase 3: Penawaran</div>
               <div className="text-2xl font-bold text-neutral-900 dark:text-white">{summary.totalPenawaran}</div>
             </div>
           </div>
@@ -332,6 +348,9 @@ export default function LeadPage() {
         // Filter
         columnFilters={tableState.columnFilters}
         onFilterChange={tableHandlers.onFilterChange}
+        onResetFilters={() => { clearAllFilters(); tableHandlers.onSearchChange(""); }}
+        // Export
+        onExport={handleExport}
         // Actions
         actions={actions}
       />

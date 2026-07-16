@@ -149,22 +149,37 @@ export default function CustomerPage() {
     });
   };
 
-  const handleExport = async () => {
+  const handleExport = async (type) => {
     try {
-      const res = await fetch(`/api/customer?limit=1000`);
-      const json = await res.json();
-      if (json.success) {
-        const exportData = json.data.map(c => ({
-          NAMA: c.nama,
-          TELEPON: c.telepon,
-          ALAMAT: c.alamat || "-",
-          CATATAN: c.catatan || "-",
-          TERDAFTAR: dayjs(c.dibuat_tanggal).format("DD/MM/YYYY")
-        }));
-        exportToExcel(exportData, "daftar_customer.xlsx");
+      showToast("Sedang menyiapkan file export...", "info");
+      let dataToExport = [];
+      
+      if (type === "page") {
+        dataToExport = customers;
+      } else {
+        const params = buildParams({ limit: "1000", page: "1" });
+        const res = await fetch(`/api/customer?${params.toString()}`);
+        const json = await res.json();
+        if (json.success) {
+          dataToExport = json.data;
+        } else {
+          showToast("Gagal mengambil data untuk export", "error");
+          return;
+        }
       }
+
+      const exportData = dataToExport.map(c => ({
+        NAMA: c.nama,
+        TELEPON: c.telepon,
+        ALAMAT: c.alamat || "-",
+        CATATAN: c.catatan || "-",
+        TERDAFTAR: dayjs(c.dibuat_tanggal).format("DD/MM/YYYY")
+      }));
+      exportToExcel(exportData, "daftar_customer.xlsx");
+      showToast("Data customer berhasil diexport.", "success");
     } catch (error) {
       console.error(error);
+      showToast("Terjadi kesalahan saat mengexport data.", "error");
     }
   };
 
@@ -315,13 +330,6 @@ export default function CustomerPage() {
                 <span className="hidden sm:inline">Tambah Customer</span>
               </button>
             )}
-            <button 
-              className="p-2 text-neutral-500 hover:text-neutral-900 bg-white hover:bg-neutral-100 dark:bg-neutral-900 dark:text-neutral-400 dark:hover:text-white dark:hover:bg-neutral-800 rounded-full transition-colors border border-neutral-200 dark:border-neutral-800"
-              title="Export ke Excel"
-              onClick={handleExport}
-            >
-              <FiDownload className="w-4 h-4" />
-            </button>
           </>,
           document.getElementById("header-actions-portal")
         )}
@@ -351,6 +359,8 @@ export default function CustomerPage() {
         columnFilters={tableState.columnFilters}
         onFilterChange={tableHandlers.onFilterChange}
         onResetFilters={() => { clearAllFilters(); tableHandlers.onSearchChange(""); }}
+        // Export
+        onExport={handleExport}
         // Actions
         actions={actions}
       />

@@ -11,18 +11,79 @@ const alasanLostSchema = z.object({
 
 export async function GET(request) {
   try {
-    const alasanLosts = await prisma.alasanLost.findMany({
-      orderBy: { id: 'desc' }
+    const { searchParams } = new URL(request.url);
+    const search = searchParams.get('search') || '';
+    const page = parseInt(searchParams.get('page')) || 1;
+    const limit = parseInt(searchParams.get('limit')) || 10;
+    const isExport = searchParams.get('export') === 'true';
+    const sortField = searchParams.get('sortField') || 'id';
+    const sortOrder = (searchParams.get('sortOrder') || 'desc') === 'asc' ? 'asc' : 'desc';
+
+    let whereClause = {};
+
+    if (search) {
+      whereClause.OR = [
+        { kode: { contains: search } },
+        { nama: { contains: search } }
+      ];
+    }
+
+    // Parse column filters
+    const filterConditions = [];
+    const filterKeys = new Set();
+    for (const [paramKey] of searchParams.entries()) {
+      const match = paramKey.match(/^filter\[(.+?)\]\[operator\]$/);
+      if (match) filterKeys.add(match[1]);
+    }
+    for (const colKey of filterKeys) {
+      const operator = searchParams.get(`filter[${colKey}][operator]`);
+      const value = searchParams.get(`filter[${colKey}][value]`);
+      if (!operator || value === null || value === '') continue;
+
+      let condition = null;
+      if (operator === 'contains') condition = { [colKey]: { contains: value } };
+      else if (operator === 'startsWith') condition = { [colKey]: { startsWith: value } };
+      else if (operator === 'endsWith') condition = { [colKey]: { endsWith: value } };
+      else if (operator === 'equals' || operator === 'eq') {
+        condition = { [colKey]: colKey === 'aktif' ? parseInt(value) : value };
+      }
+      if (condition) filterConditions.push(condition);
+    }
+    if (filterConditions.length > 0) {
+      whereClause = { AND: [whereClause, ...filterConditions] };
+    }
+
+    const totalData = await prisma.alasanLost.count({ where: whereClause });
+
+    const orderByClause = { [sortField]: sortOrder };
+    const take = isExport ? 1000 : limit;
+    const skip = isExport ? 0 : (page - 1) * limit;
+
+    const data = await prisma.alasanLost.findMany({
+      where: whereClause,
+      orderBy: orderByClause,
+      take,
+      skip
     });
 
-    const serializedData = JSON.parse(JSON.stringify(alasanLosts, (key, value) =>
+    const serializedData = JSON.parse(JSON.stringify(data, (key, value) =>
       typeof value === 'bigint' ? value.toString() : value
     ));
+
+    if (isExport) {
+      return NextResponse.json({ success: true, message: "Data berhasil diambil.", data: serializedData });
+    }
 
     return NextResponse.json({
       success: true,
       message: "Data berhasil diambil.",
-      data: serializedData
+      data: serializedData,
+      pagination: {
+        totalData,
+        totalPages: Math.ceil(totalData / limit),
+        page,
+        limit
+      }
     });
   } catch (error) {
     console.error("GET Alasan Lost Error:", error);
@@ -49,11 +110,7 @@ export async function POST(request) {
     
     const { kode, nama, aktif } = result.data;
     
-    // Check for unique kode
-    const existing = await prisma.alasanLost.findFirst({
-      where: { kode }
-    });
-
+    const existing = await prisma.alasanLost.findFirst({ where: { kode } });
     if (existing) {
       return NextResponse.json({
         success: false,
@@ -61,11 +118,7 @@ export async function POST(request) {
       }, { status: 409 });
     }
 
-    // Check for unique nama
-    const existingNama = await prisma.alasanLost.findFirst({
-      where: { nama }
-    });
-
+    const existingNama = await prisma.alasanLost.findFirst({ where: { nama } });
     if (existingNama) {
       return NextResponse.json({
         success: false,
@@ -75,16 +128,11 @@ export async function POST(request) {
 
     const currentUser = await getCurrentUsername(request);
 
-    const newAlasanLost = await prisma.alasanLost.create({
-      data: {
-        kode,
-        nama,
-        aktif,
-        dibuat_oleh: currentUser
-      }
+    const newData = await prisma.alasanLost.create({
+      data: { kode, nama, aktif, dibuat_oleh: currentUser }
     });
     
-    const serializedData = JSON.parse(JSON.stringify(newAlasanLost, (key, value) =>
+    const serializedData = JSON.parse(JSON.stringify(newData, (key, value) =>
       typeof value === 'bigint' ? value.toString() : value
     ));
     

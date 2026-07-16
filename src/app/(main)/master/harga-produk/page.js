@@ -194,21 +194,35 @@ export default function HargaProdukPage() {
     });
   };
 
-  const handleExport = async () => {
+  const handleExport = async (type) => {
     try {
-      const res = await fetch("/api/master/harga-produk?export=true");
-      const json = await res.json();
-      if (json.success) {
-        const exportData = json.data.map(h => ({
-          KODE_PRODUK: h.produk?.kode || "",
-          NAMA_PRODUK: h.produk?.nama || "",
-          KODE_CABANG: h.cabang?.kode || "",
-          NAMA_CABANG: h.cabang?.nama || "",
-          HARGA: parseFloat(h.harga || 0)
-        }));
-        exportToExcel(exportData, "master_harga_produk.xlsx");
+      showToast("Sedang menyiapkan file export...", "info");
+      let dataToExport = [];
+      
+      if (type === "page") {
+        dataToExport = hargaProduks;
+      } else {
+        const res = await fetch("/api/master/harga-produk?export=true");
+        const json = await res.json();
+        if (json.success) {
+          dataToExport = json.data;
+        } else {
+          showToast("Gagal mengambil data untuk export", "error");
+          return;
+        }
       }
+
+      const exportData = dataToExport.map(h => ({
+        KODE_PRODUK: h.produk?.kode || "",
+        NAMA_PRODUK: h.produk?.nama || "",
+        KODE_CABANG: h.cabang?.kode || "",
+        NAMA_CABANG: h.cabang?.nama || "",
+        HARGA: parseFloat(h.harga || 0)
+      }));
+      exportToExcel(exportData, "master_harga_produk.xlsx");
+      showToast("Data harga produk berhasil diexport.", "success");
     } catch (error) {
+      console.error(error);
       showToast("Gagal mengambil data untuk export", "error");
     }
   };
@@ -418,13 +432,6 @@ export default function HargaProdukPage() {
           >
             <FiUpload className="w-4 h-4" />
           </button>
-          <button 
-            className="p-2 text-neutral-500 hover:text-neutral-900 bg-white hover:bg-neutral-100 dark:bg-neutral-900 dark:text-neutral-400 dark:hover:text-white dark:hover:bg-neutral-800 rounded-full transition-colors border border-neutral-200 dark:border-neutral-800"
-            title="Export ke Excel"
-            onClick={handleExport}
-          >
-            <FiDownload className="w-4 h-4" />
-          </button>
         </>,
         document.getElementById("header-actions-portal")
       )}
@@ -454,6 +461,8 @@ export default function HargaProdukPage() {
         columnFilters={tableState.columnFilters}
         onFilterChange={tableHandlers.onFilterChange}
         onResetFilters={() => { clearAllFilters(); tableHandlers.onSearchChange(""); }}
+        // Export
+        onExport={handleExport}
         // Actions
         actions={actions}
       />
