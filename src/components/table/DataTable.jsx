@@ -103,7 +103,7 @@ export default function DataTable({
 
   // Visible columns only
   const visibleColumns = useMemo(
-    () => columns.filter((c) => !hiddenColumns.has(c.key)),
+    () => columns.filter((c) => !hiddenColumns.has(c.key) && c.key !== "id" && c.label !== "No"),
     [columns, hiddenColumns]
   );
 

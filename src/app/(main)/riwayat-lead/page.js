@@ -13,7 +13,7 @@ import dayjs from "dayjs";
 import { DataTable } from "@/components/table";
 import { useDataTable } from "@/hooks/useDataTable";
 
-export default function LaporanSemuaLeadPage() {
+export default function RiwayatLeadPage() {
   const user = useAuthStore((state) => state.user);
   const { showToast } = useUIStore();
   const [mounted, setMounted] = useState(false);
@@ -29,13 +29,7 @@ export default function LaporanSemuaLeadPage() {
   });
   const [leads, setLeads] = useState([]);
 
-  // Date range filter (terpisah dari DataTable, dikirim via buildParams extra)
-  const todayDate = new Date();
-  const firstDay = new Date(todayDate.getFullYear(), todayDate.getMonth(), 1);
-  const [startDate, setStartDate] = useState(dayjs(firstDay).format("YYYY-MM-DD"));
-  const [endDate, setEndDate] = useState(dayjs(todayDate).format("YYYY-MM-DD"));
-  const [pendingStart, setPendingStart] = useState(dayjs(firstDay).format("YYYY-MM-DD"));
-  const [pendingEnd, setPendingEnd] = useState(dayjs(todayDate).format("YYYY-MM-DD"));
+
 
   const {
     tableState,
@@ -75,8 +69,8 @@ export default function LaporanSemuaLeadPage() {
   const fetchReport = async () => {
     setIsLoading(true);
     try {
-      const params = buildParams({ startDate, endDate });
-      const res = await fetch(`/api/lead/report?${params.toString()}`);
+      const params = buildParams();
+      const res = await fetch(`/api/lead/riwayat-lead?${params.toString()}`);
       const json = await res.json();
       if (json.success && json.data) {
         setSummary(json.data.summary || {});
@@ -109,15 +103,8 @@ export default function LaporanSemuaLeadPage() {
     tableState.pageSize,
     tableState.sortField,
     tableState.sortOrder,
-    tableState.columnFilters,
-    startDate,
-    endDate
+    tableState.columnFilters
   ]);
-
-  const handleApplyDateFilter = () => {
-    setStartDate(pendingStart);
-    setEndDate(pendingEnd);
-  };
 
   const handleExport = async (type) => {
     setIsExporting(true);
@@ -128,8 +115,8 @@ export default function LaporanSemuaLeadPage() {
       if (type === "page") {
         dataToExport = leads;
       } else {
-        const params = new URLSearchParams({ startDate, endDate, page: "1", limit: "1000" });
-        const res = await fetch(`/api/lead/report?${params}`);
+        const params = new URLSearchParams({ page: "1", limit: "1000" });
+        const res = await fetch(`/api/lead/riwayat-lead?${params}`);
         const json = await res.json();
         if (json.success && json.data?.leads) {
           dataToExport = json.data.leads;
@@ -152,8 +139,8 @@ export default function LaporanSemuaLeadPage() {
         "Terakhir Follow Up": l.terakhir_follow_up ? dayjs(l.terakhir_follow_up).format("DD/MM/YYYY HH:mm") : "-",
         "Nilai Potensi (Rp)": l.nilai_potensi ?? "-"
       }));
-      await exportToExcel(formattedExport, "Laporan_Semua_Lead");
-      showToast("Laporan berhasil diexport ke Excel.", "success");
+      await exportToExcel(formattedExport, "Riwayat_Lead");
+      showToast("Riwayat Lead berhasil diexport ke Excel.", "success");
     } catch (error) {
       console.error(error);
       showToast("Terjadi kesalahan saat mengeksport data.", "error");
@@ -315,17 +302,15 @@ export default function LaporanSemuaLeadPage() {
   return (
     <div className="space-y-6 max-w-6xl mx-auto">
 
-      {/* Portal: Header Actions */}
+      {/* Portal: Header Actions (Refresh button next to dark mode) */}
       {mounted && document.getElementById("header-actions-portal") && createPortal(
-        <>
-          <button
-            onClick={fetchReport}
-            className="p-2 text-neutral-500 hover:text-neutral-900 bg-white hover:bg-neutral-100 dark:bg-neutral-900 dark:text-neutral-400 dark:hover:text-white dark:hover:bg-neutral-800 rounded-full transition-colors border border-neutral-200 dark:border-neutral-800"
-            title="Refresh"
-          >
-            <FiRefreshCw className="w-4 h-4" />
-          </button>
-        </>,
+        <button
+          onClick={fetchReport}
+          className="p-2 text-neutral-500 hover:text-neutral-900 bg-white hover:bg-neutral-100 dark:bg-neutral-900 dark:text-neutral-400 dark:hover:text-white dark:hover:bg-neutral-800 rounded-full transition-colors border border-neutral-200 dark:border-neutral-800 relative cursor-pointer"
+          title="Refresh Data"
+        >
+          <FiRefreshCw className="h-4 w-4 animate-none hover:rotate-180 transition-transform duration-500" />
+        </button>,
         document.getElementById("header-actions-portal")
       )}
 
@@ -350,43 +335,6 @@ export default function LaporanSemuaLeadPage() {
           </div>
         ))}
       </div>
-
-      {/* Date Range Filter Panel */}
-      <div className="bg-white dark:bg-neutral-900 border border-neutral-200/50 dark:border-neutral-800 rounded-2xl p-4 shadow-sm">
-        <div className="flex flex-col sm:flex-row items-end gap-3">
-          <div className="flex-1">
-            <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-1.5">Periode Lead Dibuat</label>
-            <div className="flex items-center gap-2">
-              <input
-                type="date"
-                value={pendingStart}
-                onChange={e => setPendingStart(e.target.value)}
-                className="flex-1 px-3 py-2 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 dark:text-white text-xs font-semibold"
-              />
-              <span className="text-xs text-neutral-400">—</span>
-              <input
-                type="date"
-                value={pendingEnd}
-                onChange={e => setPendingEnd(e.target.value)}
-                className="flex-1 px-3 py-2 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 dark:text-white text-xs font-semibold"
-              />
-            </div>
-          </div>
-          <button
-            onClick={handleApplyDateFilter}
-            className="px-5 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-xl text-xs font-bold transition-all shadow-sm whitespace-nowrap"
-          >
-            Terapkan Periode
-          </button>
-          <button
-            onClick={() => { clearAllFilters(); setPendingStart(dayjs(firstDay).format("YYYY-MM-DD")); setPendingEnd(dayjs(today).format("YYYY-MM-DD")); setStartDate(dayjs(firstDay).format("YYYY-MM-DD")); setEndDate(dayjs(today).format("YYYY-MM-DD")); }}
-            className="px-4 py-2 bg-white dark:bg-neutral-900 hover:bg-neutral-50 dark:hover:bg-neutral-800 border border-neutral-200 dark:border-neutral-800 text-neutral-700 dark:text-neutral-300 rounded-xl text-xs font-bold transition-all whitespace-nowrap"
-          >
-            Reset Filter
-          </button>
-        </div>
-      </div>
-
       {/* DataTable */}
       <DataTable
         columns={columns}
@@ -424,7 +372,7 @@ export default function LaporanSemuaLeadPage() {
         <FiGrid className="w-5 h-5 flex-shrink-0 mt-0.5 text-blue-600 dark:text-blue-500" />
         <div className="space-y-1">
           <p className="font-semibold">Informasi:</p>
-          <p className="font-medium">Laporan ini menampilkan semua lead dari seluruh status. Gunakan filter untuk mempersempit pencarian data sesuai kebutuhan Anda.</p>
+          <p className="font-medium">Halaman ini menampilkan riwayat semua lead dari seluruh status. Gunakan filter untuk mempersempit pencarian data sesuai kebutuhan Anda.</p>
           <p className="font-medium opacity-80">Data nilai potensi adalah estimasi dari penawaran terakhir, jika ada.</p>
         </div>
       </div>

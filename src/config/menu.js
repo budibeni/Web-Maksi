@@ -59,7 +59,7 @@ export const APP_MENUS = [
       },
       {
         title: "Riwayat Lead",
-        path: "/report",
+        path: "/riwayat-lead",
         icon: FiClock,
         roles: [ROLE_ADMIN, ROLE_TOP_MANAGEMENT, ROLE_BRANCH_MANAGER, ROLE_SALES],
       },

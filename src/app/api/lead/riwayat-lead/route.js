@@ -220,7 +220,7 @@ export async function GET(request) {
       }
     }));
   } catch (error) {
-    console.error('GET /api/lead/report Error:', error);
+    console.error('GET /api/lead/riwayat-lead Error:', error);
     return NextResponse.json({ success: false, message: 'Terjadi kesalahan sistem.', error: error.message }, { status: 500 });
   }
 }
