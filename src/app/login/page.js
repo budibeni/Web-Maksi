@@ -17,7 +17,7 @@ export default function LoginPage() {
   const router = useRouter();
   const [error, setError] = useState("");
   const setUser = useAuthStore((state) => state.setUser);
-  
+
   const {
     register,
     handleSubmit,
@@ -29,7 +29,7 @@ export default function LoginPage() {
       password: ""
     }
   });
-  
+
   const onSubmit = async (data) => {
     try {
       setError("");
@@ -63,7 +63,7 @@ export default function LoginPage() {
                   {error}
                 </div>
               )}
-              
+
               <div>
                 <label className="block text-sm font-semibold text-neutral-700 dark:text-neutral-300 mb-1.5" htmlFor="username">
                   Username / Telepon
@@ -109,7 +109,7 @@ export default function LoginPage() {
           </div>
           <div className="bg-neutral-50 dark:bg-neutral-950/50 p-4 text-center border-t border-neutral-100 dark:border-neutral-800 transition-colors duration-300">
             <p className="text-sm text-neutral-500 dark:text-neutral-400">
-              © {new Date().getFullYear()} MAKSI. All rights reserved.
+              © {new Date().getFullYear()} Bensoft. All rights reserved.
             </p>
           </div>
         </div>
