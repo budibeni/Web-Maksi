@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/auth.store";
 import { useUIStore } from "@/store/ui.store";
 import { logout } from "@/services/auth.service";
-import { FiLogOut, FiUser, FiBell, FiMenu, FiChevronLeft, FiChevronRight, FiMoon, FiSun } from "react-icons/fi";
+import { FiLogOut, FiUser, FiMenu, FiChevronLeft, FiChevronRight, FiMoon, FiSun } from "react-icons/fi";
 import { useTheme } from "next-themes";
 import Breadcrumb from "./Breadcrumb";
 
@@ -68,7 +68,7 @@ export default function Header() {
       {/* Spacer to push right items */}
       <div className="flex-1"></div>
 
-      <div className="flex items-center space-x-2 md:space-x-4">
+      <div className="flex items-center space-x-2">
         {/* Portal for page-specific actions */}
         <div id="header-actions-portal" className="flex items-center gap-3 empty:hidden mr-4 md:mr-6 border-r border-neutral-200 dark:border-neutral-800 pr-4 md:pr-6"></div>
 
@@ -82,18 +82,22 @@ export default function Header() {
           </button>
         )}
 
-        <button className="p-2 text-neutral-500 hover:text-neutral-900 bg-white hover:bg-neutral-100 dark:bg-neutral-900 dark:text-neutral-400 dark:hover:text-white dark:hover:bg-neutral-800 rounded-full transition-colors border border-neutral-200 dark:border-neutral-800 relative">
-          <FiBell className="h-4 w-4" />
-          <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-red-500 ring-2 ring-white dark:ring-neutral-900"></span>
-        </button>
-        
-        <div className="relative ml-1 md:ml-2">
+
+        <div className="relative">
           <button 
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="flex items-center focus:outline-none rounded-full ring-2 ring-transparent hover:ring-orange-200 dark:hover:ring-orange-900/50 transition-all"
+            className="flex items-center gap-2.5 focus:outline-none rounded-xl px-2 py-1.5 ring-2 ring-transparent hover:bg-neutral-100 dark:hover:bg-neutral-800/60 transition-all"
           >
-            <div className="h-8 w-8 rounded-full bg-gradient-to-r from-orange-500 to-orange-600 flex items-center justify-center text-white font-bold text-xs shadow-sm">
+            <div className="h-8 w-8 rounded-full bg-gradient-to-r from-orange-500 to-orange-600 flex items-center justify-center text-white font-bold text-xs shadow-sm flex-shrink-0">
               {user?.nama?.charAt(0) || "U"}
+            </div>
+            <div className="hidden md:flex flex-col items-start leading-tight">
+              <span className="text-xs font-bold text-neutral-800 dark:text-neutral-200 truncate max-w-[120px]">
+                {user?.nama || "User"}
+              </span>
+              <span className="text-[10px] font-medium text-neutral-400 dark:text-neutral-500 truncate max-w-[120px]">
+                {user?.role?.nama || "Role"}
+              </span>
             </div>
           </button>
 

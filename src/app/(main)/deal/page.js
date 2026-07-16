@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { 
-  FiTrendingUp, FiCheckCircle, FiDollarSign, FiCalendar, 
-  FiClock, FiDownload, FiRefreshCw, FiChevronDown, FiFilter, 
+import {
+  FiTrendingUp, FiCheckCircle, FiDollarSign, FiCalendar,
+  FiClock, FiDownload, FiRefreshCw, FiChevronDown, FiFilter,
   FiMapPin, FiBell, FiChevronRight, FiPieChart, FiBarChart2, FiActivity
 } from "react-icons/fi";
 import { useAuthStore } from "@/store/auth.store";
@@ -184,7 +184,7 @@ export default function LaporanLeadDealPage() {
     <div className="space-y-6 max-w-6xl mx-auto">
 
       {/* Panel Filter Laporan (Segmen Reusable) */}
-      <FilterPanel 
+      <FilterPanel
         title="Filter Data"
         role={user?.role?.nama || user?.role}
         branches={cabangs}
@@ -280,23 +280,23 @@ export default function LaporanLeadDealPage() {
               <FiPieChart className="text-orange-500" />
               Deal berdasarkan Tipe Customer
             </h3>
-            
+
             {/* SVG Donut Chart */}
             <div className="flex items-center justify-center py-6 relative">
               <svg className="w-36 h-36" viewBox="0 0 36 36">
                 <circle cx="18" cy="18" r="15.915" fill="none" stroke="#e6e6e6" strokeWidth="4"></circle>
-                
+
                 {/* Simulated Segment Values */}
                 {summary.totalDeal > 0 ? (
                   <>
                     {/* Segment 1: Customer Baru */}
-                    <circle cx="18" cy="18" r="15.915" fill="none" stroke="#3b82f6" strokeWidth="4" 
-                      strokeDasharray={`${charts.customerType[0]?.pct || 60} ${100 - (charts.customerType[0]?.pct || 60)}`} 
+                    <circle cx="18" cy="18" r="15.915" fill="none" stroke="#3b82f6" strokeWidth="4"
+                      strokeDasharray={`${charts.customerType[0]?.pct || 60} ${100 - (charts.customerType[0]?.pct || 60)}`}
                       strokeDashoffset="25">
                     </circle>
                     {/* Segment 2: Customer Existing */}
-                    <circle cx="18" cy="18" r="15.915" fill="none" stroke="#10b981" strokeWidth="4" 
-                      strokeDasharray={`${charts.customerType[1]?.pct || 40} ${100 - (charts.customerType[1]?.pct || 40)}`} 
+                    <circle cx="18" cy="18" r="15.915" fill="none" stroke="#10b981" strokeWidth="4"
+                      strokeDasharray={`${charts.customerType[1]?.pct || 40} ${100 - (charts.customerType[1]?.pct || 40)}`}
                       strokeDashoffset={100 - (charts.customerType[0]?.pct || 60) + 25}>
                     </circle>
                   </>
@@ -331,13 +331,13 @@ export default function LaporanLeadDealPage() {
             <FiBarChart2 className="text-orange-500" />
             Deal per Sales (Top 5)
           </h3>
-          
+
           <div className="space-y-4 py-2">
             {charts.salesList.slice(0, 5).map((sales, idx) => {
               const maxCount = charts.salesList[0]?.count || 1;
               const barPct = (sales.count / maxCount) * 100;
               const colorClasses = ["bg-orange-500", "bg-amber-500", "bg-teal-500", "bg-blue-500", "bg-indigo-500"];
-              
+
               return (
                 <div key={idx} className="space-y-1.5 text-xs font-semibold">
                   <div className="flex justify-between text-neutral-700 dark:text-neutral-300">
@@ -345,7 +345,7 @@ export default function LaporanLeadDealPage() {
                     <span>{sales.count} Deal</span>
                   </div>
                   <div className="w-full bg-neutral-100 dark:bg-neutral-800 h-2.5 rounded-full overflow-hidden">
-                    <div 
+                    <div
                       className={`${colorClasses[idx % colorClasses.length]} h-full rounded-full transition-all duration-500`}
                       style={{ width: `${barPct}%` }}
                     ></div>
@@ -372,18 +372,18 @@ export default function LaporanLeadDealPage() {
               <div className="flex items-center justify-center py-6 relative">
                 <svg className="w-36 h-36" viewBox="0 0 36 36">
                   <circle cx="18" cy="18" r="15.915" fill="none" stroke="#e6e6e6" strokeWidth="4"></circle>
-                  
+
                   {/* SVG Segment Renders */}
                   {summary.totalDeal > 0 && charts.cabangList.reduce((acc, curr, idx) => {
                     const pct = (curr.count / summary.totalDeal) * 100;
                     const offset = acc.offset;
                     const colorMap = ["#ef4444", "#3b82f6", "#f59e0b", "#10b981", "#8b5cf6"];
-                    
+
                     const seg = (
-                      <circle cx="18" cy="18" r="15.915" fill="none" 
-                        stroke={colorMap[idx % colorMap.length]} 
-                        strokeWidth="4" 
-                        strokeDasharray={`${pct} ${100 - pct}`} 
+                      <circle cx="18" cy="18" r="15.915" fill="none"
+                        stroke={colorMap[idx % colorMap.length]}
+                        strokeWidth="4"
+                        strokeDasharray={`${pct} ${100 - pct}`}
                         strokeDashoffset={offset}
                         key={idx}>
                       </circle>
@@ -432,7 +432,7 @@ export default function LaporanLeadDealPage() {
             <FiActivity className="text-orange-500" />
             Tren Deal per Bulan
           </h3>
-          
+
           {/* Simple Histogram SVG for monthly count */}
           <div className="h-40 w-full relative pt-2">
             <div className="absolute inset-0 flex items-end justify-between px-2">
@@ -444,7 +444,7 @@ export default function LaporanLeadDealPage() {
                     <span className="text-[9px] font-black text-neutral-800 dark:text-white opacity-0 group-hover:opacity-100 transition-opacity">
                       {m.count}
                     </span>
-                    <div 
+                    <div
                       className="bg-green-500 group-hover:bg-green-600 w-full rounded-t-md transition-all duration-500"
                       style={{ height: `${heightPct || 4}px` }}
                     ></div>
@@ -469,13 +469,13 @@ export default function LaporanLeadDealPage() {
               {charts.monthlyTrend.map((m, idx) => {
                 const maxVal = Math.max(...charts.monthlyTrend.map(d => d.nilai), 1);
                 const heightPct = (m.nilai / maxVal) * 80;
-                
+
                 return (
                   <div key={idx} className="flex flex-col items-center gap-2 w-1/12 group cursor-pointer">
                     <span className="text-[7px] font-bold text-neutral-800 dark:text-white opacity-0 group-hover:opacity-100 transition-opacity truncate max-w-[40px]">
                       {m.nilai >= 1000000 ? `${(m.nilai / 1000000).toFixed(0)}jt` : m.nilai}
                     </span>
-                    <div 
+                    <div
                       className="bg-blue-500 group-hover:bg-blue-600 w-full rounded-t-md transition-all duration-500"
                       style={{ height: `${heightPct || 4}px` }}
                     ></div>
@@ -498,7 +498,7 @@ export default function LaporanLeadDealPage() {
             {charts.salesList.slice(0, 5).map((sales, idx) => {
               const maxNilai = charts.salesList[0]?.nilai || 1;
               const barPct = (sales.nilai / maxNilai) * 100;
-              
+
               return (
                 <div key={idx} className="space-y-1.5 text-xs font-semibold">
                   <div className="flex justify-between text-neutral-700 dark:text-neutral-300">
@@ -508,7 +508,7 @@ export default function LaporanLeadDealPage() {
                     </span>
                   </div>
                   <div className="w-full bg-neutral-100 dark:bg-neutral-800 h-2.5 rounded-full overflow-hidden">
-                    <div 
+                    <div
                       className="bg-emerald-500 h-full rounded-full transition-all duration-500"
                       style={{ width: `${barPct}%` }}
                     ></div>
@@ -525,73 +525,16 @@ export default function LaporanLeadDealPage() {
 
       {/* Row 3 Visualizations */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Box 7: Deal per Sumber Lead */}
-        <div className="bg-white dark:bg-neutral-900 border border-neutral-200/50 dark:border-neutral-800 rounded-2xl p-5 shadow-sm flex flex-col justify-between min-h-[300px]">
-          <div>
-            <h3 className="text-xs font-bold text-neutral-800 dark:text-neutral-200 flex items-center gap-1.5 uppercase tracking-wider border-b border-neutral-100 dark:border-neutral-800 pb-3">
-              <FiPieChart className="text-orange-500" />
-              Deal per Sumber Lead
-            </h3>
 
-            {/* SVG Donut Chart */}
-            <div className="flex items-center justify-center py-6 relative">
-              <svg className="w-36 h-36" viewBox="0 0 36 36">
-                <circle cx="18" cy="18" r="15.915" fill="none" stroke="#e6e6e6" strokeWidth="4"></circle>
-                
-                {/* SVG Segment Renders */}
-                {mockSumberData.reduce((acc, curr, idx) => {
-                  const pct = curr.pct;
-                  const offset = acc.offset;
-                  
-                  const seg = (
-                    <circle cx="18" cy="18" r="15.915" fill="none" 
-                      stroke={curr.color} 
-                      strokeWidth="4" 
-                      strokeDasharray={`${pct} ${100 - pct}`} 
-                      strokeDashoffset={offset}
-                      key={idx}>
-                    </circle>
-                  );
-
-                  return {
-                    offset: offset - pct,
-                    elements: [...acc.elements, seg]
-                  };
-                }, { offset: 25, elements: [] }).elements}
-              </svg>
-              <div className="absolute text-center">
-                <h4 className="text-xl font-black text-neutral-900 dark:text-white">{summary.totalDeal}</h4>
-                <p className="text-[9px] text-neutral-400 font-bold uppercase tracking-wider">Total Deal</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Legend */}
-          <div className="space-y-1.5 text-[11px] font-bold">
-            {mockSumberData.map((src, idx) => {
-              return (
-                <div key={idx} className="flex justify-between items-center">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: src.color }}></span>
-                    <span className="text-neutral-600 dark:text-neutral-400 font-semibold">{src.name}</span>
-                  </div>
-                  <span className="text-neutral-800 dark:text-neutral-200">
-                    {src.count} ({src.pct}%)
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
 
         {/* Box 8: Deal per Produk (Top 5) */}
-        <div className="bg-white dark:bg-neutral-900 border border-neutral-200/50 dark:border-neutral-800 rounded-2xl p-5 shadow-sm flex flex-col justify-between min-h-[300px]">
+        <div className="md:col-span-2 bg-white dark:bg-neutral-900 border border-neutral-200/50 dark:border-neutral-800 rounded-2xl p-5 shadow-sm flex flex-col justify-between min-h-[300px]">
           <div>
             <h3 className="text-xs font-bold text-neutral-800 dark:text-neutral-200 flex items-center gap-1.5 uppercase tracking-wider border-b border-neutral-100 dark:border-neutral-800 pb-3 mb-4">
               <FiCheckCircle className="text-orange-500" />
               Deal per Produk (Top 5)
             </h3>
-            
+
             <div className="overflow-x-auto">
               <table className="min-w-full text-xs">
                 <thead>
@@ -615,7 +558,7 @@ export default function LaporanLeadDealPage() {
               </table>
             </div>
           </div>
-          
+
           <button className="w-full text-center py-2.5 text-neutral-500 hover:text-orange-500 dark:text-neutral-400 dark:hover:text-orange-400 text-xs font-bold transition-colors border border-dashed border-neutral-200 dark:border-neutral-800 rounded-xl mt-4">
             Lihat Semua Produk
           </button>
@@ -627,7 +570,7 @@ export default function LaporanLeadDealPage() {
             <FiDollarSign className="text-orange-500" />
             Ringkasan Nilai Deal
           </h3>
-          
+
           <div className="space-y-4 flex-1 justify-center flex flex-col">
             {/* Total Nilai Deal */}
             <div className="flex justify-between items-center border-b border-neutral-100 dark:border-neutral-800 pb-2 text-xs">
@@ -672,7 +615,7 @@ export default function LaporanLeadDealPage() {
             <FiActivity className="text-orange-500" />
             Ringkasan Konversi Funnel
           </h3>
-          
+
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 py-2 px-4">
             {/* Step 1: Total Lead */}
             <div className="text-center w-full sm:w-1/4 bg-neutral-50 dark:bg-neutral-950 p-4 rounded-2xl border border-neutral-200/40 dark:border-neutral-800/40">

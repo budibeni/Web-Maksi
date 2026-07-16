@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { 
-  FiAlertCircle, FiTrendingDown, FiDollarSign, FiCalendar, 
-  FiDownload, FiRefreshCw, FiChevronDown, FiFilter, 
+import {
+  FiAlertCircle, FiTrendingDown, FiDollarSign, FiCalendar,
+  FiDownload, FiRefreshCw, FiChevronDown, FiFilter,
   FiMapPin, FiBell, FiChevronRight, FiPieChart, FiBarChart2, FiActivity
 } from "react-icons/fi";
 import { useAuthStore } from "@/store/auth.store";
@@ -163,7 +163,7 @@ export default function LaporanLeadLostPage() {
     <div className="space-y-6 max-w-6xl mx-auto">
 
       {/* Panel Filter Laporan (Segmen Reusable) */}
-      <FilterPanel 
+      <FilterPanel
         title="Filter Data"
         role={user.role?.nama || user.role}
         branches={cabangs}
@@ -459,39 +459,10 @@ export default function LaporanLeadLostPage() {
           </div>
         )}
 
-        {/* Lost per Sumber Lead */}
-        <div className="bg-white dark:bg-neutral-900 border border-neutral-200/50 dark:border-neutral-800 rounded-2xl p-5 shadow-sm flex flex-col justify-between min-h-[280px]">
-          <h3 className="text-xs font-bold text-neutral-800 dark:text-neutral-200 flex items-center gap-1.5 uppercase tracking-wider border-b border-neutral-100 dark:border-neutral-800 pb-3">
-            <FiPieChart className="text-red-500" />Lost per Sumber Lead
-          </h3>
-          <div className="flex items-center justify-center py-3 relative">
-            <svg className="w-28 h-28" viewBox="0 0 36 36">
-              <circle cx="18" cy="18" r="15.915" fill="none" stroke="#f3f4f6" strokeWidth="4" />
-              {buildDonutSegments(mockSumberData, summary.totalLost, mockSumberData.map(s => s.color)).map((seg, idx) => (
-                <circle key={idx} cx="18" cy="18" r="15.915" fill="none" stroke={mockSumberData[idx]?.color || "#888"}
-                  strokeDasharray={`${seg.pct} ${100 - seg.pct}`} strokeDashoffset={seg.offset} strokeWidth="4" />
-              ))}
-            </svg>
-            <div className="absolute text-center">
-              <h4 className="text-base font-black text-neutral-900 dark:text-white">{summary.totalLost}</h4>
-              <p className="text-[8px] text-neutral-400 font-bold uppercase">Total</p>
-            </div>
-          </div>
-          <div className="space-y-1.5 text-[11px] font-semibold">
-            {mockSumberData.map((s, idx) => (
-              <div key={idx} className="flex justify-between">
-                <div className="flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: s.color }}></span>
-                  <span className="text-neutral-600 dark:text-neutral-400">{s.name}</span>
-                </div>
-                <span>{s.count} ({s.pct}%)</span>
-              </div>
-            ))}
-          </div>
-        </div>
+
 
         {/* Ringkasan Nilai Potensi Lost */}
-        <div className="bg-white dark:bg-neutral-900 border border-neutral-200/50 dark:border-neutral-800 rounded-2xl p-5 shadow-sm flex flex-col min-h-[280px]">
+        <div className="md:col-span-2 bg-white dark:bg-neutral-900 border border-neutral-200/50 dark:border-neutral-800 rounded-2xl p-5 shadow-sm flex flex-col min-h-[280px]">
           <h3 className="text-xs font-bold text-neutral-800 dark:text-neutral-200 flex items-center gap-1.5 uppercase tracking-wider border-b border-neutral-100 dark:border-neutral-800 pb-3 mb-4">
             <FiDollarSign className="text-red-500" />Ringkasan Nilai Potensi Lost
           </h3>
@@ -552,14 +523,7 @@ export default function LaporanLeadLostPage() {
         </div>
       </div>
 
-      {/* Info Notice */}
-      <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/50 rounded-2xl p-4 flex items-start gap-3 text-xs text-blue-700 dark:text-blue-400">
-        <FiActivity className="w-5 h-5 flex-shrink-0 mt-0.5" />
-        <div className="space-y-1">
-          <p className="font-semibold">Informasi:</p>
-          <p className="font-medium">Data pada laporan ini berdasarkan lead dengan status LOST pada periode dan filter yang dipilih.</p>
-        </div>
-      </div>
+
     </div>
   );
 }

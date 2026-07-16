@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { APP_MENUS } from "@/config/menu";
 import { useAuthStore } from "@/store/auth.store";
 import { useUIStore } from "@/store/ui.store";
-import { FiX, FiSettings, FiChevronDown, FiChevronRight } from "react-icons/fi";
+import { FiX, FiChevronDown, FiChevronRight } from "react-icons/fi";
 import { useEffect, useState } from "react";
 
 export default function Sidebar() {
@@ -184,15 +184,7 @@ export default function Sidebar() {
         </nav>
       </div>
       
-      {/* Bottom Floating Actions */}
-      <div className={`p-4 transition-all duration-300 flex ${isCollapsed ? 'md:flex-col md:items-center space-y-3 space-x-0' : 'items-center justify-center space-x-3'}`}>
-        <button 
-          className="flex items-center justify-center w-12 h-12 rounded-full bg-white dark:bg-neutral-900 shadow-sm text-neutral-500 dark:text-neutral-400 hover:text-orange-600 dark:hover:text-orange-400 transition-all ring-1 ring-neutral-200/50 dark:ring-neutral-800"
-          title="Settings"
-        >
-          <FiSettings className="h-5 w-5" />
-        </button>
-      </div>
+
     </div>
   );
 }

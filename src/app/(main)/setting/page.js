@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { 
-  FiUser, FiMail, FiPhone, FiLock, FiSave, FiShield, 
+import {
+  FiUser, FiMail, FiPhone, FiLock, FiSave, FiShield,
   FiEye, FiEyeOff, FiCheckCircle, FiSettings, FiChevronRight,
   FiEdit2, FiKey, FiSliders, FiHelpCircle
 } from "react-icons/fi";
@@ -131,7 +131,7 @@ export default function SettingPage() {
       localStorage.setItem("maksi_default_masa", String(appForm.defaultMasaBerlaku));
       localStorage.setItem("maksi_compact_view", appForm.compactView);
       localStorage.setItem("maksi_primary_color", appForm.primaryColor);
-      
+
       showToast("Pengaturan aplikasi berhasil disimpan.", "success");
     } catch (error) {
       showToast("Gagal menyimpan pengaturan.", "error");
@@ -215,11 +215,10 @@ export default function SettingPage() {
                 <button
                   key={tab.key}
                   onClick={() => setActiveTab(tab.key)}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-150 ${
-                    activeTab === tab.key
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-150 ${activeTab === tab.key
                       ? "bg-orange-500 text-white shadow-sm shadow-orange-200 dark:shadow-orange-900/30"
                       : "text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800"
-                  }`}
+                    }`}
                 >
                   <Icon className="w-4 h-4" />
                   <span>{tab.label}</span>
@@ -415,11 +414,10 @@ export default function SettingPage() {
                       {[1, 2, 3, 4].map(level => (
                         <div
                           key={level}
-                          className={`h-1 flex-1 rounded-full transition-colors ${
-                            passwordForm.password_baru.length >= level * 3
+                          className={`h-1 flex-1 rounded-full transition-colors ${passwordForm.password_baru.length >= level * 3
                               ? level <= 1 ? "bg-red-400" : level <= 2 ? "bg-amber-400" : level <= 3 ? "bg-blue-400" : "bg-green-500"
                               : "bg-neutral-200 dark:bg-neutral-700"
-                          }`}
+                            }`}
                         />
                       ))}
                       <span className="text-[10px] font-semibold text-neutral-400 w-12 text-right">
@@ -444,11 +442,10 @@ export default function SettingPage() {
                       value={passwordForm.konfirmasi_password}
                       onChange={e => setPasswordForm(p => ({ ...p, konfirmasi_password: e.target.value }))}
                       placeholder="Ulangi password baru"
-                      className={`w-full pl-10 pr-10 py-2.5 bg-neutral-50 dark:bg-neutral-950 border rounded-xl outline-none focus:ring-2 text-sm font-semibold dark:text-white placeholder:text-neutral-400 transition-all ${
-                        passwordForm.konfirmasi_password && passwordForm.password_baru !== passwordForm.konfirmasi_password
+                      className={`w-full pl-10 pr-10 py-2.5 bg-neutral-50 dark:bg-neutral-950 border rounded-xl outline-none focus:ring-2 text-sm font-semibold dark:text-white placeholder:text-neutral-400 transition-all ${passwordForm.konfirmasi_password && passwordForm.password_baru !== passwordForm.konfirmasi_password
                           ? "border-red-400 focus:border-red-500 focus:ring-red-500/20"
                           : "border-neutral-200 dark:border-neutral-800 focus:border-orange-500 focus:ring-orange-500/20"
-                      }`}
+                        }`}
                     />
                     <button
                       type="button"
@@ -566,39 +563,6 @@ export default function SettingPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {/* Default Table View */}
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300">
-                      Tampilan Tabel Default
-                    </label>
-                    <select
-                      value={appForm.compactView}
-                      onChange={e => setAppForm(p => ({ ...p, compactView: e.target.value }))}
-                      className="w-full px-4 py-2.5 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 text-sm font-semibold dark:text-white transition-all appearance-none"
-                    >
-                      <option value="true">Padat (Compact)</option>
-                      <option value="false">Lebar (Comfortable)</option>
-                    </select>
-                  </div>
-
-                  {/* Primary Color Accent */}
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-neutral-700 dark:text-neutral-300">
-                      Aksen Warna Utama Aplikasi
-                    </label>
-                    <select
-                      value={appForm.primaryColor}
-                      onChange={e => setAppForm(p => ({ ...p, primaryColor: e.target.value }))}
-                      className="w-full px-4 py-2.5 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 text-sm font-semibold dark:text-white transition-all appearance-none"
-                    >
-                      <option value="orange">Oranye (Maksindo Default)</option>
-                      <option value="blue">Biru (Corporate)</option>
-                      <option value="purple">Ungu (Premium)</option>
-                      <option value="green">Hijau (Fresh)</option>
-                    </select>
-                  </div>
-                </div>
 
                 <div className="pt-2 flex justify-end">
                   <button
