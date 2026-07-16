@@ -39,7 +39,7 @@ export default function Header() {
   };
 
   return (
-    <header className="bg-transparent h-16 flex items-center justify-between px-4 md:px-6 sticky top-0 z-10 transition-all duration-300">
+    <header className="bg-transparent h-16 flex items-center justify-between px-4 md:px-6 sticky top-0 z-30 transition-all duration-300">
       <div className="flex items-center">
         {/* Mobile menu toggle */}
         <button 
@@ -100,10 +100,10 @@ export default function Header() {
           {isMenuOpen && (
             <>
               <div 
-                className="fixed inset-0 z-10" 
+                className="fixed inset-0 z-40" 
                 onClick={() => setIsMenuOpen(false)}
               ></div>
-              <div className="absolute right-0 mt-3 w-56 bg-white dark:bg-neutral-900 rounded-2xl shadow-xl shadow-neutral-200/50 dark:shadow-black/50 py-2 z-20 border border-neutral-100 dark:border-neutral-800 animate-in fade-in slide-in-from-top-2 duration-200">
+              <div className="absolute right-0 mt-3 w-56 bg-white dark:bg-neutral-900 rounded-2xl shadow-xl shadow-neutral-200/50 dark:shadow-black/50 py-2 z-50 border border-neutral-100 dark:border-neutral-800 animate-in fade-in slide-in-from-top-2 duration-200">
                 <div className="px-5 py-3 border-b border-neutral-100 dark:border-neutral-800">
                   <p className="text-sm font-bold text-neutral-800 dark:text-neutral-200">{user?.nama || "User"}</p>
                   <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400 mt-0.5">{user?.role?.nama || "Role"}</p>

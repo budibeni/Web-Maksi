@@ -289,7 +289,7 @@ export default function LeadPage() {
           <div className="flex items-center gap-3">
             <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-xl"><FiUsers className="w-5 h-5 text-blue-600 dark:text-blue-400" /></div>
             <div>
-              <div className="text-xs text-neutral-500 dark:text-neutral-400 font-medium">Fase 1: Kualifikasi</div>
+              <div className="text-xs text-neutral-500 dark:text-neutral-400 font-medium">Fase 1: Lead Baru</div>
               <div className="text-2xl font-bold text-neutral-900 dark:text-white">{summary.totalLeadBaru}</div>
             </div>
           </div>
@@ -365,12 +365,6 @@ export default function LeadPage() {
           </>
         }
       />
-
-      {/* Info note */}
-      <div className="flex items-start gap-2 text-xs text-neutral-500 dark:text-neutral-400 bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-900/30 rounded-xl p-3">
-        <FiTarget className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
-        <span>Daftar ini hanya menampilkan lead dengan status <strong>OPEN</strong>. Lead yang sudah DEAL dapat dilihat pada menu <strong>Deal</strong>, dan Lead yang LOST pada menu <strong>Lost</strong>.</span>
-      </div>
     </div>
   );
 }

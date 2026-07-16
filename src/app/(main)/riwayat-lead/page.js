@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
-import { 
+import {
   FiDownload, FiEye, FiRefreshCw,
   FiCheckCircle, FiAlertCircle, FiInbox, FiTrendingUp, FiLayers, FiGrid
 } from "react-icons/fi";
@@ -111,7 +111,7 @@ export default function RiwayatLeadPage() {
     try {
       showToast("Sedang menyiapkan file export...", "info");
       let dataToExport = [];
-      
+
       if (type === "page") {
         dataToExport = leads;
       } else {
@@ -366,16 +366,6 @@ export default function RiwayatLeadPage() {
         // Actions
         actions={actions}
       />
-
-      {/* Info notice */}
-      <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/50 rounded-2xl p-4 flex items-start gap-3 text-xs text-blue-700 dark:text-blue-400">
-        <FiGrid className="w-5 h-5 flex-shrink-0 mt-0.5 text-blue-600 dark:text-blue-500" />
-        <div className="space-y-1">
-          <p className="font-semibold">Informasi:</p>
-          <p className="font-medium">Halaman ini menampilkan riwayat semua lead dari seluruh status. Gunakan filter untuk mempersempit pencarian data sesuai kebutuhan Anda.</p>
-          <p className="font-medium opacity-80">Data nilai potensi adalah estimasi dari penawaran terakhir, jika ada.</p>
-        </div>
-      </div>
     </div>
   );
 }

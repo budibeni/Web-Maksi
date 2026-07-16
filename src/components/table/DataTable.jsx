@@ -90,7 +90,17 @@ export default function DataTable({
   // Header actions (Tambah, Import, etc.)
   headerActions,
 }) {
-  const [hiddenColumns, setHiddenColumns] = useState(new Set(defaultHiddenColumns));
+  // Kolom berlabel "No" disembunyikan secara default agar backward-compatible
+  const initialHidden = useMemo(() => {
+    const base = new Set(defaultHiddenColumns);
+    columns.forEach((c) => {
+      if (c.label === "No" && !defaultHiddenColumns.includes(c.key)) {
+        base.add(c.key);
+      }
+    });
+    return base;
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  const [hiddenColumns, setHiddenColumns] = useState(initialHidden);
 
   const toggleColumn = (key) => {
     setHiddenColumns((prev) => {
@@ -101,9 +111,9 @@ export default function DataTable({
     });
   };
 
-  // Visible columns only
+  // Visible columns only (kolom "No" bisa di-toggle dari panel Kolom)
   const visibleColumns = useMemo(
-    () => columns.filter((c) => !hiddenColumns.has(c.key) && c.key !== "id" && c.label !== "No"),
+    () => columns.filter((c) => !hiddenColumns.has(c.key)),
     [columns, hiddenColumns]
   );
 

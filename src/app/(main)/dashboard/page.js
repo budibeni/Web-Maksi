@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { 
+import {
   FiSearch, FiCalendar, FiUser, FiMapPin, FiRefreshCw, FiTrendingUp,
   FiTarget, FiCheckCircle, FiXCircle, FiActivity, FiBell, FiChevronRight, FiGrid
 } from "react-icons/fi";
@@ -17,7 +17,7 @@ export default function Dashboard() {
 
   const [isLoading, setIsLoading] = useState(true);
   const [dashboardData, setDashboardData] = useState(null);
-  
+
   // Filter States
   const [datePreset, setDatePreset] = useState("thisMonth");
   const [startDate, setStartDate] = useState("");
@@ -102,9 +102,13 @@ export default function Dashboard() {
     );
   }
 
-  const { summary, monthlyTrend, distribusiFase, funnelPenjualan, topSales, ringkasanCabang, reminders, recentActivities } = dashboardData;
+  const { summary, trendYear, trendLabel, isDaily, monthlyTrend, distribusiFase, funnelPenjualan, topSales, ringkasanCabang, reminders, recentActivities } = dashboardData;
   const role = (typeof currentUser.role === 'object' ? currentUser.role.nama : currentUser.role || "").toLowerCase();
-  const currentYear = new Date().getFullYear();
+  const currentYear = trendYear || new Date().getFullYear();
+
+  // Alias tren data (monthlyTrend bisa berisi data harian atau bulanan)
+  const trendData = monthlyTrend || [];
+  const totalTrendPoints = trendData.length;
 
   // Helper for phase donut chart math
   const sumFase = distribusiFase.reduce((acc, curr) => acc + curr.count, 0);
@@ -122,14 +126,18 @@ export default function Dashboard() {
     };
   });
 
-  // Helper for trend line chart math
-  const maxTrendVal = Math.max(...monthlyTrend.map(t => Math.max(t.total, t.deal, t.lost)), 10);
+  // Helper for trend line chart math - DINAMIS berdasarkan jumlah poin data
+  const maxTrendVal = Math.max(...trendData.map(t => Math.max(t.total, t.deal, t.lost)), 10);
   const roundedMaxTrend = Math.ceil(maxTrendVal / 5) * 5;
-  
-  // Coordinate calculations for monthly trend lines (Plot size: 440 x 160)
+
+  // Koordinat SVG dinamis berdasarkan jumlah poin (Plot area: x=40..440, y=30..180)
+  const getX = (index) => totalTrendPoints <= 1
+    ? 240
+    : 40 + (index * (400 / (totalTrendPoints - 1)));
+
   const getPoints = (key) => {
-    return monthlyTrend.map((t, index) => {
-      const x = 40 + (index * (400 / 11));
+    return trendData.map((t, index) => {
+      const x = getX(index);
       const val = t[key];
       const y = 180 - ((val / roundedMaxTrend) * 150);
       return `${x},${y}`;
@@ -137,29 +145,20 @@ export default function Dashboard() {
   };
 
   const getAreaPoints = (key) => {
+    if (trendData.length === 0) return "";
     const points = getPoints(key);
-    if (!points) return "";
-    const firstX = 40;
-    const lastX = 40 + (11 * (400 / 11));
+    const firstX = getX(0);
+    const lastX = getX(totalTrendPoints - 1);
     return `${firstX},180 ${points} ${lastX},180`;
   };
 
+  // Untuk chart harian yang padat (>14 poin), tampilkan label setiap N poin
+  const xLabelStep = totalTrendPoints <= 14 ? 1 : Math.ceil(totalTrendPoints / 14);
+
   return (
     <div className="space-y-6">
-      {/* Top Welcome Header */}
-      <div className="bg-white dark:bg-neutral-900 border border-neutral-200/50 dark:border-neutral-800/60 rounded-3xl p-6 shadow-sm flex flex-col xl:flex-row xl:items-center justify-between gap-6 transition-colors duration-300">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-neutral-800 dark:text-neutral-100 flex items-center gap-2">
-            Selamat Datang, <span className="text-orange-600 dark:text-orange-400">{currentUser.nama}</span>
-          </h1>
-          <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
-            Maksi Sales Information System - Peran Anda: <span className="font-semibold uppercase">{typeof currentUser.role === 'object' ? currentUser.role.nama : currentUser.role}</span>
-          </p>
-        </div>
-      </div>
-
       {/* Panel Filter Laporan (Segmen Reusable) */}
-      <FilterPanel 
+      <FilterPanel
         title="Filter Data"
         role={role}
         branches={filterOptions.branches}
@@ -239,10 +238,17 @@ export default function Dashboard() {
         <div className="bg-white dark:bg-neutral-900 border border-neutral-200/50 dark:border-neutral-800/60 rounded-3xl p-6 shadow-sm lg:col-span-2 flex flex-col justify-between transition-colors duration-300">
           <div className="flex justify-between items-center mb-4">
             <div>
-              <h3 className="font-bold text-neutral-800 dark:text-neutral-100">Tren Lead {currentYear}</h3>
-              <p className="text-xs text-neutral-400 mt-0.5">Grafik sebaran bulanan volume lead tahun berjalan</p>
+              <h3 className="font-bold text-neutral-800 dark:text-neutral-100">
+                Tren Lead {isDaily ? '' : currentYear}
+              </h3>
+              <p className="text-xs text-neutral-400 mt-0.5">
+                {trendLabel
+                  ? (isDaily ? `Grafik tren harian — ${trendLabel}` : `Grafik sebaran bulanan — ${trendLabel}`)
+                  : 'Grafik sebaran volume lead'
+                }
+              </p>
             </div>
-            
+
             {/* Chart Legends */}
             <div className="flex items-center gap-3 text-[10px] font-semibold text-neutral-500">
               <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 bg-orange-500 rounded-full"></span>Total</span>
@@ -266,9 +272,10 @@ export default function Dashboard() {
                 );
               })}
 
-              {/* X Labels (Months) */}
-              {monthlyTrend.map((t, index) => {
-                const x = 40 + (index * (400 / 11));
+              {/* X Labels (Harian atau Bulanan) - tampilkan setiap xLabelStep poin */}
+              {trendData.map((t, index) => {
+                if (index % xLabelStep !== 0 && index !== totalTrendPoints - 1) return null;
+                const x = getX(index);
                 return (
                   <text key={index} x={x} y="195" textAnchor="middle" className="text-[10px] font-semibold fill-neutral-400">{t.name}</text>
                 );
@@ -284,9 +291,9 @@ export default function Dashboard() {
               <polyline points={getPoints("deal")} fill="none" stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
               <polyline points={getPoints("lost")} fill="none" stroke="#ef4444" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
 
-              {/* Node Circles */}
-              {monthlyTrend.map((t, index) => {
-                const x = 40 + (index * (400 / 11));
+              {/* Node Circles - hanya tampilkan jika poin tidak terlalu banyak */}
+              {totalTrendPoints <= 31 && trendData.map((t, index) => {
+                const x = getX(index);
                 const yTotal = 180 - ((t.total / roundedMaxTrend) * 150);
                 const yDeal = 180 - ((t.deal / roundedMaxTrend) * 150);
                 return (
@@ -379,7 +386,12 @@ export default function Dashboard() {
       </div>
 
       {/* Rankings Row (Top Sales, Funnel, and Cabang summary) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+      <div className={`grid gap-6 ${role === 'sales'
+          ? 'grid-cols-1'
+          : role === 'branch manager' || role === 'bm'
+            ? 'grid-cols-1 md:grid-cols-2'
+            : 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3'
+        }`}>
         {/* Funnel Penjualan */}
         <div className="bg-white dark:bg-neutral-900 border border-neutral-200/50 dark:border-neutral-800/60 rounded-3xl p-6 shadow-sm flex flex-col justify-between transition-colors duration-300">
           <div>
@@ -391,11 +403,11 @@ export default function Dashboard() {
             {funnelPenjualan.map((f, i) => {
               const maxCount = funnelPenjualan[0].count || 1;
               const widthPct = maxCount > 0 ? (f.count / maxCount) * 100 : 0;
-              
+
               let barColor = "from-orange-500 to-amber-500";
               if (i === 1) barColor = "from-indigo-500 to-purple-500";
               if (i === 2) barColor = "from-green-500 to-emerald-500";
-              
+
               return (
                 <div key={i} className="space-y-1">
                   <div className="flex justify-between text-xs font-semibold">
@@ -403,7 +415,7 @@ export default function Dashboard() {
                     <span className="text-neutral-800 dark:text-neutral-100 font-mono">{f.count} Lead</span>
                   </div>
                   <div className="w-full bg-neutral-100 dark:bg-neutral-850 h-6 rounded-2xl overflow-hidden relative border border-neutral-200/20 dark:border-neutral-800/50">
-                    <div 
+                    <div
                       className={`h-full bg-gradient-to-r ${barColor} rounded-2xl transition-all duration-1000 ease-out`}
                       style={{ width: `${Math.max(widthPct, 6)}%` }}
                     ></div>
@@ -423,79 +435,83 @@ export default function Dashboard() {
           </p>
         </div>
 
-        {/* Top Sales Performance (Only meaningful/visible for Admins/BM/Top Management) */}
-        <div className="bg-white dark:bg-neutral-900 border border-neutral-200/50 dark:border-neutral-800/60 rounded-3xl p-6 shadow-sm flex flex-col justify-between transition-colors duration-300">
-          <div>
-            <h3 className="font-bold text-neutral-800 dark:text-neutral-100">Top 5 Performa Sales</h3>
-            <p className="text-xs text-neutral-400 mt-0.5">Rangking sales berdasarkan nominal transaksi Deal</p>
-          </div>
+        {/* Top Sales Performance (Only visible for Admins/BM/Top Management) */}
+        {role !== 'sales' && (
+          <div className="bg-white dark:bg-neutral-900 border border-neutral-200/50 dark:border-neutral-800/60 rounded-3xl p-6 shadow-sm flex flex-col justify-between transition-colors duration-300">
+            <div>
+              <h3 className="font-bold text-neutral-800 dark:text-neutral-100">Top 5 Performa Sales</h3>
+              <p className="text-xs text-neutral-400 mt-0.5">Rangking sales berdasarkan nominal transaksi Deal</p>
+            </div>
 
-          <div className="space-y-4 my-4 flex-1 flex flex-col justify-center">
-            {topSales.length === 0 ? (
-              <p className="text-center text-sm text-neutral-400 my-10">Belum ada transaksi Deal pada periode ini.</p>
-            ) : (
-              topSales.map((s, idx) => {
-                const maxVal = topSales[0].nilai || 1;
-                const progressWidth = (s.nilai / maxVal) * 100;
-                return (
-                  <div key={idx} className="space-y-1">
-                    <div className="flex justify-between items-center text-xs font-semibold">
-                      <span className="text-neutral-700 dark:text-neutral-300 truncate max-w-[150px]">{s.name}</span>
-                      <span className="text-green-600 dark:text-green-400 font-mono">{formatCurrency(s.nilai)} <span className="text-neutral-400 text-[10px]">({s.count} Deal)</span></span>
+            <div className="space-y-4 my-4 flex-1 flex flex-col justify-center">
+              {topSales.length === 0 ? (
+                <p className="text-center text-sm text-neutral-400 my-10">Belum ada transaksi Deal pada periode ini.</p>
+              ) : (
+                topSales.map((s, idx) => {
+                  const maxVal = topSales[0].nilai || 1;
+                  const progressWidth = (s.nilai / maxVal) * 100;
+                  return (
+                    <div key={idx} className="space-y-1">
+                      <div className="flex justify-between items-center text-xs font-semibold">
+                        <span className="text-neutral-700 dark:text-neutral-300 truncate max-w-[150px]">{s.name}</span>
+                        <span className="text-green-600 dark:text-green-400 font-mono">{formatCurrency(s.nilai)} <span className="text-neutral-400 text-[10px]">({s.count} Deal)</span></span>
+                      </div>
+                      <div className="w-full bg-neutral-100 dark:bg-neutral-850 h-2.5 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-gradient-to-r from-orange-500 to-amber-500 rounded-full transition-all duration-1000 ease-out"
+                          style={{ width: `${Math.max(progressWidth, 3)}%` }}
+                        ></div>
+                      </div>
                     </div>
-                    <div className="w-full bg-neutral-100 dark:bg-neutral-850 h-2.5 rounded-full overflow-hidden">
-                      <div 
-                        className="h-full bg-gradient-to-r from-orange-500 to-amber-500 rounded-full transition-all duration-1000 ease-out"
-                        style={{ width: `${Math.max(progressWidth, 3)}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                );
-              })
-            )}
+                  );
+                })
+              )}
+            </div>
+
+            <p className="text-[10px] text-neutral-400 text-center italic border-t border-neutral-100 dark:border-neutral-850 pt-3">
+              Hanya menghitung nominal deal pada rentang tanggal yang difilter.
+            </p>
           </div>
+        )}
 
-          <p className="text-[10px] text-neutral-400 text-center italic border-t border-neutral-100 dark:border-neutral-850 pt-3">
-            Hanya menghitung nominal deal pada rentang tanggal yang difilter.
-          </p>
-        </div>
+        {/* Performa Cabang (Ringkasan Cabang) - Only visible for Admins/Top Management */}
+        {role !== 'sales' && role !== 'branch manager' && role !== 'bm' && (
+          <div className="bg-white dark:bg-neutral-900 border border-neutral-200/50 dark:border-neutral-800/60 rounded-3xl p-6 shadow-sm flex flex-col justify-between transition-colors duration-300">
+            <div>
+              <h3 className="font-bold text-neutral-800 dark:text-neutral-100">Performa Cabang</h3>
+              <p className="text-xs text-neutral-400 mt-0.5">Sebaran transaksi Deal per Kantor Cabang</p>
+            </div>
 
-        {/* Performa Cabang (Ringkasan Cabang) */}
-        <div className="bg-white dark:bg-neutral-900 border border-neutral-200/50 dark:border-neutral-800/60 rounded-3xl p-6 shadow-sm md:col-span-2 xl:col-span-1 flex flex-col justify-between transition-colors duration-300">
-          <div>
-            <h3 className="font-bold text-neutral-800 dark:text-neutral-100">Performa Cabang</h3>
-            <p className="text-xs text-neutral-400 mt-0.5">Sebaran transaksi Deal per Kantor Cabang</p>
-          </div>
-
-          <div className="space-y-4 my-4 flex-1 flex flex-col justify-center">
-            {ringkasanCabang.length === 0 ? (
-              <p className="text-center text-sm text-neutral-400 my-10">Belum ada transaksi di cabang pada periode ini.</p>
-            ) : (
-              ringkasanCabang.map((c, idx) => {
-                const maxVal = ringkasanCabang[0].nilai || 1;
-                const progressWidth = (c.nilai / maxVal) * 100;
-                return (
-                  <div key={idx} className="space-y-1">
-                    <div className="flex justify-between items-center text-xs font-semibold">
-                      <span className="text-neutral-700 dark:text-neutral-300 truncate max-w-[150px]">{c.name}</span>
-                      <span className="text-neutral-800 dark:text-neutral-200 font-mono">{formatCurrency(c.nilai)} <span className="text-neutral-400 text-[10px]">({c.deal}/{c.total} Deal)</span></span>
+            <div className="space-y-4 my-4 flex-1 flex flex-col justify-center">
+              {ringkasanCabang.length === 0 ? (
+                <p className="text-center text-sm text-neutral-400 my-10">Belum ada transaksi di cabang pada periode ini.</p>
+              ) : (
+                ringkasanCabang.map((c, idx) => {
+                  const maxVal = ringkasanCabang[0].nilai || 1;
+                  const progressWidth = (c.nilai / maxVal) * 100;
+                  return (
+                    <div key={idx} className="space-y-1">
+                      <div className="flex justify-between items-center text-xs font-semibold">
+                        <span className="text-neutral-700 dark:text-neutral-300 truncate max-w-[150px]">{c.name}</span>
+                        <span className="text-neutral-800 dark:text-neutral-200 font-mono">{formatCurrency(c.nilai)} <span className="text-neutral-400 text-[10px]">({c.deal}/{c.total} Deal)</span></span>
+                      </div>
+                      <div className="w-full bg-neutral-100 dark:bg-neutral-850 h-2.5 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-gradient-to-r from-sky-500 to-indigo-500 rounded-full transition-all duration-1000 ease-out"
+                          style={{ width: `${Math.max(progressWidth, 3)}%` }}
+                        ></div>
+                      </div>
                     </div>
-                    <div className="w-full bg-neutral-100 dark:bg-neutral-850 h-2.5 rounded-full overflow-hidden">
-                      <div 
-                        className="h-full bg-gradient-to-r from-sky-500 to-indigo-500 rounded-full transition-all duration-1000 ease-out"
-                        style={{ width: `${Math.max(progressWidth, 3)}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </div>
+                  );
+                })
+              )}
+            </div>
 
-          <p className="text-[10px] text-neutral-400 text-center italic border-t border-neutral-100 dark:border-neutral-850 pt-3">
-            Format: (Deal / Total Lead Dibuat).
-          </p>
-        </div>
+            <p className="text-[10px] text-neutral-400 text-center italic border-t border-neutral-100 dark:border-neutral-850 pt-3">
+              Format: (Deal / Total Lead Dibuat).
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Reminders & Recent Activities Row */}
@@ -532,7 +548,7 @@ export default function Dashboard() {
                         <p className="text-[9px] text-neutral-400">Sales: {rem.lead.user.nama}</p>
                       )}
                     </div>
-                    
+
                     <div className="text-right shrink-0">
                       <span className="text-[10px] font-mono font-bold text-neutral-600 dark:text-neutral-300">
                         {dayjs(rem.tanggal_pengingat).format("DD/MM/YY HH:mm")}
@@ -598,7 +614,7 @@ export default function Dashboard() {
                       <p className="text-xs text-neutral-500 dark:text-neutral-400 line-clamp-1 italic">{act.catatan || "(Tanpa catatan)"}</p>
                       <p className="text-[9px] text-neutral-400">Dicatat oleh: <span className="font-semibold">{act.dibuat_oleh}</span></p>
                     </div>
-                    
+
                     <div className="text-right shrink-0">
                       <span className={`inline-flex px-2 py-0.5 rounded-full text-[9px] font-bold ${colorClass}`}>
                         {act.hasil_interaksi}

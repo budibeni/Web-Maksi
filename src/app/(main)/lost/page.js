@@ -58,8 +58,9 @@ export default function LaporanLeadLostPage() {
   const [users, setUsers] = useState([]);
   const [alasanLosts, setAlasanLosts] = useState([]);
 
-  const isAdminOrTop = user?.role?.nama === "Administrator" || user?.role?.nama === "Top Management";
-  const isBranchManager = user?.role?.nama === "Branch Manager";
+  const roleStr = (typeof user?.role === 'object' ? user?.role?.nama : user?.role || "").toLowerCase();
+  const isAdminOrTop = roleStr === "administrator" || roleStr === "top management";
+  const isBranchManager = roleStr === "branch manager" || roleStr === "bm";
 
   useEffect(() => {
     fetch("/api/master/cabang").then(r => r.json()).then(d => { if (d.success) setCabangs(d.data || []); });
@@ -429,32 +430,34 @@ export default function LaporanLeadLostPage() {
       </div>
 
       {/* Row 3: Lost per Cabang & Sumber Lead & Ringkasan Nilai */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className={`grid grid-cols-1 gap-6 ${isAdminOrTop ? "md:grid-cols-3" : "md:grid-cols-2"}`}>
         {/* Lost per Cabang */}
-        <div className="bg-white dark:bg-neutral-900 border border-neutral-200/50 dark:border-neutral-800 rounded-2xl p-5 shadow-sm min-h-[280px]">
-          <h3 className="text-xs font-bold text-neutral-800 dark:text-neutral-200 flex items-center gap-1.5 uppercase tracking-wider border-b border-neutral-100 dark:border-neutral-800 pb-3 mb-4">
-            <FiBarChart2 className="text-red-500" />Lost per Cabang
-          </h3>
-          <div className="space-y-3">
-            {charts.cabangList.map((c, idx) => {
-              const max = charts.cabangList[0]?.count || 1;
-              const pct = (c.count / max) * 100;
-              const colors = ["bg-red-500", "bg-orange-500", "bg-amber-500", "bg-rose-400", "bg-pink-500"];
-              return (
-                <div key={idx} className="space-y-1 text-xs">
-                  <div className="flex justify-between text-neutral-700 dark:text-neutral-300 font-semibold">
-                    <span>{c.name}</span>
-                    <span>{c.count} ({c.pct}%)</span>
+        {isAdminOrTop && (
+          <div className="bg-white dark:bg-neutral-900 border border-neutral-200/50 dark:border-neutral-800 rounded-2xl p-5 shadow-sm min-h-[280px]">
+            <h3 className="text-xs font-bold text-neutral-800 dark:text-neutral-200 flex items-center gap-1.5 uppercase tracking-wider border-b border-neutral-100 dark:border-neutral-800 pb-3 mb-4">
+              <FiBarChart2 className="text-red-500" />Lost per Cabang
+            </h3>
+            <div className="space-y-3">
+              {charts.cabangList.map((c, idx) => {
+                const max = charts.cabangList[0]?.count || 1;
+                const pct = (c.count / max) * 100;
+                const colors = ["bg-red-500", "bg-orange-500", "bg-amber-500", "bg-rose-400", "bg-pink-500"];
+                return (
+                  <div key={idx} className="space-y-1 text-xs">
+                    <div className="flex justify-between text-neutral-700 dark:text-neutral-300 font-semibold">
+                      <span>{c.name}</span>
+                      <span>{c.count} ({c.pct}%)</span>
+                    </div>
+                    <div className="w-full bg-neutral-100 dark:bg-neutral-800 h-2.5 rounded-full overflow-hidden">
+                      <div className={`${colors[idx % colors.length]} h-full rounded-full transition-all duration-500`} style={{ width: `${pct}%` }}></div>
+                    </div>
                   </div>
-                  <div className="w-full bg-neutral-100 dark:bg-neutral-800 h-2.5 rounded-full overflow-hidden">
-                    <div className={`${colors[idx % colors.length]} h-full rounded-full transition-all duration-500`} style={{ width: `${pct}%` }}></div>
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
+            <button className="mt-4 text-xs text-orange-500 font-bold hover:text-orange-600 transition-colors">Lihat Detail</button>
           </div>
-          <button className="mt-4 text-xs text-orange-500 font-bold hover:text-orange-600 transition-colors">Lihat Detail</button>
-        </div>
+        )}
 
         {/* Lost per Sumber Lead */}
         <div className="bg-white dark:bg-neutral-900 border border-neutral-200/50 dark:border-neutral-800 rounded-2xl p-5 shadow-sm flex flex-col justify-between min-h-[280px]">

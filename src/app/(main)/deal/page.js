@@ -67,8 +67,9 @@ export default function LaporanLeadDealPage() {
   const [users, setUsers] = useState([]);
 
   // Check roles
-  const isAdminOrTop = user?.role?.nama === "Administrator" || user?.role?.nama === "Top Management";
-  const isBranchManager = user?.role?.nama === "Branch Manager";
+  const roleStr = (typeof user?.role === 'object' ? user?.role?.nama : user?.role || "").toLowerCase();
+  const isAdminOrTop = roleStr === "administrator" || roleStr === "top management";
+  const isBranchManager = roleStr === "branch manager" || roleStr === "bm";
 
   useEffect(() => {
     fetch("/api/master/cabang")
@@ -271,7 +272,7 @@ export default function LaporanLeadDealPage() {
       </div>
 
       {/* Grid Visualisasi & Grafik */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className={`grid grid-cols-1 gap-6 ${isAdminOrTop ? "md:grid-cols-3" : "md:grid-cols-2"}`}>
         {/* Box 1: Deal berdasarkan Tipe Customer */}
         <div className="bg-white dark:bg-neutral-900 border border-neutral-200/50 dark:border-neutral-800 rounded-2xl p-5 shadow-sm flex flex-col justify-between min-h-[300px]">
           <div>
@@ -359,66 +360,68 @@ export default function LaporanLeadDealPage() {
         </div>
 
         {/* Box 3: Deal per Cabang */}
-        <div className="bg-white dark:bg-neutral-900 border border-neutral-200/50 dark:border-neutral-800 rounded-2xl p-5 shadow-sm flex flex-col justify-between min-h-[300px]">
-          <div>
-            <h3 className="text-xs font-bold text-neutral-800 dark:text-neutral-200 flex items-center gap-1.5 uppercase tracking-wider border-b border-neutral-100 dark:border-neutral-800 pb-3">
-              <FiPieChart className="text-orange-500" />
-              Deal per Cabang
-            </h3>
+        {isAdminOrTop && (
+          <div className="bg-white dark:bg-neutral-900 border border-neutral-200/50 dark:border-neutral-800 rounded-2xl p-5 shadow-sm flex flex-col justify-between min-h-[300px]">
+            <div>
+              <h3 className="text-xs font-bold text-neutral-800 dark:text-neutral-200 flex items-center gap-1.5 uppercase tracking-wider border-b border-neutral-100 dark:border-neutral-800 pb-3">
+                <FiPieChart className="text-orange-500" />
+                Deal per Cabang
+              </h3>
 
-            {/* SVG Donut Chart */}
-            <div className="flex items-center justify-center py-6 relative">
-              <svg className="w-36 h-36" viewBox="0 0 36 36">
-                <circle cx="18" cy="18" r="15.915" fill="none" stroke="#e6e6e6" strokeWidth="4"></circle>
-                
-                {/* SVG Segment Renders */}
-                {summary.totalDeal > 0 && charts.cabangList.reduce((acc, curr, idx) => {
-                  const pct = (curr.count / summary.totalDeal) * 100;
-                  const offset = acc.offset;
-                  const colorMap = ["#ef4444", "#3b82f6", "#f59e0b", "#10b981", "#8b5cf6"];
+              {/* SVG Donut Chart */}
+              <div className="flex items-center justify-center py-6 relative">
+                <svg className="w-36 h-36" viewBox="0 0 36 36">
+                  <circle cx="18" cy="18" r="15.915" fill="none" stroke="#e6e6e6" strokeWidth="4"></circle>
                   
-                  const seg = (
-                    <circle cx="18" cy="18" r="15.915" fill="none" 
-                      stroke={colorMap[idx % colorMap.length]} 
-                      strokeWidth="4" 
-                      strokeDasharray={`${pct} ${100 - pct}`} 
-                      strokeDashoffset={offset}
-                      key={idx}>
-                    </circle>
-                  );
+                  {/* SVG Segment Renders */}
+                  {summary.totalDeal > 0 && charts.cabangList.reduce((acc, curr, idx) => {
+                    const pct = (curr.count / summary.totalDeal) * 100;
+                    const offset = acc.offset;
+                    const colorMap = ["#ef4444", "#3b82f6", "#f59e0b", "#10b981", "#8b5cf6"];
+                    
+                    const seg = (
+                      <circle cx="18" cy="18" r="15.915" fill="none" 
+                        stroke={colorMap[idx % colorMap.length]} 
+                        strokeWidth="4" 
+                        strokeDasharray={`${pct} ${100 - pct}`} 
+                        strokeDashoffset={offset}
+                        key={idx}>
+                      </circle>
+                    );
 
-                  return {
-                    offset: offset - pct,
-                    elements: [...acc.elements, seg]
-                  };
-                }, { offset: 25, elements: [] }).elements}
-              </svg>
-              <div className="absolute text-center">
-                <h4 className="text-xl font-black text-neutral-900 dark:text-white">{summary.totalDeal}</h4>
-                <p className="text-[9px] text-neutral-400 font-bold uppercase tracking-wider">Total Deal</p>
+                    return {
+                      offset: offset - pct,
+                      elements: [...acc.elements, seg]
+                    };
+                  }, { offset: 25, elements: [] }).elements}
+                </svg>
+                <div className="absolute text-center">
+                  <h4 className="text-xl font-black text-neutral-900 dark:text-white">{summary.totalDeal}</h4>
+                  <p className="text-[9px] text-neutral-400 font-bold uppercase tracking-wider">Total Deal</p>
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Legend */}
-          <div className="space-y-1.5 text-[11px] font-bold">
-            {charts.cabangList.map((cab, idx) => {
-              const pct = summary.totalDeal > 0 ? ((cab.count / summary.totalDeal) * 100).toFixed(2) : 0;
-              const colors = ["bg-red-500", "bg-blue-500", "bg-amber-500", "bg-green-500", "bg-purple-500"];
-              return (
-                <div key={idx} className="flex justify-between items-center">
-                  <div className="flex items-center gap-2">
-                    <span className={`w-2.5 h-2.5 rounded-full ${colors[idx % colors.length]}`}></span>
-                    <span className="text-neutral-600 dark:text-neutral-400 font-semibold">{cab.name}</span>
+            {/* Legend */}
+            <div className="space-y-1.5 text-[11px] font-bold">
+              {charts.cabangList.map((cab, idx) => {
+                const pct = summary.totalDeal > 0 ? ((cab.count / summary.totalDeal) * 100).toFixed(2) : 0;
+                const colors = ["bg-red-500", "bg-blue-500", "bg-amber-500", "bg-green-500", "bg-purple-500"];
+                return (
+                  <div key={idx} className="flex justify-between items-center">
+                    <div className="flex items-center gap-2">
+                      <span className={`w-2.5 h-2.5 rounded-full ${colors[idx % colors.length]}`}></span>
+                      <span className="text-neutral-600 dark:text-neutral-400 font-semibold">{cab.name}</span>
+                    </div>
+                    <span className="text-neutral-800 dark:text-neutral-200">
+                      {cab.count} ({pct}%)
+                    </span>
                   </div>
-                  <span className="text-neutral-800 dark:text-neutral-200">
-                    {cab.count} ({pct}%)
-                  </span>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Row 2 Visualizations */}
