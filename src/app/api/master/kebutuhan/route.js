@@ -6,7 +6,7 @@ import { z } from 'zod';
 
 const serialize = (data) => JSON.parse(JSON.stringify(data, (_, v) => typeof v === 'bigint' ? v.toString() : v));
 
-const hasilInteraksiSchema = z.object({
+const kebutuhanSchema = z.object({
   kode: z.string().min(1, "Kode wajib diisi.").max(30, "Maksimal 30 karakter."),
   nama: z.string().min(1, "Nama wajib diisi.").max(150, "Maksimal 150 karakter."),
   fase_lead: z.enum(["LEAD_BARU", "FOLLOW_UP", "PENAWARAN"], {
@@ -18,7 +18,7 @@ const hasilInteraksiSchema = z.object({
   aktif: z.number().int().min(0).max(1).default(1)
 });
 
-// GET /api/master/hasil-interaksi
+// GET /api/master/kebutuhan
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -32,18 +32,10 @@ export async function GET(request) {
 
     // If called without pagination params (legacy usage for dropdowns etc.), return all aktif data
     const isPaginated = searchParams.has('page') || searchParams.has('limit') || searchParams.has('search') || isExport;
-    const fase = searchParams.get('fase'); // Filter by fase_lead e.g. LEAD_BARU, FOLLOW_UP, PENAWARAN
 
     if (!isPaginated) {
-      const where = {};
-      if (aktifOnly) where.aktif = 1;
-      if (fase) {
-        // Support multiple fase separated by comma: ?fase=FOLLOW_UP,PENAWARAN
-        const faseList = fase.split(',').map(f => f.trim());
-        where.fase_lead = faseList.length === 1 ? faseList[0] : { in: faseList };
-      }
-      const data = await prisma.hasilInteraksi.findMany({
-        where,
+      const data = await prisma.kebutuhan.findMany({
+        where: aktifOnly ? { aktif: 1 } : {},
         orderBy: { urutan: 'asc' },
       });
       return NextResponse.json({ success: true, message: 'Data berhasil diambil.', data: serialize(data) });
@@ -86,12 +78,12 @@ export async function GET(request) {
       whereClause = { AND: [whereClause, ...filterConditions] };
     }
 
-    const totalData = await prisma.hasilInteraksi.count({ where: whereClause });
+    const totalData = await prisma.kebutuhan.count({ where: whereClause });
     const orderByClause = { [sortField]: sortOrder };
     const take = isExport ? 1000 : limit;
     const skip = isExport ? 0 : (page - 1) * limit;
 
-    const data = await prisma.hasilInteraksi.findMany({
+    const data = await prisma.kebutuhan.findMany({
       where: whereClause,
       orderBy: orderByClause,
       take,
@@ -119,8 +111,7 @@ export async function GET(request) {
   }
 }
 
-
-// POST /api/master/hasil-interaksi
+// POST /api/master/kebutuhan
 export async function POST(request) {
   try {
     const currentUser = await getCurrentUser(request);
@@ -129,7 +120,7 @@ export async function POST(request) {
     }
 
     const body = await request.json();
-    const result = hasilInteraksiSchema.safeParse(body);
+    const result = kebutuhanSchema.safeParse(body);
 
     if (!result.success) {
       return NextResponse.json({
@@ -142,30 +133,30 @@ export async function POST(request) {
     const { kode, nama, fase_lead, urutan, warna, ikon, aktif } = result.data;
 
     // Check for unique kode
-    const existingKode = await prisma.hasilInteraksi.findUnique({
+    const existingKode = await prisma.kebutuhan.findUnique({
       where: { kode }
     });
 
     if (existingKode) {
       return NextResponse.json({
         success: false,
-        message: "Kode Hasil Interaksi sudah digunakan."
+        message: "Kode Kebutuhan sudah digunakan."
       }, { status: 409 });
     }
 
     // Check for unique nama
-    const existingNama = await prisma.hasilInteraksi.findUnique({
+    const existingNama = await prisma.kebutuhan.findUnique({
       where: { nama }
     });
 
     if (existingNama) {
       return NextResponse.json({
         success: false,
-        message: "Nama Hasil Interaksi sudah digunakan."
+        message: "Nama Kebutuhan sudah digunakan."
       }, { status: 409 });
     }
 
-    const newHasil = await prisma.hasilInteraksi.create({
+    const newKebutuhan = await prisma.kebutuhan.create({
       data: {
         kode,
         nama,
@@ -181,22 +172,22 @@ export async function POST(request) {
     // Record Audit Log
     await recordAuditLog({
       user: currentUser,
-      modul: "HASIL_INTERAKSI",
+      modul: "KEBUTUHAN",
       aksi: "CREATE",
-      referensi_id: newHasil.id,
-      deskripsi: `Membuat hasil interaksi baru: ${nama} (${kode})`,
-      data_sesudah: newHasil,
+      referensi_id: newKebutuhan.id,
+      deskripsi: `Membuat kebutuhan baru: ${nama} (${kode})`,
+      data_sesudah: newKebutuhan,
       request
     });
 
     return NextResponse.json({
       success: true,
-      message: "Data Hasil Interaksi berhasil disimpan.",
-      data: serialize(newHasil)
+      message: "Data Kebutuhan berhasil disimpan.",
+      data: serialize(newKebutuhan)
     }, { status: 201 });
 
   } catch (error) {
-    console.error("POST Hasil Interaksi Error:", error);
+    console.error("POST Kebutuhan Error:", error);
     return NextResponse.json({
       success: false,
       message: "Terjadi kesalahan pada server.",
@@ -204,4 +195,3 @@ export async function POST(request) {
     }, { status: 500 });
   }
 }
-

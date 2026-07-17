@@ -690,3 +690,5 @@ Seluruh implementasi wajib mengikuti prinsip berikut:
 Dokumen ini merupakan acuan utama dalam pengembangan aplikasi MAKSI.
 
 Apabila terdapat perubahan kebutuhan bisnis, Business Rules harus diperbarui terlebih dahulu sebelum implementasi dilakukan pada kode aplikasi.
+
+# TAMBAHKAN TREN INTERAKSI (BY CABANG)

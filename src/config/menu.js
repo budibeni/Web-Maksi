@@ -1,7 +1,8 @@
 import { ROLE_ADMIN, ROLE_TOP_MANAGEMENT, ROLE_BRANCH_MANAGER, ROLE_SALES } from "../constants/role";
 import { 
   FiHome, FiUsers, FiTarget, FiFileText, FiDatabase, FiSettings,
-  FiBox, FiActivity, FiBell, FiCheckCircle, FiXCircle, FiGrid, FiClock
+  FiBox, FiActivity, FiBell, FiCheckCircle, FiXCircle, FiGrid, FiClock,
+  FiTag
 } from "react-icons/fi";
 
 export const APP_MENUS = [
@@ -101,6 +102,12 @@ export const APP_MENUS = [
         title: "Hasil Interaksi",
         path: "/master/hasil-interaksi",
         icon: FiActivity,
+        roles: [ROLE_ADMIN],
+      },
+      {
+        title: "Kebutuhan",
+        path: "/master/kebutuhan",
+        icon: FiTag,
         roles: [ROLE_ADMIN],
       },
       {

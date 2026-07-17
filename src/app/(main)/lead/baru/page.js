@@ -114,8 +114,10 @@ export default function LeadBaruPage() {
   const [namaCustomer, setNamaCustomer] = useState("");
   const [teleponCustomer, setTeleponCustomer] = useState("");
   const [alamatCustomer, setAlamatCustomer] = useState("");
-  const [kebutuhan, setKebutuhan] = useState([]);
+  const [kategori, setKategori] = useState([]);       // ID kategori produk yang dipilih
   const [kategoriList, setKategoriList] = useState([]);
+  const [kebutuhan, setKebutuhan] = useState([]);     // ID kebutuhan dari master kebutuhan
+  const [kebutuhanList, setKebutuhanList] = useState([]);
   const [hasilInteraksiList, setHasilInteraksiList] = useState([]);
   const [hasilInteraksiId, setHasilInteraksiId] = useState("");
   const [catatan, setCatatan] = useState("");
@@ -128,12 +130,14 @@ export default function LeadBaruPage() {
 
   useEffect(() => {
     setMounted(true);
-    // Load kategori produk & hasil interaksi dari DB
+    // Load kategori produk, kebutuhan master & hasil interaksi dari DB
     Promise.all([
       fetch('/api/master/kategori-produk').then(r => r.json()),
+      fetch('/api/master/kebutuhan?aktif=1').then(r => r.json()),
       fetch('/api/master/hasil-interaksi').then(r => r.json()),
-    ]).then(([kat, hi]) => {
+    ]).then(([kat, keb, hi]) => {
       if (kat.success) setKategoriList(kat.data || []);
+      if (keb.success) setKebutuhanList(keb.data || []);
       if (hi.success) setHasilInteraksiList(hi.data || []);
     });
 
@@ -193,6 +197,10 @@ export default function LeadBaruPage() {
     setActiveSearchField(null);
   };
 
+  const toggleKategori = (id) => {
+    setKategori(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  };
+
   const toggleKebutuhan = (id) => {
     setKebutuhan(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
   };
@@ -203,6 +211,7 @@ export default function LeadBaruPage() {
     const telepon = teleponCustomer || teleponCari;
     if (!nama) { showToast('Nama customer wajib diisi.', 'error'); return; }
     if (!telepon) { showToast('Nomor HP wajib diisi.', 'error'); return; }
+    if (kategori.length === 0) { showToast('Kategori produk wajib dipilih minimal 1.', 'error'); return; }
     if (kebutuhan.length === 0) { showToast('Kebutuhan wajib dipilih minimal 1.', 'error'); return; }
     if (!hasilInteraksiId) { showToast('Pilih hasil interaksi pertama.', 'error'); return; }
 
@@ -213,6 +222,7 @@ export default function LeadBaruPage() {
         nama_customer: nama,
         telepon_customer: telepon,
         alamat_customer: alamatCustomer,
+        kategori: kategori.map(String),
         kebutuhan: kebutuhan.map(String),
         hasil_interaksi_pertama_id: hasilInteraksiId,
         catatan_awal: catatan,
@@ -302,7 +312,7 @@ export default function LeadBaruPage() {
         {/* Responsive 2-Column Grid Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-          {/* LEFT COLUMN: Info Customer & Catatan */}
+          {/* LEFT COLUMN: Info Customer, Kebutuhan, Catatan */}
           <div className="space-y-6">
             {/* Card 1: Info Customer */}
             <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200/50 dark:border-neutral-800 shadow-sm overflow-hidden">
@@ -445,10 +455,44 @@ export default function LeadBaruPage() {
               </div>
             </div>
 
-            {/* Card 2: Catatan */}
+            {/* Card 3: Kebutuhan */}
             <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200/50 dark:border-neutral-800 shadow-sm overflow-hidden">
               <div className="px-6 py-4 border-b border-neutral-100 dark:border-neutral-800 flex items-center gap-3">
-                <div className="w-7 h-7 rounded-full bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 text-xs font-bold flex items-center justify-center">3</div>
+                <div className="w-7 h-7 rounded-full bg-orange-600 text-white text-xs font-bold flex items-center justify-center">3</div>
+                <h2 className="text-base font-bold text-neutral-900 dark:text-white">Kebutuhan <span className="text-sm font-normal text-neutral-400">(Pilih salah satu atau lebih)</span> <span className="text-red-500">*</span></h2>
+              </div>
+              <div className="p-6">
+                <div className="flex flex-wrap gap-2">
+                  {kebutuhanList.map(keb => {
+                    const isSelected = kebutuhan.includes(String(keb.id));
+                    return (
+                      <label
+                        key={keb.id}
+                        className={`relative flex items-center gap-2.5 px-3.5 py-2 rounded-xl border-2 cursor-pointer transition-all select-none ${
+                          isSelected
+                            ? 'border-orange-500 bg-orange-50/50 dark:bg-orange-950/20'
+                            : 'border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900/50 hover:border-neutral-300 dark:hover:border-neutral-700'
+                        }`}
+                        onClick={() => toggleKebutuhan(String(keb.id))}
+                      >
+                        <div className={`w-4 h-4 rounded flex items-center justify-center flex-shrink-0 transition-all ${
+                          isSelected ? 'bg-orange-500 border-orange-500' : 'border-2 border-neutral-300 dark:border-neutral-600'
+                        }`}>
+                          {isSelected && <FiCheck className="w-2.5 h-2.5 text-white" />}
+                        </div>
+                        <span className={`text-sm font-semibold ${isSelected ? 'text-orange-900 dark:text-orange-400' : 'text-neutral-700 dark:text-neutral-300'}`}>{keb.nama}</span>
+                      </label>
+                    );
+                  })}
+                  {kebutuhanList.length === 0 && <p className="text-sm text-neutral-400 italic">Belum ada data kebutuhan.</p>}
+                </div>
+              </div>
+            </div>
+
+            {/* Card 5: Catatan */}
+            <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200/50 dark:border-neutral-800 shadow-sm overflow-hidden">
+              <div className="px-6 py-4 border-b border-neutral-100 dark:border-neutral-800 flex items-center gap-3">
+                <div className="w-7 h-7 rounded-full bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 text-xs font-bold flex items-center justify-center">5</div>
                 <h2 className="text-base font-bold text-neutral-900 dark:text-white">Catatan <span className="text-sm font-normal text-neutral-400">(Opsional)</span></h2>
               </div>
               <div className="p-6">
@@ -465,44 +509,12 @@ export default function LeadBaruPage() {
             </div>
           </div>
 
-          {/* RIGHT COLUMN: Kebutuhan & Hasil Interaksi */}
+          {/* RIGHT COLUMN: Hasil Interaksi, Kategori */}
           <div className="space-y-6">
-            {/* Card 3: Kebutuhan */}
+            {/* Card 2: Hasil Interaksi */}
             <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200/50 dark:border-neutral-800 shadow-sm overflow-hidden">
               <div className="px-6 py-4 border-b border-neutral-100 dark:border-neutral-800 flex items-center gap-3">
                 <div className="w-7 h-7 rounded-full bg-orange-600 text-white text-xs font-bold flex items-center justify-center">2</div>
-                <h2 className="text-base font-bold text-neutral-900 dark:text-white">Kebutuhan <span className="text-sm font-normal text-neutral-400">(Pilih salah satu atau lebih)</span> <span className="text-red-500">*</span></h2>
-              </div>
-              <div className="p-6">
-                <div className="flex flex-wrap gap-4">
-                  {kategoriList.map(kat => {
-                    const isSelected = kebutuhan.includes(String(kat.id));
-                    return (
-                      <label
-                        key={kat.id}
-                        className={`relative flex items-center gap-3 px-6 py-4 rounded-xl border-2 cursor-pointer transition-all select-none min-w-[120px] ${isSelected
-                            ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/20'
-                            : 'border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 hover:border-neutral-300 dark:hover:border-neutral-700'
-                          }`}
-                        onClick={() => toggleKebutuhan(String(kat.id))}
-                      >
-                        <div className={`w-5 h-5 rounded flex items-center justify-center flex-shrink-0 transition-all ${isSelected ? 'bg-orange-500' : 'border-2 border-neutral-300 dark:border-neutral-600'
-                          }`}>
-                          {isSelected && <FiCheck className="w-3.5 h-3.5 text-white" />}
-                        </div>
-                        <span className={`text-sm font-semibold ${isSelected ? 'text-orange-700 dark:text-orange-400' : 'text-neutral-700 dark:text-neutral-300'}`}>{kat.nama}</span>
-                      </label>
-                    );
-                  })}
-                  {kategoriList.length === 0 && <p className="text-sm text-neutral-400 italic">Belum ada kategori produk.</p>}
-                </div>
-              </div>
-            </div>
-
-            {/* Card 4: Hasil Interaksi */}
-            <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200/50 dark:border-neutral-800 shadow-sm overflow-hidden">
-              <div className="px-6 py-4 border-b border-neutral-100 dark:border-neutral-800 flex items-center gap-3">
-                <div className="w-7 h-7 rounded-full bg-orange-600 text-white text-xs font-bold flex items-center justify-center">4</div>
                 <h2 className="text-base font-bold text-neutral-900 dark:text-white">Hasil Interaksi Pertama <span className="text-red-500">*</span></h2>
               </div>
               <div className="p-6">
@@ -512,7 +524,7 @@ export default function LeadBaruPage() {
                     Belum ada data master hasil interaksi.
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     {hasilInteraksiList.map(hi => {
                       const isSelected = String(hasilInteraksiId) === String(hi.id);
 
@@ -524,11 +536,11 @@ export default function LeadBaruPage() {
                       return (
                         <label
                           key={hi.id}
-                          className={`relative flex items-center gap-3.5 p-4 rounded-xl border-2 cursor-pointer transition-all ${getHIColor(hi.kode, isSelected)}`}
+                          className={`relative flex items-center gap-2.5 p-2.5 rounded-xl border-2 cursor-pointer transition-all ${getHIColor(hi.kode, isSelected)}`}
                           onClick={() => setHasilInteraksiId(hi.id)}
                         >
-                          <div className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 transition-colors ${getHIIconColor(hi.kode, isSelected)}`}>
-                            <IconComponent className="w-4.5 h-4.5" />
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-colors ${getHIIconColor(hi.kode, isSelected)}`}>
+                            <IconComponent className="w-4 h-4" />
                           </div>
                           <div className="min-w-0 flex-1">
                             <div className={`text-sm font-bold leading-snug ${isSelected ? 'text-neutral-900 dark:text-white' : 'text-neutral-800 dark:text-neutral-200'}`}>{hi.nama}</div>
@@ -546,6 +558,40 @@ export default function LeadBaruPage() {
                     })}
                   </div>
                 )}
+              </div>
+            </div>
+
+            {/* Card 4: Kategori Produk */}
+            <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200/50 dark:border-neutral-800 shadow-sm overflow-hidden">
+              <div className="px-6 py-4 border-b border-neutral-100 dark:border-neutral-800 flex items-center gap-3">
+                <div className="w-7 h-7 rounded-full bg-orange-600 text-white text-xs font-bold flex items-center justify-center">4</div>
+                <h2 className="text-base font-bold text-neutral-900 dark:text-white">Kategori Produk <span className="text-sm font-normal text-neutral-400">(Pilih salah satu atau lebih)</span> <span className="text-red-500">*</span></h2>
+              </div>
+              <div className="p-6">
+                <div className="flex flex-wrap gap-2">
+                  {kategoriList.map(kat => {
+                    const isSelected = kategori.includes(String(kat.id));
+                    return (
+                      <label
+                        key={kat.id}
+                        className={`relative flex items-center gap-2.5 px-3.5 py-2 rounded-xl border-2 cursor-pointer transition-all select-none ${
+                          isSelected
+                            ? 'border-orange-500 bg-orange-50/50 dark:bg-orange-950/20'
+                            : 'border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900/50 hover:border-neutral-300 dark:hover:border-neutral-700'
+                        }`}
+                        onClick={() => toggleKategori(String(kat.id))}
+                      >
+                        <div className={`w-4 h-4 rounded flex items-center justify-center flex-shrink-0 transition-all ${
+                          isSelected ? 'bg-orange-500 border-orange-500' : 'border-2 border-neutral-300 dark:border-neutral-600'
+                        }`}>
+                          {isSelected && <FiCheck className="w-2.5 h-2.5 text-white" />}
+                        </div>
+                        <span className={`text-sm font-semibold ${isSelected ? 'text-orange-900 dark:text-orange-400' : 'text-neutral-700 dark:text-neutral-300'}`}>{kat.nama}</span>
+                      </label>
+                    );
+                  })}
+                  {kategoriList.length === 0 && <p className="text-sm text-neutral-400 italic">Belum ada kategori produk.</p>}
+                </div>
               </div>
             </div>
           </div>

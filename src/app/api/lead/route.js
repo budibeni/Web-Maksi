@@ -32,7 +32,8 @@ const leadSchema = z.object({
   nama_customer: z.string().min(1, 'Nama customer wajib diisi.'),
   telepon_customer: z.string().min(1, 'Nomor HP wajib diisi.'),
   alamat_customer: z.string().optional(),
-  kebutuhan: z.array(z.string()).optional(),
+  kategori: z.array(z.string()).optional(), // JSON array of kategori_produk_id
+  kebutuhan: z.array(z.string()).optional(), // JSON array of kebutuhan_id from tb_kebutuhan
   hasil_interaksi_pertama_id: z.string().min(1, 'Hasil interaksi wajib dipilih.'),
   catatan_awal: z.string().optional(),
 });
@@ -172,7 +173,7 @@ export async function POST(request) {
       return NextResponse.json({ success: false, message: 'Validasi gagal.', errors: parsed.error.flatten().fieldErrors }, { status: 422 });
     }
 
-    const { customer_id, nama_customer, telepon_customer, alamat_customer, kebutuhan, hasil_interaksi_pertama_id, catatan_awal } = parsed.data;
+    const { customer_id, nama_customer, telepon_customer, alamat_customer, kategori, kebutuhan, hasil_interaksi_pertama_id, catatan_awal } = parsed.data;
 
     // Cek hasil interaksi
     const hasilInteraksi = await prisma.hasilInteraksi.findUnique({ where: { id: BigInt(hasil_interaksi_pertama_id) } });
@@ -240,6 +241,7 @@ export async function POST(request) {
         status_customer: statusCustomer,
         status: 1, // OPEN
         fase: faseAwal,
+        kategori: kategori && kategori.length > 0 ? JSON.stringify(kategori) : null,
         kebutuhan: kebutuhan && kebutuhan.length > 0 ? JSON.stringify(kebutuhan) : null,
         catatan_awal: catatan_awal || null,
         dibuat_oleh: user.nama,

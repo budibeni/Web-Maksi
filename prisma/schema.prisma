@@ -200,6 +200,22 @@ model HasilInteraksi {
   @@map("tb_hasil_interaksi")
 }
 
+model Kebutuhan {
+  id             BigInt    @id @default(autoincrement())
+  kode           String    @unique(map: "idx_kebutuhan_kode") @db.VarChar(30)
+  nama           String    @unique(map: "idx_kebutuhan_nama") @db.VarChar(150)
+  urutan         Int       @default(0)
+  ikon           String?   @db.VarChar(50)
+  aktif          Int       @default(1) @db.TinyInt
+  dibuat_oleh    String?   @db.VarChar(100)
+  dibuat_tanggal DateTime  @default(now()) @db.DateTime(0)
+  diubah_oleh    String?   @db.VarChar(100)
+  diubah_tanggal DateTime? @db.DateTime(0)
+
+  @@index([aktif], map: "idx_kebutuhan_aktif")
+  @@map("tb_kebutuhan")
+}
+
 model Lead {
   id                        BigInt    @id @default(autoincrement())
   nomor                     String    @unique(map: "uk_lead_nomor") @db.VarChar(30)
@@ -209,7 +225,8 @@ model Lead {
   status_customer           String    @default("BARU") @db.VarChar(20) // BARU, EXISTING
   status                    Int       @default(1) @db.TinyInt // 1=OPEN, 2=DEAL, 3=LOST
   fase                      Int       @default(1) @db.TinyInt // 1=LEAD_BARU, 2=FOLLOW_UP, 3=PENAWARAN
-  kebutuhan                 String?   @db.Text // JSON array of kategori_produk_id
+  kategori                  String?   @db.Text // JSON array of kategori_produk_id
+  kebutuhan                 String?   @db.Text // JSON array of kebutuhan_id from tb_kebutuhan
   versi_penawaran_final_id  BigInt?
   nilai_deal                Decimal?  @db.Decimal(18, 2)
   tanggal_deal              DateTime? @db.DateTime(0)
