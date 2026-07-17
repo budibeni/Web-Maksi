@@ -7,7 +7,8 @@ import { createPortal } from "react-dom";
 import {
   FiArrowLeft, FiSearch, FiUser, FiPhone, FiMapPin,
   FiCheckSquare, FiAlertCircle, FiChevronRight, FiCheck,
-  FiMessageCircle, FiFileText, FiXCircle, FiInfo
+  FiMessageCircle, FiFileText, FiXCircle, FiInfo,
+  FiCheckCircle, FiPlayCircle, FiRefreshCw, FiClock
 } from "react-icons/fi";
 import { useUIStore } from "@/store/ui.store";
 
@@ -134,7 +135,7 @@ export default function LeadBaruPage() {
     Promise.all([
       fetch('/api/master/kategori-produk').then(r => r.json()),
       fetch('/api/master/kebutuhan?aktif=1').then(r => r.json()),
-      fetch('/api/master/hasil-interaksi').then(r => r.json()),
+      fetch('/api/master/hasil-interaksi?aktif=1&fase=LEAD_BARU').then(r => r.json()),
     ]).then(([kat, keb, hi]) => {
       if (kat.success) setKategoriList(kat.data || []);
       if (keb.success) setKebutuhanList(keb.data || []);
@@ -237,9 +238,9 @@ export default function LeadBaruPage() {
         showToast('Lead berhasil dibuat!', 'success');
         const leadId = json.data.id;
 
-        // Cek apakah hasil interaksi yang dipilih memicu LOST (TIDAK_MINAT atau KOMPETITOR)
+        // Cek apakah hasil interaksi yang dipilih memicu LOST (TIDAK_TERTARIK atau STOCK_TIDAK_ADA)
         const selectedHI = hasilInteraksiList.find(h => String(h.id) === String(hasilInteraksiId));
-        if (selectedHI && (selectedHI.kode === 'TIDAK_MINAT' || selectedHI.kode === 'KOMPETITOR')) {
+        if (selectedHI && (selectedHI.kode === 'TIDAK_TERTARIK' || selectedHI.kode === 'STOCK_TIDAK_ADA')) {
           setCreatedLeadId(leadId);
           setShowModalLost(true);
         } else {
@@ -253,24 +254,42 @@ export default function LeadBaruPage() {
     }
   };
 
-  // Helper untuk styling warna kartu hasil interaksi berdasarkan kode/fase
-  const getHIColor = (kode, isSelected) => {
+  // Helper untuk styling warna kartu hasil interaksi berdasarkan kode/fase dari database
+  const getHIColor = (hi, isSelected) => {
+    const warna = hi.warna || 'orange';
     if (isSelected) {
-      if (kode === 'TIDAK_MINAT' || kode === 'KOMPETITOR') {
+      if (warna === 'red') {
         return 'border-red-500 bg-red-50/50 dark:bg-red-950/20 text-red-900 dark:text-red-400';
       }
-      if (kode === 'PENAWARAN' || kode === 'SIAP') {
+      if (warna === 'blue') {
+        return 'border-blue-500 bg-blue-50/50 dark:bg-blue-950/20 text-blue-900 dark:text-blue-400';
+      }
+      if (warna === 'purple') {
         return 'border-purple-500 bg-purple-50/50 dark:bg-purple-950/20 text-purple-900 dark:text-purple-400';
+      }
+      if (warna === 'green') {
+        return 'border-green-500 bg-green-50/50 dark:bg-green-950/20 text-green-900 dark:text-green-400';
+      }
+      if (warna === 'yellow') {
+        return 'border-yellow-500 bg-yellow-50/50 dark:bg-yellow-950/20 text-yellow-900 dark:text-yellow-400';
+      }
+      if (warna === 'gray') {
+        return 'border-neutral-500 bg-neutral-50/50 dark:bg-neutral-950/20 text-neutral-900 dark:text-neutral-400';
       }
       return 'border-orange-500 bg-orange-50/50 dark:bg-orange-950/20 text-orange-900 dark:text-orange-400';
     }
     return 'border-neutral-200 dark:border-neutral-800 hover:border-neutral-300 dark:hover:border-neutral-700 bg-white dark:bg-neutral-900/50';
   };
 
-  const getHIIconColor = (kode, isSelected) => {
+  const getHIIconColor = (hi, isSelected) => {
+    const warna = hi.warna || 'orange';
     if (isSelected) {
-      if (kode === 'TIDAK_MINAT' || kode === 'KOMPETITOR') return 'text-red-500 bg-red-100 dark:bg-red-900/30';
-      if (kode === 'PENAWARAN' || kode === 'SIAP') return 'text-purple-500 bg-purple-100 dark:bg-purple-900/30';
+      if (warna === 'red') return 'text-red-500 bg-red-100 dark:bg-red-900/30';
+      if (warna === 'blue') return 'text-blue-500 bg-blue-100 dark:bg-blue-900/30';
+      if (warna === 'purple') return 'text-purple-500 bg-purple-100 dark:bg-purple-900/30';
+      if (warna === 'green') return 'text-green-500 bg-green-100 dark:bg-green-900/30';
+      if (warna === 'yellow') return 'text-yellow-500 bg-yellow-100 dark:bg-yellow-900/30';
+      if (warna === 'gray') return 'text-neutral-500 bg-neutral-100 dark:bg-neutral-800';
       return 'text-orange-500 bg-orange-100 dark:bg-orange-900/30';
     }
     return 'text-neutral-400 bg-neutral-100 dark:bg-neutral-800';
@@ -530,16 +549,20 @@ export default function LeadBaruPage() {
 
                       // Tentukan icon yang sesuai
                       let IconComponent = FiMessageCircle;
-                      if (hi.kode === 'PENAWARAN' || hi.kode === 'SIAP') IconComponent = FiFileText;
-                      if (hi.kode === 'TIDAK_MINAT' || hi.kode === 'KOMPETITOR') IconComponent = FiXCircle;
+                      if (hi.kode === 'MINTA_PENAWARAN' || hi.kode === 'MINTA_REVISI_PENAWARAN') IconComponent = FiFileText;
+                      if (hi.kode === 'TIDAK_TERTARIK' || hi.kode === 'STOCK_TIDAK_ADA' || hi.kode === 'TIDAK_TERTARIK_LAGI' || hi.kode === 'SULIT_DIHUBUNGI') IconComponent = FiXCircle;
+                      if (hi.kode === 'TERTARIK' || hi.kode === 'MASIH_TERTARIK') IconComponent = FiCheckCircle;
+                      if (hi.kode === 'MINTA_DEMO') IconComponent = FiPlayCircle;
+                      if (hi.kode === 'MINTA_FOLLOW_UP' || hi.kode === 'MINTA_FOLLOW_UP_LAGI') IconComponent = FiRefreshCw;
+                      if (hi.kode === 'BELUM_MEMUTUSKAN' || hi.kode === 'MENUNGGU_KEPUTUSAN' || hi.kode === 'MENUNGGU_ANGGARAN' || hi.kode === 'MENUNGGU_STOK') IconComponent = FiClock;
 
                       return (
                         <label
                           key={hi.id}
-                          className={`relative flex items-center gap-2.5 p-2.5 rounded-xl border-2 cursor-pointer transition-all ${getHIColor(hi.kode, isSelected)}`}
+                          className={`relative flex items-center gap-2.5 p-2.5 rounded-xl border-2 cursor-pointer transition-all ${getHIColor(hi, isSelected)}`}
                           onClick={() => setHasilInteraksiId(hi.id)}
                         >
-                          <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-colors ${getHIIconColor(hi.kode, isSelected)}`}>
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 transition-colors ${getHIIconColor(hi, isSelected)}`}>
                             <IconComponent className="w-4 h-4" />
                           </div>
                           <div className="min-w-0 flex-1">

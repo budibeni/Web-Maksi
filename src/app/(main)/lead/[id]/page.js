@@ -208,7 +208,7 @@ export default function LeadDetailPage({ params }) {
   useEffect(() => {
     if (id) {
       fetchLead();
-      fetch('/api/master/hasil-interaksi').then(r => r.json()).then(d => {
+      fetch('/api/master/hasil-interaksi?aktif=1&fase=FOLLOW_UP,PENAWARAN').then(r => r.json()).then(d => {
         if (d.success) setHasilInteraksiList(d.data || []);
       });
     }
@@ -238,8 +238,16 @@ export default function LeadDetailPage({ params }) {
       const json = await res.json();
       if (json.success) {
         showToast('Follow up berhasil disimpan!', 'success');
+        const submittedHasilId = hasilId;
         setHasilId(""); setCatatan(""); setBuatPengingat(false);
-        fetchLead();
+        
+        // Cek apakah hasil interaksi yang dipilih memicu LOST (TIDAK_TERTARIK_LAGI atau SULIT_DIHUBUNGI)
+        const selectedHI = hasilInteraksiList.find(h => String(h.id) === String(submittedHasilId));
+        if (selectedHI && (selectedHI.kode === 'TIDAK_TERTARIK_LAGI' || selectedHI.kode === 'SULIT_DIHUBUNGI')) {
+          setShowModalLost(true);
+        } else {
+          fetchLead();
+        }
       } else {
         showToast(json.message || 'Terjadi kesalahan.', 'error');
       }
