@@ -1,8 +1,8 @@
 import { ROLE_ADMIN, ROLE_TOP_MANAGEMENT, ROLE_BRANCH_MANAGER, ROLE_SALES } from "../constants/role";
-import { 
+import {
   FiHome, FiUsers, FiTarget, FiFileText, FiDatabase, FiSettings,
   FiBox, FiActivity, FiBell, FiCheckCircle, FiXCircle, FiGrid, FiClock,
-  FiTag
+  FiTag, FiTrendingUp
 } from "react-icons/fi";
 
 export const APP_MENUS = [
@@ -47,6 +47,12 @@ export const APP_MENUS = [
         roles: [ROLE_ADMIN, ROLE_TOP_MANAGEMENT, ROLE_BRANCH_MANAGER, ROLE_SALES],
       },
       {
+        title: "Tren",
+        path: "/tren",
+        icon: FiTrendingUp,
+        roles: [ROLE_ADMIN, ROLE_TOP_MANAGEMENT, ROLE_BRANCH_MANAGER, ROLE_SALES],
+      },
+      {
         title: "Deal",
         path: "/deal",
         icon: FiCheckCircle,
@@ -64,6 +70,7 @@ export const APP_MENUS = [
         icon: FiClock,
         roles: [ROLE_ADMIN, ROLE_TOP_MANAGEMENT, ROLE_BRANCH_MANAGER, ROLE_SALES],
       },
+
     ]
   },
   {

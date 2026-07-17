@@ -331,7 +331,7 @@ export default function LeadBaruPage() {
         {/* Responsive 2-Column Grid Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-          {/* LEFT COLUMN: Info Customer, Kebutuhan, Catatan */}
+          {/* LEFT COLUMN: Info Customer, Hasil Interaksi */}
           <div className="space-y-6">
             {/* Card 1: Info Customer */}
             <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200/50 dark:border-neutral-800 shadow-sm overflow-hidden">
@@ -474,62 +474,6 @@ export default function LeadBaruPage() {
               </div>
             </div>
 
-            {/* Card 3: Kebutuhan */}
-            <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200/50 dark:border-neutral-800 shadow-sm overflow-hidden">
-              <div className="px-6 py-4 border-b border-neutral-100 dark:border-neutral-800 flex items-center gap-3">
-                <div className="w-7 h-7 rounded-full bg-orange-600 text-white text-xs font-bold flex items-center justify-center">3</div>
-                <h2 className="text-base font-bold text-neutral-900 dark:text-white">Kebutuhan <span className="text-sm font-normal text-neutral-400">(Pilih salah satu atau lebih)</span> <span className="text-red-500">*</span></h2>
-              </div>
-              <div className="p-6">
-                <div className="flex flex-wrap gap-2">
-                  {kebutuhanList.map(keb => {
-                    const isSelected = kebutuhan.includes(String(keb.id));
-                    return (
-                      <label
-                        key={keb.id}
-                        className={`relative flex items-center gap-2.5 px-3.5 py-2 rounded-xl border-2 cursor-pointer transition-all select-none ${
-                          isSelected
-                            ? 'border-orange-500 bg-orange-50/50 dark:bg-orange-950/20'
-                            : 'border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900/50 hover:border-neutral-300 dark:hover:border-neutral-700'
-                        }`}
-                        onClick={() => toggleKebutuhan(String(keb.id))}
-                      >
-                        <div className={`w-4 h-4 rounded flex items-center justify-center flex-shrink-0 transition-all ${
-                          isSelected ? 'bg-orange-500 border-orange-500' : 'border-2 border-neutral-300 dark:border-neutral-600'
-                        }`}>
-                          {isSelected && <FiCheck className="w-2.5 h-2.5 text-white" />}
-                        </div>
-                        <span className={`text-sm font-semibold ${isSelected ? 'text-orange-900 dark:text-orange-400' : 'text-neutral-700 dark:text-neutral-300'}`}>{keb.nama}</span>
-                      </label>
-                    );
-                  })}
-                  {kebutuhanList.length === 0 && <p className="text-sm text-neutral-400 italic">Belum ada data kebutuhan.</p>}
-                </div>
-              </div>
-            </div>
-
-            {/* Card 5: Catatan */}
-            <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200/50 dark:border-neutral-800 shadow-sm overflow-hidden">
-              <div className="px-6 py-4 border-b border-neutral-100 dark:border-neutral-800 flex items-center gap-3">
-                <div className="w-7 h-7 rounded-full bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 text-xs font-bold flex items-center justify-center">5</div>
-                <h2 className="text-base font-bold text-neutral-900 dark:text-white">Catatan <span className="text-sm font-normal text-neutral-400">(Opsional)</span></h2>
-              </div>
-              <div className="p-6">
-                <textarea
-                  rows={4}
-                  className="w-full px-4 py-3 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all dark:text-white text-sm resize-none"
-                  placeholder="Tulis catatan tentang kebutuhan customer, produk yang ditanyakan, atau hal penting lainnya..."
-                  value={catatan}
-                  onChange={(e) => setCatatan(e.target.value)}
-                  maxLength={500}
-                />
-                <div className="text-xs text-neutral-400 text-right mt-1">{catatan.length}/500</div>
-              </div>
-            </div>
-          </div>
-
-          {/* RIGHT COLUMN: Hasil Interaksi, Kategori */}
-          <div className="space-y-6">
             {/* Card 2: Hasil Interaksi */}
             <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200/50 dark:border-neutral-800 shadow-sm overflow-hidden">
               <div className="px-6 py-4 border-b border-neutral-100 dark:border-neutral-800 flex items-center gap-3">
@@ -583,11 +527,14 @@ export default function LeadBaruPage() {
                 )}
               </div>
             </div>
+          </div>
 
-            {/* Card 4: Kategori Produk */}
+          {/* RIGHT COLUMN: Kategori, Kebutuhan, Catatan */}
+          <div className="space-y-6">
+            {/* Card 3: Kategori Produk */}
             <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200/50 dark:border-neutral-800 shadow-sm overflow-hidden">
               <div className="px-6 py-4 border-b border-neutral-100 dark:border-neutral-800 flex items-center gap-3">
-                <div className="w-7 h-7 rounded-full bg-orange-600 text-white text-xs font-bold flex items-center justify-center">4</div>
+                <div className="w-7 h-7 rounded-full bg-orange-600 text-white text-xs font-bold flex items-center justify-center">3</div>
                 <h2 className="text-base font-bold text-neutral-900 dark:text-white">Kategori Produk <span className="text-sm font-normal text-neutral-400">(Pilih salah satu atau lebih)</span> <span className="text-red-500">*</span></h2>
               </div>
               <div className="p-6">
@@ -615,6 +562,59 @@ export default function LeadBaruPage() {
                   })}
                   {kategoriList.length === 0 && <p className="text-sm text-neutral-400 italic">Belum ada kategori produk.</p>}
                 </div>
+              </div>
+            </div>
+
+            {/* Card 4: Kebutuhan */}
+            <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200/50 dark:border-neutral-800 shadow-sm overflow-hidden">
+              <div className="px-6 py-4 border-b border-neutral-100 dark:border-neutral-800 flex items-center gap-3">
+                <div className="w-7 h-7 rounded-full bg-orange-600 text-white text-xs font-bold flex items-center justify-center">4</div>
+                <h2 className="text-base font-bold text-neutral-900 dark:text-white">Kebutuhan <span className="text-sm font-normal text-neutral-400">(Pilih salah satu atau lebih)</span> <span className="text-red-500">*</span></h2>
+              </div>
+              <div className="p-6">
+                <div className="flex flex-wrap gap-2">
+                  {kebutuhanList.map(keb => {
+                    const isSelected = kebutuhan.includes(String(keb.id));
+                    return (
+                      <label
+                        key={keb.id}
+                        className={`relative flex items-center gap-2.5 px-3.5 py-2 rounded-xl border-2 cursor-pointer transition-all select-none ${
+                          isSelected
+                            ? 'border-orange-500 bg-orange-50/50 dark:bg-orange-950/20'
+                            : 'border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900/50 hover:border-neutral-300 dark:hover:border-neutral-700'
+                        }`}
+                        onClick={() => toggleKebutuhan(String(keb.id))}
+                      >
+                        <div className={`w-4 h-4 rounded flex items-center justify-center flex-shrink-0 transition-all ${
+                          isSelected ? 'bg-orange-500 border-orange-500' : 'border-2 border-neutral-300 dark:border-neutral-600'
+                        }`}>
+                          {isSelected && <FiCheck className="w-2.5 h-2.5 text-white" />}
+                        </div>
+                        <span className={`text-sm font-semibold ${isSelected ? 'text-orange-900 dark:text-orange-400' : 'text-neutral-700 dark:text-neutral-300'}`}>{keb.nama}</span>
+                      </label>
+                    );
+                  })}
+                  {kebutuhanList.length === 0 && <p className="text-sm text-neutral-400 italic">Belum ada data kebutuhan.</p>}
+                </div>
+              </div>
+            </div>
+
+            {/* Card 5: Catatan */}
+            <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200/50 dark:border-neutral-800 shadow-sm overflow-hidden">
+              <div className="px-6 py-4 border-b border-neutral-100 dark:border-neutral-800 flex items-center gap-3">
+                <div className="w-7 h-7 rounded-full bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 text-xs font-bold flex items-center justify-center">5</div>
+                <h2 className="text-base font-bold text-neutral-900 dark:text-white">Catatan <span className="text-sm font-normal text-neutral-400">(Opsional)</span></h2>
+              </div>
+              <div className="p-6">
+                <textarea
+                  rows={4}
+                  className="w-full px-4 py-3 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all dark:text-white text-sm resize-none"
+                  placeholder="Tulis catatan tentang kebutuhan customer, produk yang ditanyakan, atau hal penting lainnya..."
+                  value={catatan}
+                  onChange={(e) => setCatatan(e.target.value)}
+                  maxLength={500}
+                />
+                <div className="text-xs text-neutral-400 text-right mt-1">{catatan.length}/500</div>
               </div>
             </div>
           </div>
