@@ -73,19 +73,24 @@ export async function POST(request) {
 
       // 3. Create AktivitasLead record for Deal
       // Find the "Hasil Interaksi" for "Siap membeli" (code SIAP)
-      const hi = await tx.hasilInteraksi.findFirst({ where: { kode: 'SIAP' } });
-      const hiId = hi ? hi.id : 4n; // fallback to 4n if not found
+      let hi = await tx.hasilInteraksi.findFirst({ where: { kode: 'SIAP', aktif: 1 } });
+      if (!hi) {
+        // Fallback to any active interaction to prevent foreign key violation
+        hi = await tx.hasilInteraksi.findFirst({ where: { aktif: 1 } });
+      }
 
-      await tx.aktivitasLead.create({
-        data: {
-          lead_id: leadId,
-          user_id: BigInt(user.id),
-          hasil_interaksi_id: hiId,
-          hasil_interaksi: `Deal penjualan`,
-          catatan: `Lead dinyatakan DEAL dengan menyetujui Penawaran ${quotation.nomor} Versi ${quotation.versi} senilai Rp ${Number(quotation.grand_total).toLocaleString('id-ID')}.`,
-          dibuat_oleh: user.nama,
-        },
-      });
+      if (hi) {
+        await tx.aktivitasLead.create({
+          data: {
+            lead_id: leadId,
+            user_id: BigInt(user.id),
+            hasil_interaksi_id: hi.id,
+            hasil_interaksi: `Deal penjualan`,
+            catatan: `Lead dinyatakan DEAL dengan menyetujui Penawaran ${quotation.nomor} Versi ${quotation.versi} senilai Rp ${Number(quotation.grand_total).toLocaleString('id-ID')}.`,
+            dibuat_oleh: user.nama,
+          },
+        });
+      }
 
       return updatedLead;
     });
