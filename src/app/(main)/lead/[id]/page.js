@@ -276,31 +276,42 @@ export default function LeadDetailPage({ params }) {
       {/* Inject tombol ke header portal */}
       {portalEl && createPortal(
         <div className="flex items-center gap-2">
-          <Link
-            href="/lead"
-            className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-neutral-600 hover:text-neutral-900 bg-white hover:bg-neutral-50 dark:bg-neutral-900 dark:text-neutral-400 dark:hover:text-white dark:hover:bg-neutral-800 rounded-lg transition-colors border border-neutral-200 dark:border-neutral-800"
-          >
-            <FiX className="w-4 h-4" />
-            Tutup
-          </Link>
           {isOpen && !isTopManagement && lead.versi_penawarans?.length > 0 && (
             <button
               onClick={() => setShowModalDeal(true)}
-              className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-semibold rounded-lg border border-green-200 text-green-600 hover:bg-green-50 dark:border-green-800 dark:text-green-400 dark:hover:bg-green-900/20 transition-colors"
+              className="bg-green-600 hover:bg-green-700 text-white px-4 py-1.5 rounded-full font-semibold flex items-center gap-2 transition-colors shadow-sm text-sm mr-2"
             >
               <FiCheckCircle className="w-4 h-4" />
               Tandai Deal
             </button>
           )}
+
+          {isOpen && !isTopManagement && lead.versi_penawarans?.length === 0 && (
+            <div className="flex justify-end">
+              <Link
+                href={`/lead/${id}/penawaran/baru`}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-full font-bold transition-all shadow-sm text-xs flex items-center gap-1.5"
+              >
+                <FiPlus className="w-4 h-4" />
+                Buat Penawaran
+              </Link>
+            </div>
+          )}
           {isOpen && !isTopManagement && (
             <button
               onClick={() => setShowModalLost(true)}
-              className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-semibold rounded-lg border border-red-200 text-red-600 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/20 transition-colors"
+              className="bg-white hover:bg-neutral-100 dark:bg-neutral-900 dark:hover:bg-neutral-800 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 px-4 py-1.5 rounded-full font-semibold flex items-center gap-2 transition-colors  text-sm mr-2"
             >
               <FiXCircle className="w-4 h-4" />
               Tandai Lost
             </button>
           )}
+          <Link
+            href="/lead"
+            className="px-4 py-1.5 text-sm font-semibold rounded-full bg-white hover:bg-neutral-100 dark:bg-neutral-900 dark:hover:bg-neutral-800 border border-neutral-200 dark:border-neutral-800 text-neutral-700 dark:text-neutral-300 transition-colors"
+          >
+            Tutup
+          </Link>
         </div>,
         document.getElementById('header-actions-portal')
       )}
@@ -406,14 +417,14 @@ export default function LeadDetailPage({ params }) {
                 </div>
 
                 <div className="flex justify-end gap-3">
-                  <button
+                  {/* <button
                     type="button"
                     onClick={() => setShowModalLost(true)}
                     className="px-4 py-2.5 text-sm font-medium rounded-xl border border-red-200 text-red-600 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/20 transition-colors"
                   >
                     <FiXCircle className="w-4 h-4 inline mr-1" />
                     Tandai Lost
-                  </button>
+                  </button> */}
                   <button
                     type="submit"
                     disabled={isSubmittingFU}
@@ -485,7 +496,7 @@ export default function LeadDetailPage({ params }) {
               ) : (
                 /* Penawaran Content */
                 <div className="space-y-4">
-                  {isOpen && !isTopManagement && lead.versi_penawarans?.length === 0 && (
+                  {/* {isOpen && !isTopManagement && lead.versi_penawarans?.length === 0 && (
                     <div className="flex justify-end">
                       <Link
                         href={`/lead/${id}/penawaran/baru`}
@@ -495,7 +506,7 @@ export default function LeadDetailPage({ params }) {
                         Buat Penawaran
                       </Link>
                     </div>
-                  )}
+                  )} */}
 
                   {lead.versi_penawarans?.length === 0 ? (
                     <div className="text-center py-10 border border-dashed rounded-2xl">
