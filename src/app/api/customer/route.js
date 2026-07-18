@@ -92,7 +92,13 @@ export async function GET(request) {
       include: {
         leads: {
           select: {
-            status: true
+            status: true,
+            nilai_deal: true,
+            cabang: {
+              select: {
+                nama: true
+              }
+            }
           }
         }
       }

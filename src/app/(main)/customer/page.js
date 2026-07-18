@@ -216,9 +216,18 @@ export default function CustomerPage() {
             <FiUser className="h-5 w-5 text-orange-600 dark:text-orange-500" />
           </div>
           <div className="ml-4">
-            <div className="text-sm font-medium text-neutral-900 dark:text-white">
+            <div className="text-sm font-semibold text-neutral-900 dark:text-white">
               {row.nama}
             </div>
+            {row.leads && row.leads.length > 0 ? (
+              <div className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5" title={Array.from(new Set(row.leads.map(l => l.cabang?.nama).filter(Boolean))).join(", ")}>
+                {Array.from(new Set(row.leads.map(l => l.cabang?.nama).filter(Boolean))).join(", ")}
+              </div>
+            ) : (
+              <div className="text-xs text-neutral-400 dark:text-neutral-500 mt-0.5 italic">
+                Tanpa Cabang
+              </div>
+            )}
           </div>
         </div>
       )
@@ -244,6 +253,22 @@ export default function CustomerPage() {
             <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-md bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400" title="Lost Leads">
               {lost} Lost
             </span>
+          </div>
+        );
+      }
+    },
+    {
+      key: "total_deal",
+      label: "Total Deal",
+      sortable: false,
+      render: (row) => {
+        const leads = row.leads || [];
+        const dealLeads = leads.filter(l => l.status === 2);
+        const totalNominal = dealLeads.reduce((acc, lead) => acc + Number(lead.nilai_deal || 0), 0);
+
+        return (
+          <div className="text-sm font-medium text-neutral-800 dark:text-neutral-200">
+            {totalNominal > 0 ? `Rp ${totalNominal.toLocaleString("id-ID")}` : "Rp 0"}
           </div>
         );
       }

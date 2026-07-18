@@ -117,7 +117,7 @@ export default function CustomerDetailPage({ params }) {
                   {customer.nama}
                 </h2>
                 <div className="text-sm font-medium text-orange-600 dark:text-orange-500 mt-1">
-                  Customer
+                  Customer {customer.leads && customer.leads.length > 0 ? `· ${Array.from(new Set(customer.leads.map(l => l.cabang?.nama).filter(Boolean))).join(", ")}` : ""}
                 </div>
               </div>
 
