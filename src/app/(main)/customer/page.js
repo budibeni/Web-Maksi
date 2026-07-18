@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
-import { FiPlus, FiEdit2, FiTrash2, FiX, FiDownload, FiUser, FiPhone, FiEye, FiStar } from "react-icons/fi";
+import { FiPlus, FiEdit2, FiTrash2, FiX, FiDownload, FiUser, FiPhone, FiEye, FiStar, FiTag } from "react-icons/fi";
 import { FaWhatsapp } from "react-icons/fa";
 import { exportToExcel } from "@/lib/excel";
 import { useUIStore } from "@/store/ui.store";
@@ -36,7 +36,7 @@ export default function CustomerPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({ id: null, nama: "", telepon: "", alamat: "", catatan: "" });
-  
+
   const [mounted, setMounted] = useState(false);
   const { showToast, showConfirm } = useUIStore();
 
@@ -95,11 +95,11 @@ export default function CustomerPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
-    
+
     try {
       const url = formData.id ? `/api/customer/${formData.id}` : "/api/customer";
       const method = formData.id ? "PUT" : "POST";
-      
+
       const res = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
@@ -110,9 +110,9 @@ export default function CustomerPage() {
           catatan: formData.catatan
         })
       });
-      
+
       const json = await res.json();
-      
+
       if (res.ok && json.success) {
         setIsModalOpen(false);
         fetchCustomers();
@@ -131,30 +131,30 @@ export default function CustomerPage() {
   const handleDelete = (id) => {
     showConfirm(
       "Konfirmasi Hapus",
-      "Apakah Anda yakin ingin menghapus data Customer ini? Data tidak dapat dihapus jika sudah berelasi dengan transaksi.", 
+      "Apakah Anda yakin ingin menghapus data Customer ini? Data tidak dapat dihapus jika sudah berelasi dengan transaksi.",
       async () => {
-      try {
-        const res = await fetch(`/api/customer/${id}`, { method: "DELETE" });
-        const json = await res.json();
-        
-        if (res.ok && json.success) {
-          fetchCustomers();
-          showToast(json.message, "success");
-        } else {
-          showToast(json.message || "Gagal menghapus data", "error");
+        try {
+          const res = await fetch(`/api/customer/${id}`, { method: "DELETE" });
+          const json = await res.json();
+
+          if (res.ok && json.success) {
+            fetchCustomers();
+            showToast(json.message, "success");
+          } else {
+            showToast(json.message || "Gagal menghapus data", "error");
+          }
+        } catch (error) {
+          console.error(error);
+          showToast("Terjadi kesalahan sistem", "error");
         }
-      } catch (error) {
-        console.error(error);
-        showToast("Terjadi kesalahan sistem", "error");
-      }
-    });
+      });
   };
 
   const handleExport = async (type) => {
     try {
       showToast("Sedang menyiapkan file export...", "info");
       let dataToExport = [];
-      
+
       if (type === "page") {
         dataToExport = customers;
       } else {
@@ -220,12 +220,16 @@ export default function CustomerPage() {
               {row.nama}
             </div>
             {row.leads && row.leads.length > 0 ? (
-              <div className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5" title={Array.from(new Set(row.leads.map(l => l.cabang?.nama).filter(Boolean))).join(", ")}>
-                {Array.from(new Set(row.leads.map(l => l.cabang?.nama).filter(Boolean))).join(", ")}
+              <div className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5 flex items-center gap-1" title={Array.from(new Set(row.leads.map(l => l.cabang?.nama).filter(Boolean))).join(", ")}>
+                <FiTag className="w-3 h-3 text-neutral-400 dark:text-neutral-500 flex-shrink-0" />
+                <span className="truncate max-w-[150px]">
+                  {Array.from(new Set(row.leads.map(l => l.cabang?.nama).filter(Boolean))).join(", ")}
+                </span>
               </div>
             ) : (
-              <div className="text-xs text-neutral-400 dark:text-neutral-500 mt-0.5 italic">
-                Tanpa Cabang
+              <div className="text-xs text-neutral-400 dark:text-neutral-500 mt-0.5 flex items-center gap-1 italic">
+                <FiTag className="w-3 h-3 text-neutral-300 dark:text-neutral-600 flex-shrink-0" />
+                <span>Tanpa Cabang</span>
               </div>
             )}
           </div>
@@ -282,7 +286,7 @@ export default function CustomerPage() {
         const dealLeads = leads.filter(l => l.status === 2).length;
         const lostLeads = leads.filter(l => l.status === 3).length;
         const finishedLeads = dealLeads + lostLeads;
-        
+
         let rating = 0;
         if (finishedLeads > 0) {
           const winRate = dealLeads / finishedLeads;
@@ -301,11 +305,10 @@ export default function CustomerPage() {
               Array.from({ length: 5 }).map((_, i) => (
                 <FiStar
                   key={i}
-                  className={`w-4 h-4 ${
-                    i < rating 
-                      ? "text-yellow-500 fill-yellow-500" 
-                      : "text-neutral-200 dark:text-neutral-700"
-                  }`}
+                  className={`w-4 h-4 ${i < rating
+                    ? "text-yellow-500 fill-yellow-500"
+                    : "text-neutral-200 dark:text-neutral-700"
+                    }`}
                 />
               ))
             )}
@@ -319,9 +322,9 @@ export default function CustomerPage() {
       sortable: true,
       filter: { type: "text" },
       render: (row) => (
-        <a 
-          href={formatWhatsAppUrl(row.telepon)} 
-          target="_blank" 
+        <a
+          href={formatWhatsAppUrl(row.telepon)}
+          target="_blank"
           rel="noopener noreferrer"
           className="text-sm text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white font-medium flex items-center gap-1.5 transition-colors"
           title="Chat via WhatsApp"
@@ -361,7 +364,7 @@ export default function CustomerPage() {
       render: (row) => row.dibuat_oleh ? (
         <div>
           {row.dibuat_oleh}
-          <br/>
+          <br />
           <span className="text-[10px] opacity-70">
             {dayjs(row.dibuat_tanggal).format('DD/MM/YY HH:mm')}
           </span>
@@ -376,7 +379,7 @@ export default function CustomerPage() {
       render: (row) => row.diubah_oleh ? (
         <div>
           {row.diubah_oleh}
-          <br/>
+          <br />
           <span className="text-[10px] opacity-70">
             {row.diubah_tanggal ? dayjs(row.diubah_tanggal).format('DD/MM/YY HH:mm') : '—'}
           </span>
@@ -442,7 +445,7 @@ export default function CustomerPage() {
         headerActions={
           <>
             {!isTopManagement && (
-              <button 
+              <button
                 onClick={() => handleOpenModal()}
                 className="flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold text-white bg-orange-600 hover:bg-orange-700 rounded-xl transition-all duration-200 cursor-pointer shadow-sm hover:shadow"
                 title="Tambah Customer"
@@ -467,60 +470,60 @@ export default function CustomerPage() {
                 <FiX className="w-5 h-5" />
               </button>
             </div>
-            
+
             <form onSubmit={handleSubmit}>
               <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Nama Customer *</label>
-                  <input 
-                    type="text" 
-                    required 
+                  <input
+                    type="text"
+                    required
                     maxLength={150}
                     className="w-full px-4 py-2 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all dark:text-white"
                     value={formData.nama}
-                    onChange={(e) => setFormData({...formData, nama: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, nama: e.target.value })}
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Nomor Telepon / HP *</label>
-                  <input 
-                    type="text" 
-                    required 
+                  <input
+                    type="text"
+                    required
                     maxLength={20}
                     className="w-full px-4 py-2 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all dark:text-white"
                     value={formData.telepon}
-                    onChange={(e) => setFormData({...formData, telepon: e.target.value.replace(/[^0-9+]/g, "")})}
+                    onChange={(e) => setFormData({ ...formData, telepon: e.target.value.replace(/[^0-9+]/g, "") })}
                     placeholder="Contoh: 081234567890"
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Alamat</label>
-                  <textarea 
+                  <textarea
                     className="w-full px-4 py-2 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all dark:text-white resize-none h-24"
                     value={formData.alamat}
-                    onChange={(e) => setFormData({...formData, alamat: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, alamat: e.target.value })}
                   ></textarea>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Catatan Tambahan</label>
-                  <textarea 
+                  <textarea
                     className="w-full px-4 py-2 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all dark:text-white resize-none h-20"
                     value={formData.catatan}
-                    onChange={(e) => setFormData({...formData, catatan: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, catatan: e.target.value })}
                   ></textarea>
                 </div>
               </div>
-              
+
               <div className="px-6 py-4 border-t border-neutral-100 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900/50 flex justify-end gap-3">
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   onClick={() => setIsModalOpen(false)}
                   className="px-4 py-2 text-neutral-600 dark:text-neutral-400 font-medium hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-xl transition-colors"
                 >
                   Batal
                 </button>
-                <button 
-                  type="submit" 
+                <button
+                  type="submit"
                   disabled={isSubmitting}
                   className="px-6 py-2 bg-orange-600 hover:bg-orange-700 text-white font-medium rounded-xl transition-colors shadow-sm disabled:opacity-50 flex items-center gap-2"
                 >

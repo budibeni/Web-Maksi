@@ -21,6 +21,11 @@ function serializeData(data) {
 
 export async function GET(request) {
   try {
+    const user = await getCurrentUser(request);
+    if (!user) {
+      return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
+    }
+
     const { searchParams } = new URL(request.url);
     const search = searchParams.get('search') || '';
     const page = parseInt(searchParams.get('page') || '1');
@@ -37,6 +42,41 @@ export async function GET(request) {
         { telepon: { contains: search } }
       ]
     } : {};
+
+    const roleName = (typeof user.role === 'object' ? user.role.nama : user.role || '').toLowerCase();
+
+    // Terapkan filter hak akses data customer
+    if (roleName === 'branch manager') {
+      whereClause = {
+        ...whereClause,
+        OR: [
+          {
+            leads: {
+              some: {
+                cabang_id: BigInt(user.cabang_id)
+              }
+            }
+          },
+          { dibuat_oleh: user.nama },
+          { diubah_oleh: user.nama }
+        ]
+      };
+    } else if (roleName === 'sales') {
+      whereClause = {
+        ...whereClause,
+        OR: [
+          {
+            leads: {
+              some: {
+                user_id: BigInt(user.id)
+              }
+            }
+          },
+          { dibuat_oleh: user.nama },
+          { diubah_oleh: user.nama }
+        ]
+      };
+    }
 
     // Parse column filters: filter[colKey][operator] & filter[colKey][value]
     const filterConditions = [];
