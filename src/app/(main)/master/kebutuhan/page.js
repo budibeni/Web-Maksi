@@ -9,35 +9,7 @@ import { DataTable } from "@/components/table";
 import { useDataTable } from "@/hooks/useDataTable";
 import dayjs from "dayjs";
 
-const getFaseBadgeColor = (fase) => {
-  switch (fase) {
-    case "LEAD_BARU": return "bg-sky-50 text-sky-700 dark:bg-sky-950/20 dark:text-sky-400 border border-sky-200/50 dark:border-sky-900/30";
-    case "FOLLOW_UP": return "bg-amber-50 text-amber-700 dark:bg-amber-950/20 dark:text-amber-400 border border-amber-200/50 dark:border-amber-900/30";
-    case "PENAWARAN": return "bg-indigo-50 text-indigo-700 dark:bg-indigo-950/20 dark:text-indigo-400 border border-indigo-200/50 dark:border-indigo-900/30";
-    default: return "bg-neutral-50 text-neutral-700 dark:bg-neutral-900 dark:text-neutral-400 border border-neutral-200 dark:border-neutral-800";
-  }
-};
 
-const getFaseName = (fase) => {
-  switch (fase) {
-    case "LEAD_BARU": return "Lead Baru";
-    case "FOLLOW_UP": return "Follow Up";
-    case "PENAWARAN": return "Penawaran";
-    default: return fase;
-  }
-};
-
-const getVisualBadgeColor = (warna) => {
-  if (!warna) return "bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300";
-  switch (warna.toLowerCase()) {
-    case "green": case "success": return "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400";
-    case "blue": case "info": return "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400";
-    case "yellow": case "warning": return "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400";
-    case "red": case "danger": return "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400";
-    case "purple": return "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400";
-    default: return "bg-orange-100 text-orange-700 dark:bg-orange-950/30 dark:text-orange-400";
-  }
-};
 
 export default function KebutuhanPage() {
   const [kebutuhans, setKebutuhans] = useState([]);
@@ -50,7 +22,7 @@ export default function KebutuhanPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
-    id: null, kode: "", nama: "", fase_lead: "FOLLOW_UP", urutan: 0, warna: "orange", aktif: 1
+    id: null, kode: "", nama: "", urutan: 0, aktif: 1
   });
 
   const {
@@ -99,13 +71,13 @@ export default function KebutuhanPage() {
   const handleOpenModal = (kebutuhan = null) => {
     if (kebutuhan) {
       setFormData({
-        id: kebutuhan.id, kode: kebutuhan.kode, nama: kebutuhan.nama, fase_lead: kebutuhan.fase_lead,
-        urutan: parseInt(kebutuhan.urutan) || 0, warna: kebutuhan.warna || "orange", aktif: kebutuhan.aktif
+        id: kebutuhan.id, kode: kebutuhan.kode, nama: kebutuhan.nama,
+        urutan: parseInt(kebutuhan.urutan) || 0, aktif: kebutuhan.aktif
       });
     } else {
       setFormData({
-        id: null, kode: "", nama: "", fase_lead: "FOLLOW_UP",
-        urutan: kebutuhans.length + 1, warna: "orange", aktif: 1
+        id: null, kode: "", nama: "",
+        urutan: kebutuhans.length + 1, aktif: 1
       });
     }
     setIsModalOpen(true);
@@ -121,8 +93,8 @@ export default function KebutuhanPage() {
         method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          kode: formData.kode, nama: formData.nama, fase_lead: formData.fase_lead,
-          urutan: parseInt(formData.urutan) || 0, warna: formData.warna, aktif: parseInt(formData.aktif)
+          kode: formData.kode, nama: formData.nama,
+          urutan: parseInt(formData.urutan) || 0, aktif: parseInt(formData.aktif)
         })
       });
       const json = await res.json();
@@ -181,9 +153,7 @@ export default function KebutuhanPage() {
       const exportData = dataToExport.map(k => ({
         KODE: k.kode,
         NAMA_KEBUTUHAN: k.nama,
-        FASE_LEAD: k.fase_lead,
         URUTAN: k.urutan,
-        WARNA: k.warna || "orange",
         STATUS: k.aktif === 1 ? "Aktif" : "Nonaktif"
       }));
       exportToExcel(exportData, "master_kebutuhan.xlsx");
@@ -282,38 +252,11 @@ export default function KebutuhanPage() {
       render: (row) => <span className="text-neutral-900 dark:text-neutral-200">{row.nama}</span>
     },
     {
-      key: "fase_lead",
-      label: "Fase Lead",
-      sortable: true,
-      filter: {
-        type: "select",
-        options: [
-          { value: "LEAD_BARU", label: "Lead Baru" },
-          { value: "FOLLOW_UP", label: "Follow Up" },
-          { value: "PENAWARAN", label: "Penawaran" }
-        ]
-      },
-      render: (row) => (
-        <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-semibold ${getFaseBadgeColor(row.fase_lead)}`}>
-          {getFaseName(row.fase_lead)}
-        </span>
-      )
-    },
-    {
       key: "urutan",
       label: "Urutan",
       sortable: true,
       width: 80,
       render: (row) => <span className="font-mono text-sm text-neutral-700 dark:text-neutral-300">{row.urutan}</span>
-    },
-    {
-      key: "warna",
-      label: "Warna",
-      render: (row) => (
-        <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold border ${getVisualBadgeColor(row.warna)}`}>
-          {row.warna}
-        </span>
-      )
     },
     {
       key: "aktif",
@@ -460,37 +403,10 @@ export default function KebutuhanPage() {
                     value={formData.nama} onChange={(e) => setFormData({ ...formData, nama: e.target.value })} />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Fase Lead *</label>
-                  <select className="w-full px-4 py-2 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all dark:text-white"
-                    value={formData.fase_lead} onChange={(e) => setFormData({ ...formData, fase_lead: e.target.value })}>
-                    <option value="LEAD_BARU">Lead Baru</option>
-                    <option value="FOLLOW_UP">Follow Up</option>
-                    <option value="PENAWARAN">Penawaran</option>
-                  </select>
-                </div>
-                <div>
                   <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Urutan *</label>
                   <input type="number" required min={0}
                     className="w-full px-4 py-2 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all dark:text-white font-mono"
                     value={formData.urutan} onChange={(e) => setFormData({ ...formData, urutan: parseInt(e.target.value) || 0 })} />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Warna Badge</label>
-                  <select className="w-full px-4 py-2 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all dark:text-white"
-                    value={formData.warna} onChange={(e) => setFormData({ ...formData, warna: e.target.value })}>
-                    <option value="orange">Orange (Default)</option>
-                    <option value="blue">Biru (Info)</option>
-                    <option value="yellow">Kuning (Warning)</option>
-                    <option value="green">Hijau (Success)</option>
-                    <option value="red">Merah (Danger)</option>
-                    <option value="purple">Ungu</option>
-                  </select>
-                  <div className="mt-2 flex items-center gap-2">
-                    <span className="text-xs text-neutral-500">Preview:</span>
-                    <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold border ${getVisualBadgeColor(formData.warna)}`}>
-                      {formData.nama || "Badge Text"}
-                    </span>
-                  </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">Status</label>

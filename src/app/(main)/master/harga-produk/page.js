@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useMemo } from "react";
 import { createPortal } from "react-dom";
-import { FiPlus, FiEdit2, FiTrash2, FiX, FiDownload, FiUpload, FiFileText } from "react-icons/fi";
+import { FiPlus, FiEdit2, FiTrash2, FiX, FiDownload, FiUpload, FiFileText, FiTrendingUp, FiTrendingDown, FiMinus } from "react-icons/fi";
 import { exportToExcel, parseExcel } from "@/lib/excel";
 import { useUIStore } from "@/store/ui.store";
 import dayjs from "dayjs";
@@ -33,6 +33,8 @@ export default function HargaProdukPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({ id: null, produk_id: "", cabang_id: "", harga: "" });
   const [mounted, setMounted] = useState(false);
+  const [hargaDefault, setHargaDefault] = useState(null);
+  const [isFetchingDefault, setIsFetchingDefault] = useState(false);
   const fileInputRef = useRef(null);
   const { showToast, showConfirm } = useUIStore();
 
@@ -119,6 +121,7 @@ export default function HargaProdukPage() {
   ]);
 
   const handleOpenModal = (hargaProduk = null) => {
+    setHargaDefault(null);
     if (hargaProduk) {
       setProduks(prev => {
         if (hargaProduk.produk && !prev.find(p => p.id === hargaProduk.produk.id)) {
@@ -132,6 +135,10 @@ export default function HargaProdukPage() {
         cabang_id: hargaProduk.cabang_id,
         harga: hargaProduk.harga
       });
+      // Set harga default dari data produk yang sudah ada
+      if (hargaProduk.produk?.harga_default !== undefined) {
+        setHargaDefault(parseFloat(hargaProduk.produk.harga_default) || 0);
+      }
     } else {
       setFormData({ id: null, produk_id: "", cabang_id: "", harga: "" });
       setProdukSearch("");
@@ -297,6 +304,38 @@ export default function HargaProdukPage() {
     const p = produks.find(p => p.id === formData.produk_id);
     return p ? `${p.kode} - ${p.nama}` : "";
   }, [formData.produk_id, produks]);
+
+  // Fetch harga default ketika produk dipilih
+  useEffect(() => {
+    if (!formData.produk_id || !isModalOpen) return;
+    // Cek dulu dari data produks yang sudah diload
+    const existing = produks.find(p => String(p.id) === String(formData.produk_id));
+    if (existing?.harga_default !== undefined) {
+      setHargaDefault(parseFloat(existing.harga_default) || 0);
+      return;
+    }
+    // Jika tidak ada, fetch dari API
+    const fetchDefault = async () => {
+      setIsFetchingDefault(true);
+      try {
+        const res = await fetch(`/api/master/produk/${formData.produk_id}`);
+        const json = await res.json();
+        if (json.success && json.data) {
+          setHargaDefault(parseFloat(json.data.harga_default) || 0);
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setIsFetchingDefault(false);
+      }
+    };
+    fetchDefault();
+  }, [formData.produk_id, isModalOpen]);
+
+  const selisihHarga = useMemo(() => {
+    if (hargaDefault === null || formData.harga === "") return null;
+    return parseFloat(formData.harga) - hargaDefault;
+  }, [formData.harga, hargaDefault]);
 
   const filterCabangOptions = useMemo(() => {
     return cabangs.map(c => ({ value: String(c.id), label: c.nama }));
@@ -564,6 +603,25 @@ export default function HargaProdukPage() {
                   </select>
                 </div>
 
+                {/* Info Harga Default/Pusat */}
+                {formData.produk_id && (
+                  <div className="rounded-xl border border-blue-200/70 dark:border-blue-900/40 bg-blue-50/60 dark:bg-blue-950/20 p-3">
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-blue-500 dark:text-blue-400 mb-1.5">Harga Default / Pusat</p>
+                    {isFetchingDefault ? (
+                      <div className="flex items-center gap-2">
+                        <div className="w-3.5 h-3.5 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
+                        <span className="text-xs text-blue-500">Memuat harga default...</span>
+                      </div>
+                    ) : hargaDefault !== null ? (
+                      <p className="text-lg font-bold text-blue-700 dark:text-blue-300">
+                        Rp {hargaDefault.toLocaleString('id-ID')}
+                      </p>
+                    ) : (
+                      <p className="text-xs text-blue-400">Pilih produk untuk melihat harga default</p>
+                    )}
+                  </div>
+                )}
+
                 {/* Nilai Harga Khusus */}
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Harga Cabang Khusus *</label>
@@ -577,6 +635,39 @@ export default function HargaProdukPage() {
                     placeholder="Contoh: 150000"
                   />
                 </div>
+
+                {/* Selisih Harga */}
+                {selisihHarga !== null && (
+                  <div className={`rounded-xl border p-3 flex items-center gap-3 ${
+                    selisihHarga > 0
+                      ? "bg-orange-50/60 dark:bg-orange-950/20 border-orange-200/70 dark:border-orange-900/40"
+                      : selisihHarga < 0
+                      ? "bg-green-50/60 dark:bg-green-950/20 border-green-200/70 dark:border-green-900/40"
+                      : "bg-neutral-50 dark:bg-neutral-800/30 border-neutral-200 dark:border-neutral-700"
+                  }`}>
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                      selisihHarga > 0
+                        ? "bg-orange-100 dark:bg-orange-900/40 text-orange-600 dark:text-orange-400"
+                        : selisihHarga < 0
+                        ? "bg-green-100 dark:bg-green-900/40 text-green-600 dark:text-green-400"
+                        : "bg-neutral-200 dark:bg-neutral-700 text-neutral-500"
+                    }`}>
+                      {selisihHarga > 0 ? <FiTrendingUp className="w-4 h-4" /> : selisihHarga < 0 ? <FiTrendingDown className="w-4 h-4" /> : <FiMinus className="w-4 h-4" />}
+                    </div>
+                    <div>
+                      <p className={`text-[10px] font-semibold uppercase tracking-wider mb-0.5 ${
+                        selisihHarga > 0 ? "text-orange-500 dark:text-orange-400" : selisihHarga < 0 ? "text-green-500 dark:text-green-400" : "text-neutral-500"
+                      }`}>
+                        {selisihHarga > 0 ? "Lebih Mahal dari Pusat" : selisihHarga < 0 ? "Lebih Murah dari Pusat" : "Sama dengan Harga Pusat"}
+                      </p>
+                      <p className={`text-base font-bold ${
+                        selisihHarga > 0 ? "text-orange-700 dark:text-orange-300" : selisihHarga < 0 ? "text-green-700 dark:text-green-300" : "text-neutral-600 dark:text-neutral-400"
+                      }`}>
+                        {selisihHarga !== 0 ? `${selisihHarga > 0 ? '+' : ''}Rp ${selisihHarga.toLocaleString('id-ID')}` : "Tidak ada selisih"}
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
               
               <div className="px-6 py-4 bg-neutral-50 dark:bg-neutral-950 border-t border-neutral-100 dark:border-neutral-800 flex justify-end gap-3 rounded-b-2xl">
