@@ -88,7 +88,14 @@ export async function GET(request) {
         [sortField]: sortOrder
       },
       skip,
-      take: limit
+      take: limit,
+      include: {
+        leads: {
+          select: {
+            status: true
+          }
+        }
+      }
     });
 
     const serializedData = serializeData(customers);

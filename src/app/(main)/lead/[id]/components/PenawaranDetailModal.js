@@ -114,8 +114,7 @@ export default function PenawaranDetailModal({ quotationId, onClose }) {
             <div className="flex justify-between items-start border-b-2 border-neutral-800 pb-4">
               <div>
                 <div className="flex items-center gap-3 mb-2">
-                  <img src="/maksindo.png" alt="MAKSINDO" className="h-10 w-auto object-contain" />
-                  {/* <h1 className="text-xl font-extrabold text-orange-600 print:text-orange-600">MAKSINDO</h1> */}
+                  <h1 className="text-xl font-extrabold text-orange-600 print:text-orange-600">MAKSINDO</h1>
                 </div>
                 <p className="text-xs text-neutral-500 print:text-neutral-500 mt-1 leading-relaxed">
                   {/* Pusat Mesin Usaha & Pertanian Indonesia<br /> */}

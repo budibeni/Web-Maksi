@@ -23,7 +23,19 @@ export async function GET(request, context) {
     const id = BigInt(params.id);
 
     const customer = await prisma.customer.findUnique({
-      where: { id }
+      where: { id },
+      include: {
+        leads: {
+          orderBy: { dibuat_tanggal: 'desc' },
+          include: {
+            cabang: { select: { nama: true, kode: true } },
+            user: { select: { nama: true } },
+            versi_penawaran_final: {
+              select: { nomor: true, versi: true, grand_total: true }
+            },
+          },
+        },
+      },
     });
 
     if (!customer) {

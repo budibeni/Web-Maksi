@@ -3,7 +3,8 @@
 import { useState, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
-import { FiPlus, FiEdit2, FiTrash2, FiX, FiDownload, FiUser, FiPhone, FiEye } from "react-icons/fi";
+import { FiPlus, FiEdit2, FiTrash2, FiX, FiDownload, FiUser, FiPhone, FiEye, FiStar } from "react-icons/fi";
+import { FaWhatsapp } from "react-icons/fa";
 import { exportToExcel } from "@/lib/excel";
 import { useUIStore } from "@/store/ui.store";
 import { useAuthStore } from "@/store/auth.store";
@@ -223,6 +224,71 @@ export default function CustomerPage() {
       )
     },
     {
+      key: "leads",
+      label: "Status Lead",
+      sortable: false,
+      render: (row) => {
+        const leads = row.leads || [];
+        const open = leads.filter(l => l.status === 1).length;
+        const deal = leads.filter(l => l.status === 2).length;
+        const lost = leads.filter(l => l.status === 3).length;
+
+        return (
+          <div className="flex items-center gap-1.5 text-xs font-semibold">
+            <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400" title="Open Leads">
+              {open} Open
+            </span>
+            <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-md bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-400" title="Deal Leads">
+              {deal} Deal
+            </span>
+            <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-md bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400" title="Lost Leads">
+              {lost} Lost
+            </span>
+          </div>
+        );
+      }
+    },
+    {
+      key: "rating",
+      label: "Rating",
+      sortable: false,
+      render: (row) => {
+        const leads = row.leads || [];
+        const dealLeads = leads.filter(l => l.status === 2).length;
+        const lostLeads = leads.filter(l => l.status === 3).length;
+        const finishedLeads = dealLeads + lostLeads;
+        
+        let rating = 0;
+        if (finishedLeads > 0) {
+          const winRate = dealLeads / finishedLeads;
+          if (winRate >= 0.8) rating = 5;
+          else if (winRate >= 0.6) rating = 4;
+          else if (winRate >= 0.4) rating = 3;
+          else if (winRate >= 0.2) rating = 2;
+          else rating = 1;
+        }
+
+        return (
+          <div className="flex items-center gap-0.5">
+            {rating === 0 ? (
+              <span className="text-xs text-neutral-400 italic">No rating</span>
+            ) : (
+              Array.from({ length: 5 }).map((_, i) => (
+                <FiStar
+                  key={i}
+                  className={`w-4 h-4 ${
+                    i < rating 
+                      ? "text-yellow-500 fill-yellow-500" 
+                      : "text-neutral-200 dark:text-neutral-700"
+                  }`}
+                />
+              ))
+            )}
+          </div>
+        );
+      }
+    },
+    {
       key: "telepon",
       label: "Telepon",
       sortable: true,
@@ -232,10 +298,10 @@ export default function CustomerPage() {
           href={formatWhatsAppUrl(row.telepon)} 
           target="_blank" 
           rel="noopener noreferrer"
-          className="text-sm text-orange-600 hover:text-orange-700 dark:text-orange-500 dark:hover:text-orange-400 font-medium flex items-center gap-1.5 transition-colors"
+          className="text-sm text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white font-medium flex items-center gap-1.5 transition-colors"
           title="Chat via WhatsApp"
         >
-          <FiPhone className="w-4 h-4" />
+          <FaWhatsapp className="w-4.5 h-4.5 text-emerald-500 hover:text-emerald-600" />
           {row.telepon}
         </a>
       )
