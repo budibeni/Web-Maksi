@@ -59,7 +59,7 @@ export default function PenawaranDetailModal({ quotationId, onClose }) {
     <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto p-4 sm:p-6 bg-neutral-900/60 backdrop-blur-sm print:bg-white print:p-0 print:absolute print:inset-0">
       {/* Modal Card */}
       <div className="bg-white dark:bg-neutral-900 rounded-2xl shadow-xl w-full max-w-4xl overflow-hidden my-4 print:my-0 print:shadow-none print:rounded-none dark:print:bg-white">
-        
+
         {/* Actions Header (hidden on print) */}
         <div className="px-6 py-4 border-b border-neutral-100 dark:border-neutral-800 flex items-center justify-between bg-neutral-50 dark:bg-neutral-900/50 print:hidden">
           <h3 className="text-sm font-bold text-neutral-800 dark:text-white">Detail Penawaran: {quotation.nomor} (v{quotation.versi})</h3>
@@ -82,9 +82,10 @@ export default function PenawaranDetailModal({ quotationId, onClose }) {
 
         {/* Printable Content wrapper */}
         <div ref={printRef} className="p-8 sm:p-10 space-y-6 text-neutral-800 dark:text-neutral-200 print:text-black print:bg-white dark:print:text-black">
-          
+
           {/* Print Header styling block */}
-          <style dangerouslySetInnerHTML={{__html: `
+          <style dangerouslySetInnerHTML={{
+            __html: `
             @media print {
               body * {
                 visibility: hidden;
@@ -108,14 +109,17 @@ export default function PenawaranDetailModal({ quotationId, onClose }) {
           `}} />
 
           <div className="print-container space-y-6">
-            
+
             {/* Header / Letterhead */}
             <div className="flex justify-between items-start border-b-2 border-neutral-800 pb-4">
               <div>
-                <h1 className="text-xl font-extrabold text-orange-600 print:text-orange-600">MAKSINDO</h1>
+                <div className="flex items-center gap-3 mb-2">
+                  <img src="/maksindo.png" alt="MAKSINDO" className="h-10 w-auto object-contain" />
+                  {/* <h1 className="text-xl font-extrabold text-orange-600 print:text-orange-600">MAKSINDO</h1> */}
+                </div>
                 <p className="text-xs text-neutral-500 print:text-neutral-500 mt-1 leading-relaxed">
-                  Pusat Mesin Usaha & Pertanian Indonesia<br />
-                  Website: www.tokomesin.com<br />
+                  {/* Pusat Mesin Usaha & Pertanian Indonesia<br /> */}
+                  Website: www.maksindo.com<br />
                   Cabang: {quotation.cabang_nama}
                 </p>
               </div>
