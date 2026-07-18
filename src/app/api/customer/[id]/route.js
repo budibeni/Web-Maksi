@@ -27,44 +27,19 @@ export async function GET(request, context) {
 
     const roleName = (typeof user.role === 'object' ? user.role.nama : user.role || '').toLowerCase();
 
-    // Buat query filter tambahan untuk branch manager dan sales
-    let whereClause = { id };
+    // Buat filter untuk relasi leads di dalam include
+    let leadsWhere = {};
     if (roleName === 'branch manager') {
-      whereClause = {
-        id,
-        OR: [
-          {
-            leads: {
-              some: {
-                cabang_id: BigInt(user.cabang_id)
-              }
-            }
-          },
-          { dibuat_oleh: user.nama },
-          { diubah_oleh: user.nama }
-        ]
-      };
+      leadsWhere = { cabang_id: BigInt(user.cabang_id) };
     } else if (roleName === 'sales') {
-      whereClause = {
-        id,
-        OR: [
-          {
-            leads: {
-              some: {
-                user_id: BigInt(user.id)
-              }
-            }
-          },
-          { dibuat_oleh: user.nama },
-          { diubah_oleh: user.nama }
-        ]
-      };
+      leadsWhere = { user_id: BigInt(user.id) };
     }
 
     const customer = await prisma.customer.findUnique({
-      where: whereClause,
+      where: { id },
       include: {
         leads: {
+          where: leadsWhere,
           orderBy: { dibuat_tanggal: 'desc' },
           include: {
             cabang: { select: { nama: true, kode: true } },
@@ -78,7 +53,7 @@ export async function GET(request, context) {
     });
 
     if (!customer) {
-      return NextResponse.json({ success: false, message: 'Data tidak ditemukan atau Anda tidak memiliki akses' }, { status: 404 });
+      return NextResponse.json({ success: false, message: 'Data tidak ditemukan' }, { status: 404 });
     }
 
     return NextResponse.json({
