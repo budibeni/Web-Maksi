@@ -114,6 +114,8 @@ Customer menjadi dasar pembuatan Lead.
 
 ---
 
+# Tahap 6 - Lead
+
 ✅ Selesai
 
 Pekerjaan
@@ -128,6 +130,7 @@ Pekerjaan
 - Revisi Penawaran
 - Deal
 - Lost
+- Tren
 
 Lead merupakan inti proses bisnis aplikasi MAKSI.
 

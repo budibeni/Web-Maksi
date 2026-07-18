@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/jwt';
+import { recordAuditLog } from '@/lib/audit';
 import { z } from 'zod';
 
 const serialize = (data) => JSON.parse(JSON.stringify(data, (_, v) => typeof v === 'bigint' ? v.toString() : v));
@@ -119,7 +120,13 @@ export async function POST(request) {
       where: { nomor: oldQuotation.nomor },
       _max: { versi: true },
     });
-    const nextVersi = (maxVersi._max.versi || oldQuotation.versi) + 1;
+    
+    const maxVersionVal = maxVersi._max.versi || oldQuotation.versi;
+    if (oldQuotation.versi < maxVersionVal) {
+      return NextResponse.json({ success: false, message: 'Revisi hanya dapat dibuat dari versi penawaran terbaru.' }, { status: 400 });
+    }
+    
+    const nextVersi = maxVersionVal + 1;
 
     // Save using Transaction
     const result = await prisma.$transaction(async (tx) => {
@@ -179,21 +186,33 @@ export async function POST(request) {
       });
 
       // 4. Create AktivitasLead record for revision
-      const hi = await tx.hasilInteraksi.findFirst({ where: { kode: 'PENAWARAN' } });
-      const hiId = hi ? hi.id : 3n;
-
-      await tx.aktivitasLead.create({
-        data: {
-          lead_id: lead.id,
-          user_id: BigInt(user.id),
-          hasil_interaksi_id: hiId,
-          hasil_interaksi: `Revisi penawaran`,
-          catatan: `Merevisi Penawaran ${oldQuotation.nomor} menjadi Versi ${nextVersi}. Nilai Penawaran Baru: Rp ${Number(grandTotal).toLocaleString('id-ID')}. ${catatan || ''}`,
-          dibuat_oleh: user.nama,
-        },
-      });
+      // Cari HasilInteraksi dengan kode MINTA_REVISI_PENAWARAN
+      const hi = await tx.hasilInteraksi.findFirst({ where: { kode: 'MINTA_REVISI_PENAWARAN', aktif: 1 } });
+      if (hi) {
+        await tx.aktivitasLead.create({
+          data: {
+            lead_id: lead.id,
+            user_id: BigInt(user.id),
+            hasil_interaksi_id: hi.id,
+            hasil_interaksi: hi.nama,
+            catatan: `Merevisi Penawaran ${oldQuotation.nomor} menjadi Versi ${nextVersi}. Nilai Penawaran Baru: Rp ${Number(grandTotal).toLocaleString('id-ID')}. ${catatan || ''}`,
+            dibuat_oleh: user.nama,
+          },
+        });
+      }
 
       return q;
+    });
+
+    // Record Audit Log
+    await recordAuditLog({
+      user,
+      modul: "PENAWARAN",
+      aksi: "CREATE",
+      referensi_id: result.id,
+      deskripsi: `Merevisi penawaran ${oldQuotation.nomor} menjadi versi ${nextVersi} untuk lead ID ${lead.id}`,
+      data_sesudah: result,
+      request
     });
 
     return NextResponse.json({

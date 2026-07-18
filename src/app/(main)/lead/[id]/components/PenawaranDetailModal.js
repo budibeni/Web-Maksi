@@ -2,6 +2,10 @@
 
 import { useEffect, useState, useRef } from "react";
 import { FiX, FiPrinter } from "react-icons/fi";
+import dayjs from "dayjs";
+import 'dayjs/locale/id';
+
+dayjs.locale('id');
 
 export default function PenawaranDetailModal({ quotationId, onClose }) {
   const [quotation, setQuotation] = useState(null);
@@ -266,19 +270,3 @@ export default function PenawaranDetailModal({ quotationId, onClose }) {
   );
 }
 
-// Simple dayjs formatted date helper locally
-const dayjs = (val) => {
-  const d = new Date(val);
-  const months = [
-    'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
-    'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
-  ];
-  return {
-    format: (pattern) => {
-      if (pattern === 'DD MMMM YYYY') {
-        return `${String(d.getDate()).padStart(2, '0')} ${months[d.getMonth()]} ${d.getFullYear()}`;
-      }
-      return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
-    }
-  };
-};

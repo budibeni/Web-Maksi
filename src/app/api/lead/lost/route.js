@@ -32,7 +32,10 @@ export async function POST(request) {
     const { lead_id, alasan_lost_id, catatan_lost } = parsed.data;
     const leadId = BigInt(lead_id);
 
-    const lead = await prisma.lead.findUnique({ where: { id: leadId } });
+    const lead = await prisma.lead.findUnique({
+      where: { id: leadId },
+      include: { versi_penawaran_final: true }
+    });
     if (!lead) return NextResponse.json({ success: false, message: 'Lead tidak ditemukan.' }, { status: 404 });
     if (lead.status !== 1) return NextResponse.json({ success: false, message: 'Lead sudah berstatus DEAL atau LOST.' }, { status: 400 });
 
@@ -45,6 +48,11 @@ export async function POST(request) {
     }
 
     const now = new Date();
+    
+    let nilaiLost = null;
+    if (lead.versi_penawaran_final) {
+      nilaiLost = lead.versi_penawaran_final.grand_total;
+    }
 
     // Update lead menjadi LOST
     await prisma.lead.update({
@@ -53,6 +61,7 @@ export async function POST(request) {
         status: 3, // LOST
         alasan_lost_id: BigInt(alasan_lost_id),
         nama_alasan_lost: alasanLost.nama,
+        nilai_lost: nilaiLost,
         catatan_lost: catatan_lost || null,
         tanggal_lost: now,
         diubah_oleh: user.nama,

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/jwt';
+import { recordAuditLog } from '@/lib/audit';
 import { z } from 'zod';
 
 const serialize = (data) => JSON.parse(JSON.stringify(data, (_, v) => typeof v === 'bigint' ? v.toString() : v));
@@ -190,6 +191,15 @@ export async function POST(request) {
     if (!lead) return NextResponse.json({ success: false, message: 'Lead tidak ditemukan.' }, { status: 404 });
     if (lead.status !== 1) return NextResponse.json({ success: false, message: 'Lead sudah berstatus DEAL atau LOST.' }, { status: 400 });
 
+    // Cek apakah lead sudah memiliki penawaran — jika ya, gunakan fitur Revisi
+    const existingPenawaran = await prisma.versiPenawaran.findFirst({ where: { lead_id: leadId } });
+    if (existingPenawaran) {
+      return NextResponse.json({
+        success: false,
+        message: 'Lead ini sudah memiliki penawaran. Gunakan fitur Revisi untuk membuat penawaran baru.',
+      }, { status: 400 });
+    }
+
     // Fetch product details and prices
     const itemDetails = [];
     let subtotalQuotation = 0;
@@ -308,22 +318,33 @@ export async function POST(request) {
       });
 
       // 4. Create AktivitasLead record
-      // Find the "Hasil Interaksi" for "Minta Penawaran" (code PENAWARAN) to get proper hasil_interaksi_id
-      const hi = await tx.hasilInteraksi.findFirst({ where: { kode: 'PENAWARAN' } });
-      const hiId = hi ? hi.id : 3n; // fallback to 3n if not found
-
-      await tx.aktivitasLead.create({
-        data: {
-          lead_id: leadId,
-          user_id: BigInt(user.id),
-          hasil_interaksi_id: hiId,
-          hasil_interaksi: `Minta penawaran`,
-          catatan: `Membuat Penawaran Baru ${nomor} (v1). Nilai Penawaran: Rp ${Number(grandTotal).toLocaleString('id-ID')}. ${catatan || ''}`,
-          dibuat_oleh: user.nama,
-        },
-      });
+      // Cari HasilInteraksi dengan kode MINTA_PENAWARAN
+      const hi = await tx.hasilInteraksi.findFirst({ where: { kode: 'MINTA_PENAWARAN', aktif: 1 } });
+      if (hi) {
+        await tx.aktivitasLead.create({
+          data: {
+            lead_id: leadId,
+            user_id: BigInt(user.id),
+            hasil_interaksi_id: hi.id,
+            hasil_interaksi: hi.nama,
+            catatan: `Membuat Penawaran Baru ${nomor} (v1). Nilai Penawaran: Rp ${Number(grandTotal).toLocaleString('id-ID')}. ${catatan || ''}`,
+            dibuat_oleh: user.nama,
+          },
+        });
+      }
 
       return q;
+    });
+
+    // Record Audit Log
+    await recordAuditLog({
+      user,
+      modul: "PENAWARAN",
+      aksi: "CREATE",
+      referensi_id: result.id,
+      deskripsi: `Membuat penawaran baru ${nomor} untuk lead ID ${leadId}`,
+      data_sesudah: result,
+      request
     });
 
     return NextResponse.json({

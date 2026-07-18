@@ -90,18 +90,33 @@ export default function BaruPenawaranPage({ params }) {
             setDpNominal(Number(q.dp_nominal));
             setCatatan(q.catatan || "");
             
-            // Map items
-            const oldItems = q.details.map(d => ({
-              produk_id: String(d.produk_id),
-              nama_produk: d.nama_produk,
-              kode_produk: d.kode_produk,
-              satuan: d.satuan,
-              harga: Number(d.harga),
-              qty: Number(d.qty),
-              diskon_persen: Number(d.diskon_persen),
-              diskon_nominal: Number(d.diskon_nominal),
-              subtotal: Number(d.subtotal),
-            }));
+            // Map items using current prices
+            const oldItems = q.details.map(d => {
+              const pId = String(d.produk_id);
+              const productObj = jsonProd.success ? jsonProd.data.find(p => String(p.id) === pId) : null;
+              const currentPrice = priceMap[pId] !== undefined 
+                ? priceMap[pId] 
+                : (productObj ? Number(productObj.harga_default) : Number(d.harga));
+              
+              const bruto = currentPrice * Number(d.qty);
+              let disc = Number(d.diskon_nominal);
+              if (Number(d.diskon_persen) > 0) {
+                disc = bruto * (Number(d.diskon_persen) / 100);
+              }
+              const itemSubtotal = bruto - disc;
+
+              return {
+                produk_id: pId,
+                nama_produk: d.nama_produk,
+                kode_produk: d.kode_produk,
+                satuan: d.satuan,
+                harga: currentPrice,
+                qty: Number(d.qty),
+                diskon_persen: Number(d.diskon_persen),
+                diskon_nominal: Number(d.diskon_nominal),
+                subtotal: itemSubtotal,
+              };
+            });
             setItems(oldItems);
           }
         }

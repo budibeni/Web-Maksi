@@ -71,12 +71,18 @@ export async function DELETE(request, context) {
 
     const lead = await prisma.lead.findUnique({
       where: { id },
-      include: { aktivitas_leads: { take: 1 } },
+      include: { 
+        aktivitas_leads: { take: 1 },
+        versi_penawarans: { take: 1 }
+      },
     });
 
     if (!lead) return NextResponse.json({ success: false, message: 'Lead tidak ditemukan.' }, { status: 404 });
     if (lead.aktivitas_leads.length > 0) {
       return NextResponse.json({ success: false, message: 'Lead yang sudah memiliki aktivitas tidak dapat dihapus.' }, { status: 400 });
+    }
+    if (lead.versi_penawarans.length > 0) {
+      return NextResponse.json({ success: false, message: 'Lead yang sudah memiliki penawaran tidak dapat dihapus.' }, { status: 400 });
     }
 
     await prisma.lead.delete({ where: { id } });

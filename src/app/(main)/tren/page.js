@@ -143,11 +143,6 @@ export default function LaporanTren() {
 
   return (
     <div className="space-y-6">
-      {/* Page Title */}
-      <div>
-        <h1 className="text-2xl font-black text-neutral-900 dark:text-white tracking-tight">Tren & Analisis Kebutuhan</h1>
-        <p className="text-sm text-neutral-500 dark:text-neutral-400">Analisis statistik tren kategori produk, kebutuhan leads, dan performa deal produk.</p>
-      </div>
 
       {/* Filter Laporan */}
       <FilterPanel
@@ -170,7 +165,7 @@ export default function LaporanTren() {
 
       {/* Main Charts: Category and Needs */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        
+
         {/* LEFT CHART: Kategori Produk */}
         <div className="bg-white dark:bg-neutral-900 border border-neutral-200/50 dark:border-neutral-800 shadow-sm rounded-2xl p-6 flex flex-col justify-between transition-colors duration-300">
           <div>

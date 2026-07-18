@@ -240,7 +240,7 @@ export default function LeadDetailPage({ params }) {
         showToast('Follow up berhasil disimpan!', 'success');
         const submittedHasilId = hasilId;
         setHasilId(""); setCatatan(""); setBuatPengingat(false);
-        
+
         // Cek apakah hasil interaksi yang dipilih memicu LOST (TIDAK_TERTARIK_LAGI atau SULIT_DIHUBUNGI)
         const selectedHI = hasilInteraksiList.find(h => String(h.id) === String(submittedHasilId));
         if (selectedHI && (selectedHI.kode === 'TIDAK_TERTARIK_LAGI' || selectedHI.kode === 'SULIT_DIHUBUNGI')) {
@@ -347,7 +347,7 @@ export default function LeadDetailPage({ params }) {
         )}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-6 gap-6">
         {/* Left: Follow Up Form */}
         {isOpen && !isTopManagement && (
           <div className="lg:col-span-3">
@@ -428,7 +428,7 @@ export default function LeadDetailPage({ params }) {
         )}
 
         {/* Right / Full: Timeline & Penawaran Tab Panel */}
-        <div className={(isOpen && !isTopManagement) ? 'lg:col-span-2' : 'lg:col-span-5'}>
+        <div className={(isOpen && !isTopManagement) ? 'lg:col-span-3' : 'lg:col-span-6'}>
           <div className="bg-white dark:bg-neutral-900 rounded-2xl border border-neutral-200/50 dark:border-neutral-800 shadow-sm overflow-hidden">
             {/* Tabs Navigation */}
             <div className="flex border-b border-neutral-100 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-900/50">
@@ -485,7 +485,7 @@ export default function LeadDetailPage({ params }) {
               ) : (
                 /* Penawaran Content */
                 <div className="space-y-4">
-                  {isOpen && !isTopManagement && (
+                  {isOpen && !isTopManagement && lead.versi_penawarans?.length === 0 && (
                     <div className="flex justify-end">
                       <Link
                         href={`/lead/${id}/penawaran/baru`}
@@ -516,44 +516,48 @@ export default function LeadDetailPage({ params }) {
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800 text-xs">
-                          {lead.versi_penawarans.map(q => {
-                            const isFinal = String(lead.versi_penawaran_final_id) === String(q.id);
-                            return (
-                              <tr key={q.id} className="hover:bg-neutral-50 dark:hover:bg-neutral-800/30 transition-colors">
-                                <td className="px-4 py-3.5 font-bold text-neutral-900 dark:text-white">v{q.versi}</td>
-                                <td className="px-4 py-3.5 font-mono text-neutral-600 dark:text-neutral-400">{q.nomor}</td>
-                                <td className="px-4 py-3.5 text-right font-bold text-neutral-900 dark:text-white">
-                                  Rp {Number(q.grand_total).toLocaleString('id-ID')}
-                                </td>
-                                <td className="px-4 py-3.5">
-                                  {isFinal ? (
-                                    <span className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 px-2.5 py-0.5 rounded-full font-bold text-[9px] uppercase tracking-wider">
-                                      Disetujui
-                                    </span>
-                                  ) : (
-                                    <span className="text-neutral-400 font-medium">-</span>
-                                  )}
-                                </td>
-                                <td className="px-4 py-3.5 text-right space-x-2 whitespace-nowrap">
-                                  <button
-                                    type="button"
-                                    onClick={() => setSelectedQuotationId(q.id)}
-                                    className="px-2.5 py-1 bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 rounded font-semibold transition-all"
-                                  >
-                                    Cetak
-                                  </button>
-                                  {isOpen && !isTopManagement && (
-                                    <Link
-                                      href={`/lead/${id}/penawaran/baru?revisi=${q.id}`}
-                                      className="px-2.5 py-1 bg-orange-100 hover:bg-orange-200 dark:bg-orange-900/20 dark:hover:bg-orange-900/40 text-orange-700 dark:text-orange-400 rounded font-semibold transition-all inline-block"
+                          {(() => {
+                            const maxVersi = Math.max(...(lead.versi_penawarans || []).map(vp => vp.versi), 0);
+                            return lead.versi_penawarans.map(q => {
+                              const isFinal = String(lead.versi_penawaran_final_id) === String(q.id);
+                              const isLatest = q.versi === maxVersi;
+                              return (
+                                <tr key={q.id} className="hover:bg-neutral-50/50 dark:hover:bg-neutral-800/30 transition-colors">
+                                  <td className="px-4 py-3.5 font-bold text-neutral-900 dark:text-white">v{q.versi}</td>
+                                  <td className="px-4 py-3.5 font-mono text-neutral-600 dark:text-neutral-400">{q.nomor}</td>
+                                  <td className="px-4 py-3.5 text-right font-bold text-neutral-900 dark:text-white">
+                                    Rp {Number(q.grand_total).toLocaleString('id-ID')}
+                                  </td>
+                                  <td className="px-4 py-3.5">
+                                    {isFinal ? (
+                                      <span className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 px-2.5 py-0.5 rounded-full font-bold text-[9px] uppercase tracking-wider">
+                                        Disetujui
+                                      </span>
+                                    ) : (
+                                      <span className="text-neutral-400 font-medium">-</span>
+                                    )}
+                                  </td>
+                                  <td className="px-4 py-3.5 text-right space-x-2 whitespace-nowrap">
+                                    <button
+                                      type="button"
+                                      onClick={() => setSelectedQuotationId(q.id)}
+                                      className="px-2.5 py-1 bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300 rounded font-semibold transition-all"
                                     >
-                                      Revisi
-                                    </Link>
-                                  )}
-                                </td>
-                              </tr>
-                            );
-                          })}
+                                      Cetak
+                                    </button>
+                                    {isOpen && !isTopManagement && isLatest && (
+                                      <Link
+                                        href={`/lead/${id}/penawaran/baru?revisi=${q.id}`}
+                                        className="px-2.5 py-1 bg-orange-100 hover:bg-orange-200 dark:bg-orange-900/20 dark:hover:bg-orange-900/40 text-orange-700 dark:text-orange-400 rounded font-semibold transition-all inline-block"
+                                      >
+                                        Revisi
+                                      </Link>
+                                    )}
+                                  </td>
+                                </tr>
+                              );
+                            });
+                          })()}
                         </tbody>
                       </table>
                     </div>
